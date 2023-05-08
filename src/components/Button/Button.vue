@@ -10,20 +10,12 @@
 </template>
 
 <script lang="ts" setup>
-import {ref} from "vue"
 import Loading from "../Loading/Loading.vue"
+import {useButton} from "./button.ts"
 
 const props = defineProps(["onClick"])
 
-const loading = ref(false)
-
-async function onClick() {
-    if (props.onClick) {
-        loading.value = true
-        await props.onClick()
-        loading.value = false
-    }
-}
+const {loading, onClick} = useButton(props.onClick)
 </script>
 
 <style scoped>
