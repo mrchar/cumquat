@@ -1,7 +1,9 @@
 <template>
-    <button class="px-4 py-2 border-2 rounded-lg" @click.stop="onClick()">
-        <div v-show="loading">Loading</div>
-        <div v-show="!loading">
+    <button @click.stop="onClick()" :disabled="loading">
+        <div v-if="loading">
+            <Loading/>
+        </div>
+        <div v-else>
             <slot/>
         </div>
     </button>
@@ -9,6 +11,7 @@
 
 <script lang="ts" setup>
 import {ref} from "vue"
+import Loading from "../Loading/Loading.vue"
 
 const props = defineProps(["onClick"])
 
@@ -22,3 +25,13 @@ async function onClick() {
     }
 }
 </script>
+
+<style scoped>
+button {
+    @apply w-20 h-12 px-4 py-2;
+    @apply border-2 rounded-lg;
+    @apply shadow-lg hover:shadow-none;
+    @apply bg-blue-500 hover:bg-blue-400 text-white;
+    @apply inline-flex justify-center items-center;
+}
+</style>
