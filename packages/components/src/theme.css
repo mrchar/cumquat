@@ -1,0 +1,68 @@
+/*
+ * Cumquat 语义设计 token
+ *
+ * 通过 Tailwind v4 @theme 定义，宿主在入口 CSS 中引入本文件即可获得
+ * cumquat-* 工具类（bg-cumquat-surface、text-cumquat-accent 等）。
+ * 深色模式：宿主在 <html> 上切换 .dark 类，以下变量运行时覆盖。
+ */
+@theme {
+  /* 品牌主色 */
+  --color-cumquat-accent: #4f46e5;
+  --color-cumquat-accent-hover: #4338ca;
+  --color-cumquat-accent-active: #3730a3;
+  --color-cumquat-accent-soft: #eef2ff;
+
+  /* 表面 / 背景 */
+  --color-cumquat-surface: #ffffff;
+  --color-cumquat-surface-2: #f8fafc;
+  --color-cumquat-surface-3: #f1f5f9;
+
+  /* 描边 */
+  --color-cumquat-border: #e2e8f0;
+  --color-cumquat-border-strong: #cbd5e1;
+
+  /* 文本 */
+  --color-cumquat-text: #0f172a;
+  --color-cumquat-text-muted: #64748b;
+  --color-cumquat-text-inverse: #ffffff;
+
+  /* 语义状态色 */
+  --color-cumquat-success: #16a34a;
+  --color-cumquat-success-soft: #dcfce7;
+  --color-cumquat-warning: #d97706;
+  --color-cumquat-warning-soft: #fef3c7;
+  --color-cumquat-danger: #dc2626;
+  --color-cumquat-danger-soft: #fee2e2;
+  --color-cumquat-info: #0284c7;
+  --color-cumquat-info-soft: #e0f2fe;
+
+  /* 圆角与阴影 */
+  --radius-cumquat: 0.5rem;
+  --shadow-cumquat-overlay: 0 4px 16px rgb(0 0 0 / 0.12);
+}
+
+/* 深色模式：宿主在 <html> 挂 .dark 类即可整体换肤 */
+.dark {
+  --color-cumquat-accent: #6366f1;
+  --color-cumquat-accent-hover: #818cf8;
+  --color-cumquat-accent-active: #a5b4fc;
+  --color-cumquat-accent-soft: #312e81;
+
+  --color-cumquat-surface: #0f172a;
+  --color-cumquat-surface-2: #1e293b;
+  --color-cumquat-surface-3: #273449;
+
+  --color-cumquat-border: #334155;
+  --color-cumquat-border-strong: #475569;
+
+  --color-cumquat-text: #f1f5f9;
+  --color-cumquat-text-muted: #94a3b8;
+  --color-cumquat-text-inverse: #0f172a;
+
+  --color-cumquat-success-soft: #14532d;
+  --color-cumquat-warning-soft: #713f12;
+  --color-cumquat-danger-soft: #7f1d1d;
+  --color-cumquat-info-soft: #0c4a6e;
+
+  --shadow-cumquat-overlay: 0 4px 16px rgb(0 0 0 / 0.5);
+}

@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import '@cumquat/components/theme.css';
+
+/* 组件源码中的类名也需要纳入扫描 */
+@source '../../packages/components/src';
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-cumquat-surface);
+  color: var(--color-cumquat-text);
+}
