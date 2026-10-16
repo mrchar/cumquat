@@ -28,21 +28,14 @@ function setFromEvent(event: MouseEvent) {
 
 <template>
   <div
-    class="cumquat-slider flex w-full items-center"
-    :class="disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'"
+    class="cumquat-slider"
+    :class="disabled ? 'cumquat-slider--disabled' : ''"
     @mousedown="setFromEvent"
   >
-    <div
-      ref="track"
-      class="cumquat-slider__track relative h-1.5 w-full rounded-full bg-cumquat-surface-3"
-    >
-      <div
-        class="cumquat-slider__fill absolute inset-y-0 left-0 rounded-full bg-cumquat-accent"
-        :style="{ width: `${percent}%` }"
-      />
+    <div ref="track" class="cumquat-slider__track">
+      <div class="cumquat-slider__fill" :style="{ width: `${percent}%` }" />
       <span
-        class="cumquat-slider__thumb absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cumquat-accent bg-cumquat-surface shadow transition-transform"
-        :class="disabled ? '' : 'hover:scale-110'"
+        class="cumquat-slider__thumb"
         :style="{ left: `${percent}%` }"
         role="slider"
         :aria-valuenow="model"
@@ -50,8 +43,6 @@ function setFromEvent(event: MouseEvent) {
         :aria-valuemax="max"
       />
     </div>
-    <span class="cumquat-slider__value ml-3 w-8 text-right text-xs text-cumquat-text-muted">{{
-      model
-    }}</span>
+    <span class="cumquat-slider__value">{{ model }}</span>
   </div>
 </template>

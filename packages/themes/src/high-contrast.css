@@ -1,0 +1,45 @@
+/*
+ * 高对比主题
+ *
+ * 纯白表面、纯黑文本与描边，状态色加深加饱和，弱化阴影与柔色底，
+ * 服务低视力与强光环境。在 <html> 上挂 cq-theme-high-contrast 类生效。
+ * 通过 Tailwind v4 的 @layer theme 覆盖同名 token，工具类自动跟随。
+ */
+@layer theme {
+  .cq-theme-high-contrast {
+    /* 品牌主色：提高与白色的对比度 */
+    --color-cumquat-accent: #1d4ed8;
+    --color-cumquat-accent-hover: #1e40af;
+    --color-cumquat-accent-active: #1e3a8a;
+    --color-cumquat-accent-soft: #ffffff;
+
+    /* 表面：取消灰色层级，统一纯白 */
+    --color-cumquat-surface: #ffffff;
+    --color-cumquat-surface-2: #ffffff;
+    --color-cumquat-surface-3: #ffffff;
+
+    /* 描边：纯黑，保证任何边界可辨 */
+    --color-cumquat-border: #000000;
+    --color-cumquat-border-strong: #000000;
+
+    /* 文本 */
+    --color-cumquat-text: #000000;
+    --color-cumquat-text-muted: #1f2937;
+    --color-cumquat-text-inverse: #ffffff;
+
+    /* 语义状态色：加深以满足对比度，柔色底改为白底 */
+    --color-cumquat-success: #166534;
+    --color-cumquat-success-soft: #ffffff;
+    --color-cumquat-warning: #92400e;
+    --color-cumquat-warning-soft: #ffffff;
+    --color-cumquat-danger: #b91c1c;
+    --color-cumquat-danger-soft: #ffffff;
+    --color-cumquat-info: #075985;
+    --color-cumquat-info-soft: #ffffff;
+
+    /* 弱化阴影，边界完全交给描边表达 */
+    --shadow-cumquat-overlay: 0 0 0 2px #000000;
+
+    color-scheme: light;
+  }
+}

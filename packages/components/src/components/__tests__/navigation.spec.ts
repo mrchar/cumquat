@@ -34,7 +34,7 @@ describe('Breadcrumb', () => {
     const wrapper = mount(Breadcrumb, { props: { items } });
     expect(wrapper.findAll('.cumquat-breadcrumb__separator')).toHaveLength(2);
     const currents = wrapper.findAll('.cumquat-breadcrumb__current');
-    expect(currents.at(-1)!.classes()).toContain('text-cumquat-text');
+    expect(currents.at(-1)!.classes()).toContain('cumquat-breadcrumb__current--last');
   });
 });
 
@@ -66,7 +66,9 @@ describe('Anchor', () => {
   it('点击链接激活', async () => {
     const wrapper = mount(Anchor, { props: { items } });
     await wrapper.findAll('.cumquat-anchor__link')[1].trigger('click');
-    expect(wrapper.findAll('.cumquat-anchor__link')[1].classes()).toContain('text-cumquat-accent');
+    expect(wrapper.findAll('.cumquat-anchor__link')[1].classes()).toContain(
+      'cumquat-anchor__link--active',
+    );
   });
 });
 
@@ -122,7 +124,7 @@ describe('TimePicker', () => {
     await wrapper.findAll('.cumquat-time-picker__hour')[3].trigger('click');
     await wrapper.findAll('.cumquat-time-picker__minute')[2].trigger('click');
     expect(wrapper.findAll('.cumquat-time-picker__hour')[3].classes()).toContain(
-      'bg-cumquat-accent',
+      'cumquat-time-picker__hour--selected',
     );
   });
 });
@@ -132,7 +134,7 @@ describe('Calendar', () => {
     const wrapper = mount(Calendar);
     const day = wrapper.findAll('.cumquat-calendar__day')[7];
     await day.trigger('click');
-    expect(day.classes()).toContain('bg-cumquat-accent');
+    expect(day.classes()).toContain('cumquat-calendar__day--selected');
   });
 });
 
@@ -176,7 +178,7 @@ describe('Layout / Grid / Space', () => {
 
   it('Grid 列数映射', () => {
     const wrapper = mount(Grid, { props: { cols: 3 }, slots: { default: '<div/><div/><div/>' } });
-    expect(wrapper.classes()).toContain('sm:grid-cols-3');
+    expect(wrapper.classes()).toContain('cumquat-grid--cols-3');
   });
 
   it('Space 均分子项', () => {

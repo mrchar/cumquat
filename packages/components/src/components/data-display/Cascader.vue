@@ -62,18 +62,21 @@ function pick(option: CascaderOption, colIndex: number) {
 </script>
 
 <template>
-  <div class="cumquat-cascader relative inline-block w-full">
+  <div class="cumquat-cascader">
     <button
       type="button"
-      class="cumquat-cascader__trigger flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-cumquat border px-3 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20"
-      :class="open ? 'border-cumquat-accent' : 'border-cumquat-border'"
+      class="cumquat-cascader__trigger"
+      :class="open ? 'cumquat-cascader__trigger--open' : ''"
       @click="open = !open"
     >
-      <span :class="selectedLabels.length > 0 ? 'text-cumquat-text' : 'text-cumquat-text-muted'">
+      <span
+        class="cumquat-cascader__value"
+        :class="selectedLabels.length > 0 ? '' : 'cumquat-cascader__value--placeholder'"
+      >
         {{ selectedLabels.length > 0 ? selectedLabels.join(' / ') : placeholder }}
       </span>
       <svg
-        class="size-4 text-cumquat-text-muted"
+        class="cumquat-cascader__trigger-icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -86,30 +89,19 @@ function pick(option: CascaderOption, colIndex: number) {
     </button>
 
     <Transition name="cumquat-fade">
-      <div
-        v-if="open"
-        class="cumquat-cascader__panel absolute z-20 mt-1.5 flex rounded-cumquat border border-cumquat-border bg-cumquat-surface shadow-cumquat-overlay"
-      >
-        <ul
-          v-for="(col, colIndex) in columns"
-          :key="colIndex"
-          class="cumquat-cascader__column max-h-60 min-w-40 overflow-y-auto border-r border-cumquat-border py-1.5 last:border-r-0"
-        >
+      <div v-if="open" class="cumquat-cascader__panel">
+        <ul v-for="(col, colIndex) in columns" :key="colIndex" class="cumquat-cascader__column">
           <li
             v-for="option in col.options"
             :key="option.value"
-            class="cumquat-cascader__option flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm transition-colors"
-            :class="
-              option.value === col.selected
-                ? 'bg-cumquat-accent-soft font-medium text-cumquat-accent'
-                : 'text-cumquat-text hover:bg-cumquat-surface-2'
-            "
+            class="cumquat-cascader__option"
+            :class="option.value === col.selected ? 'cumquat-cascader__option--selected' : ''"
             @click="pick(option, colIndex)"
           >
             {{ option.label }}
             <svg
               v-if="option.children?.length"
-              class="size-3.5 text-cumquat-text-muted"
+              class="cumquat-cascader__option-icon"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

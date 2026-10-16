@@ -13,39 +13,21 @@ withDefaults(
 
 <template>
   <div
-    class="cumquat-divider flex items-center text-sm text-cumquat-text-muted"
-    :class="orientation === 'vertical' ? 'mx-1 h-4 self-stretch' : 'my-4 w-full'"
+    class="cumquat-divider"
+    :class="[`cumquat-divider--${orientation}`, dashed ? 'cumquat-divider--dashed' : '']"
     role="separator"
     :aria-orientation="orientation"
   >
     <template v-if="orientation === 'horizontal'">
-      <span
-        v-if="!label || !$slots.default"
-        class="cumquat-divider__line flex-1"
-        :class="dashed ? 'border-t border-dashed border-cumquat-border' : 'h-px bg-cumquat-border'"
-      />
+      <span v-if="!label || !$slots.default" class="cumquat-divider__line" />
       <template v-else>
-        <span
-          class="cumquat-divider__line flex-1"
-          :class="
-            dashed ? 'border-t border-dashed border-cumquat-border' : 'h-px bg-cumquat-border'
-          "
-        />
-        <span class="cumquat-divider__label px-3"
+        <span class="cumquat-divider__line" />
+        <span class="cumquat-divider__label"
           ><slot>{{ label }}</slot></span
         >
-        <span
-          class="cumquat-divider__line flex-1"
-          :class="
-            dashed ? 'border-t border-dashed border-cumquat-border' : 'h-px bg-cumquat-border'
-          "
-        />
+        <span class="cumquat-divider__line" />
       </template>
     </template>
-    <span
-      v-else
-      class="cumquat-divider__line flex-1"
-      :class="dashed ? 'border-l border-dashed border-cumquat-border' : 'w-px bg-cumquat-border'"
-    />
+    <span v-else class="cumquat-divider__line" />
   </div>
 </template>

@@ -35,22 +35,20 @@ function isExpanded(key: string) {
 </script>
 
 <template>
-  <nav
-    class="cumquat-menu flex w-56 flex-col gap-0.5 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-2"
-  >
+  <nav class="cumquat-menu">
     <template v-for="item in items" :key="item.key">
       <!-- 分组 -->
       <template v-if="item.children">
         <button
           type="button"
-          class="cumquat-menu__group flex w-full cursor-pointer items-center justify-between rounded px-3 py-2 text-sm font-medium text-cumquat-text transition-colors hover:bg-cumquat-surface-2"
+          class="cumquat-menu__group"
           :aria-expanded="isExpanded(item.key)"
           @click="toggleGroup(item.key)"
         >
           {{ item.label }}
           <svg
-            class="cumquat-menu__chevron size-3.5 text-cumquat-text-muted transition-transform"
-            :class="isExpanded(item.key) ? 'rotate-180' : ''"
+            class="cumquat-menu__chevron"
+            :class="isExpanded(item.key) ? 'cumquat-menu__chevron--expanded' : ''"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -61,16 +59,14 @@ function isExpanded(key: string) {
             <path d="m6 9 6 6 6-6" />
           </svg>
         </button>
-        <div v-if="isExpanded(item.key)" class="cumquat-menu__subgroup flex flex-col gap-0.5 pl-3">
+        <div v-if="isExpanded(item.key)" class="cumquat-menu__subgroup">
           <button
             v-for="child in item.children"
             :key="child.key"
             type="button"
-            class="cumquat-menu__item cursor-pointer rounded px-3 py-2 text-left text-sm transition-colors"
+            class="cumquat-menu__item"
             :class="
-              child.key === active
-                ? 'bg-cumquat-accent-soft font-medium text-cumquat-accent'
-                : 'text-cumquat-text-muted hover:bg-cumquat-surface-2 hover:text-cumquat-text'
+              child.key === active ? 'cumquat-menu__item--active' : 'cumquat-menu__item--inactive'
             "
             @click="active = child.key"
           >
@@ -82,12 +78,8 @@ function isExpanded(key: string) {
       <button
         v-else
         type="button"
-        class="cumquat-menu__item cursor-pointer rounded px-3 py-2 text-left text-sm transition-colors"
-        :class="
-          item.key === active
-            ? 'bg-cumquat-accent-soft font-medium text-cumquat-accent'
-            : 'text-cumquat-text-muted hover:bg-cumquat-surface-2 hover:text-cumquat-text'
-        "
+        class="cumquat-menu__item"
+        :class="item.key === active ? 'cumquat-menu__item--active' : 'cumquat-menu__item--inactive'"
         @click="active = item.key"
       >
         {{ item.label }}

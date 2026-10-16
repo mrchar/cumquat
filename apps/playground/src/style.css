@@ -1,19 +1,24 @@
 @import 'tailwindcss';
-@import '@cumquat/components/theme.css';
-
-/* 组件源码中的类名也需要纳入扫描 */
-@source '../../packages/components/src';
+@import '@cumquat/themes/basic.css';
+@import '@cumquat/themes/light.css';
+@import '@cumquat/themes/dark.css';
+@import '@cumquat/themes/high-contrast.css';
+@import '@cumquat/themes/glass.css';
 
 html {
   scroll-behavior: smooth;
   color-scheme: light;
 }
 
-html.dark {
+html.dark,
+html.cq-theme-dark {
   color-scheme: dark;
 }
 
 body {
-  background-color: var(--color-cumquat-surface);
   color: var(--color-cumquat-text);
+}
+
+html:not(.cq-theme-glass) body {
+  background-color: var(--color-cumquat-surface);
 }

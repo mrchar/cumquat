@@ -13,27 +13,20 @@ const open = defineModel<boolean>('open', { default: false });
 <template>
   <Teleport to="body">
     <Transition name="cumquat-fade">
-      <div v-if="open" class="cumquat-drawer fixed inset-0 z-50">
-        <div class="cumquat-drawer__mask absolute inset-0 bg-black/40" @click="open = false" />
-        <aside
-          role="dialog"
-          aria-modal="true"
-          class="cumquat-drawer__panel absolute inset-y-0 right-0 flex w-80 max-w-full flex-col border-l border-cumquat-border bg-cumquat-surface shadow-cumquat-overlay"
-        >
-          <header
-            v-if="title || closable"
-            class="cumquat-drawer__header flex items-center justify-between border-b border-cumquat-border px-5 py-4"
-          >
-            <h3 class="text-base font-semibold text-cumquat-text">{{ title }}</h3>
+      <div v-if="open" class="cumquat-drawer">
+        <div class="cumquat-drawer__mask" @click="open = false" />
+        <aside role="dialog" aria-modal="true" class="cumquat-drawer__panel">
+          <header v-if="title || closable" class="cumquat-drawer__header">
+            <h3 class="cumquat-drawer__title">{{ title }}</h3>
             <button
               v-if="closable"
               type="button"
               aria-label="关闭"
-              class="cumquat-drawer__close cursor-pointer text-cumquat-text-muted transition-colors hover:text-cumquat-text"
+              class="cumquat-drawer__close"
               @click="open = false"
             >
               <svg
-                class="size-5"
+                class="cumquat-drawer__close-icon"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -44,15 +37,10 @@ const open = defineModel<boolean>('open', { default: false });
               </svg>
             </button>
           </header>
-          <div
-            class="cumquat-drawer__body flex-1 overflow-y-auto px-5 py-4 text-sm text-cumquat-text"
-          >
+          <div class="cumquat-drawer__body">
             <slot />
           </div>
-          <footer
-            v-if="$slots.footer"
-            class="cumquat-drawer__footer flex justify-end gap-3 border-t border-cumquat-border px-5 py-4"
-          >
+          <footer v-if="$slots.footer" class="cumquat-drawer__footer">
             <slot name="footer" />
           </footer>
         </aside>

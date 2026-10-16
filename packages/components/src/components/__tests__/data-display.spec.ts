@@ -72,7 +72,7 @@ describe('Tabs', () => {
   it('点击切换激活标签', async () => {
     const wrapper = mount(Tabs, { props: { tabs, modelValue: 'a' } });
     const tabButtons = wrapper.findAll('.cumquat-tabs__tab');
-    expect(tabButtons[0].classes()).toContain('border-cumquat-accent');
+    expect(tabButtons[0].classes()).toContain('cumquat-tabs__tab--active');
     await tabButtons[1].trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['b']);
   });

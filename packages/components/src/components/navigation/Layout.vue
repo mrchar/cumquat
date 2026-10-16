@@ -10,8 +10,8 @@ withDefaults(
 
 <template>
   <div
-    class="cumquat-layout w-full"
-    :class="direction === 'vertical' ? 'flex flex-col' : 'flex flex-row'"
+    class="cumquat-layout"
+    :class="direction === 'vertical' ? 'cumquat-layout--vertical' : 'cumquat-layout--horizontal'"
   >
     <slot />
   </div>

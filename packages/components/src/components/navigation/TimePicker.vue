@@ -23,14 +23,20 @@ function confirm() {
 </script>
 
 <template>
-  <div class="cumquat-time-picker relative inline-block w-40">
+  <div class="cumquat-time-picker">
     <button
       type="button"
-      class="cumquat-time-picker__trigger flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-cumquat border px-3 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20"
-      :class="open ? 'border-cumquat-accent' : 'border-cumquat-border'"
+      class="cumquat-time-picker__trigger"
+      :class="open ? 'cumquat-time-picker__trigger--open' : ''"
       @click="open = !open"
     >
-      <span :class="selectedHour != null ? 'text-cumquat-text' : 'text-cumquat-text-muted'">
+      <span
+        :class="
+          selectedHour != null
+            ? 'cumquat-time-picker__value--selected'
+            : 'cumquat-time-picker__value--placeholder'
+        "
+      >
         {{
           selectedHour != null
             ? `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute ?? 0).padStart(2, '0')}`
@@ -38,7 +44,7 @@ function confirm() {
         }}
       </span>
       <svg
-        class="size-4 text-cumquat-text-muted"
+        class="cumquat-time-picker__icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -52,36 +58,31 @@ function confirm() {
     </button>
 
     <Transition name="cumquat-fade">
-      <div
-        v-if="open"
-        class="cumquat-time-picker__panel absolute z-20 mt-1.5 flex w-full gap-1 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-2 shadow-cumquat-overlay"
-      >
-        <ul class="cumquat-time-picker__hours max-h-40 flex-1 overflow-y-auto text-center text-xs">
+      <div v-if="open" class="cumquat-time-picker__panel">
+        <ul class="cumquat-time-picker__hours">
           <li
             v-for="h in hours"
             :key="h"
-            class="cumquat-time-picker__hour cursor-pointer rounded px-2 py-1.5 transition-colors"
+            class="cumquat-time-picker__hour"
             :class="
               h === selectedHour
-                ? 'bg-cumquat-accent text-cumquat-text-inverse'
-                : 'text-cumquat-text hover:bg-cumquat-surface-2'
+                ? 'cumquat-time-picker__hour--selected'
+                : 'cumquat-time-picker__hour--default'
             "
             @click="pickHour(h)"
           >
             {{ String(h).padStart(2, '0') }} 时
           </li>
         </ul>
-        <ul
-          class="cumquat-time-picker__minutes max-h-40 flex-1 overflow-y-auto text-center text-xs"
-        >
+        <ul class="cumquat-time-picker__minutes">
           <li
             v-for="m in minutes"
             :key="m"
-            class="cumquat-time-picker__minute cursor-pointer rounded px-2 py-1.5 transition-colors"
+            class="cumquat-time-picker__minute"
             :class="
               m === selectedMinute
-                ? 'bg-cumquat-accent text-cumquat-text-inverse'
-                : 'text-cumquat-text hover:bg-cumquat-surface-2'
+                ? 'cumquat-time-picker__minute--selected'
+                : 'cumquat-time-picker__minute--default'
             "
             @click="pickMinute(m)"
           >

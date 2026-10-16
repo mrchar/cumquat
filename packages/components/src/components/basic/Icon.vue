@@ -1,6 +1,6 @@
 <template>
   <svg
-    class="cumquat-icon size-4 shrink-0"
+    class="cumquat-icon"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"

@@ -18,11 +18,11 @@ const emit = defineEmits<{
       v-if="visible"
       type="button"
       aria-label="回到顶部"
-      class="cumquat-back-top flex size-11 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-cumquat-text shadow-cumquat-overlay transition-colors hover:bg-cumquat-surface-2"
+      class="cumquat-back-top"
       @click="emit('click')"
     >
       <svg
-        class="size-5"
+        class="cumquat-back-top__icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

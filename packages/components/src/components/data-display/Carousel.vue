@@ -24,31 +24,20 @@ function next() {
 </script>
 
 <template>
-  <div
-    class="cumquat-carousel group relative w-full overflow-hidden rounded-cumquat border border-cumquat-border bg-cumquat-surface-2"
-    :style="{ height }"
-  >
+  <div class="cumquat-carousel" :style="{ height }">
     <Transition name="cumquat-fade" mode="out-in">
-      <div
-        :key="index"
-        class="cumquat-carousel__slide flex size-full flex-col items-center justify-center gap-2 bg-cumquat-surface-3"
-      >
+      <div :key="index" class="cumquat-carousel__slide">
         <slot :index="index">
-          <span class="text-2xl font-semibold text-cumquat-text-muted">{{
+          <span class="cumquat-carousel__slide-text">{{
             items[index] ?? `Slide ${index + 1}`
           }}</span>
         </slot>
       </div>
     </Transition>
 
-    <button
-      type="button"
-      aria-label="上一张"
-      class="cumquat-carousel__prev absolute top-1/2 left-3 z-10 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-cumquat-surface/80 text-cumquat-text shadow transition-opacity hover:bg-cumquat-surface"
-      @click="prev"
-    >
+    <button type="button" aria-label="上一张" class="cumquat-carousel__prev" @click="prev">
       <svg
-        class="size-5"
+        class="cumquat-carousel__arrow-icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -59,14 +48,9 @@ function next() {
         <path d="m15 18-6-6 6-6" />
       </svg>
     </button>
-    <button
-      type="button"
-      aria-label="下一张"
-      class="cumquat-carousel__next absolute top-1/2 right-3 z-10 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-cumquat-surface/80 text-cumquat-text shadow transition-opacity hover:bg-cumquat-surface"
-      @click="next"
-    >
+    <button type="button" aria-label="下一张" class="cumquat-carousel__next" @click="next">
       <svg
-        class="size-5"
+        class="cumquat-carousel__arrow-icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -78,20 +62,14 @@ function next() {
       </svg>
     </button>
 
-    <div
-      class="cumquat-carousel__indicators absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-2"
-    >
+    <div class="cumquat-carousel__indicators">
       <button
         v-for="i in count"
         :key="i"
         type="button"
         :aria-label="`第 ${i} 张`"
-        class="cumquat-carousel__indicator h-2 cursor-pointer rounded-full transition-all"
-        :class="
-          i - 1 === index
-            ? 'w-6 bg-cumquat-accent'
-            : 'w-2 bg-cumquat-border-strong hover:bg-cumquat-text-muted'
-        "
+        class="cumquat-carousel__indicator"
+        :class="i - 1 === index ? 'cumquat-carousel__indicator--active' : ''"
         @click="index = i - 1"
       />
     </div>

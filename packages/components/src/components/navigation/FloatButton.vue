@@ -26,17 +26,14 @@ function select(key: string) {
 </script>
 
 <template>
-  <div class="cumquat-float-button fixed right-6 bottom-6 z-40 flex flex-col items-center gap-2.5">
+  <div class="cumquat-float-button">
     <Transition name="cumquat-fade">
-      <div
-        v-if="open && actions.length > 0"
-        class="cumquat-float-button__actions flex flex-col items-center gap-2.5"
-      >
+      <div v-if="open && actions.length > 0" class="cumquat-float-button__actions">
         <button
           v-for="action in actions"
           :key="action.key"
           type="button"
-          class="cumquat-float-button__action flex size-10 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-xs text-cumquat-text shadow-cumquat-overlay transition-transform hover:scale-105"
+          class="cumquat-float-button__action"
           @click="select(action.key)"
         >
           {{ action.label }}
@@ -48,12 +45,12 @@ function select(key: string) {
       type="button"
       :aria-expanded="open"
       aria-label="展开操作"
-      class="cumquat-float-button__trigger flex size-12 cursor-pointer items-center justify-center rounded-full bg-cumquat-accent text-cumquat-text-inverse shadow-cumquat-overlay transition-colors hover:bg-cumquat-accent-hover"
+      class="cumquat-float-button__trigger"
       @click="open = !open"
     >
       <svg
-        class="size-5 transition-transform"
-        :class="open ? 'rotate-45' : ''"
+        class="cumquat-float-button__icon"
+        :class="open ? 'cumquat-float-button__icon--expanded' : ''"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

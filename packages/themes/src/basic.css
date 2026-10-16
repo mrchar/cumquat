@@ -1,0 +1,2056 @@
+/*
+ * Cumquat 基础主题（basic）
+ *
+ * 所有组件的完整样式定义：布局、间距、圆角、阴影、字体、排版与颜色。
+ * 语义 token 通过 Tailwind v4 @theme 在本文件注册（取值来自 Tailwind
+ * 内置色板），因此其他主题只需在本主题之后覆盖同名 token 或个别规则
+ * 即可整体换肤。
+ *
+ * 用法：在入口 CSS 中于 tailwindcss 之后引入本文件，
+ * 再引入 light / dark / high-contrast / glass 等差异主题。
+ *
+ * 注意：本文件保持单文件形态、不含嵌套 @import，避免在 dev 模式下
+ * 经包名导入时嵌套样式丢失的问题。
+ */
+@theme {
+  /* 品牌主色 */
+  --color-cumquat-accent: #4f46e5;
+  --color-cumquat-accent-hover: #4338ca;
+  --color-cumquat-accent-active: #3730a3;
+  --color-cumquat-accent-soft: #eef2ff;
+
+  /* 表面 / 背景 */
+  --color-cumquat-surface: #ffffff;
+  --color-cumquat-surface-2: #f8fafc;
+  --color-cumquat-surface-3: #f1f5f9;
+
+  /* 描边 */
+  --color-cumquat-border: #e2e8f0;
+  --color-cumquat-border-strong: #cbd5e1;
+
+  /* 文本 */
+  --color-cumquat-text: #0f172a;
+  --color-cumquat-text-muted: #64748b;
+  --color-cumquat-text-inverse: #ffffff;
+
+  /* 语义状态色 */
+  --color-cumquat-success: #16a34a;
+  --color-cumquat-success-soft: #dcfce7;
+  --color-cumquat-warning: #d97706;
+  --color-cumquat-warning-soft: #fef3c7;
+  --color-cumquat-danger: #dc2626;
+  --color-cumquat-danger-soft: #fee2e2;
+  --color-cumquat-info: #0284c7;
+  --color-cumquat-info-soft: #e0f2fe;
+
+  /* 圆角与阴影 */
+  --radius-cumquat: 0.5rem;
+  --shadow-cumquat-overlay: 0 4px 16px rgb(0 0 0 / 0.12);
+}
+
+/*
+ * 基础主题 · 共享过渡与 basic 场景组件
+ * （Button / Icon / Input / Card / Divider / Avatar / Badge / Statistic / Typography / Tag / Empty）
+ */
+@layer components {
+  /* 共享淡入淡出过渡：<Transition name="cumquat-fade"> */
+  .cumquat-fade-enter-active,
+  .cumquat-fade-leave-active {
+    @apply transition-opacity duration-150;
+  }
+  .cumquat-fade-enter-from,
+  .cumquat-fade-leave-to {
+    @apply opacity-0;
+  }
+
+  /* ---------- Button ---------- */
+  .cumquat-button {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-cumquat font-medium transition-colors;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cumquat-accent;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .cumquat-button--primary {
+    @apply bg-cumquat-accent text-cumquat-text-inverse;
+  }
+  .cumquat-button--primary:hover {
+    @apply bg-cumquat-accent-hover;
+  }
+  .cumquat-button--primary:active {
+    @apply bg-cumquat-accent-active;
+  }
+  .cumquat-button--secondary {
+    @apply border border-cumquat-border bg-cumquat-surface text-cumquat-text;
+  }
+  .cumquat-button--secondary:hover {
+    @apply border-cumquat-border-strong bg-cumquat-surface-2;
+  }
+  .cumquat-button--danger {
+    @apply bg-cumquat-danger text-cumquat-text-inverse;
+  }
+  .cumquat-button--danger:hover {
+    @apply opacity-90;
+  }
+  .cumquat-button--ghost {
+    @apply text-cumquat-text;
+  }
+  .cumquat-button--ghost:hover {
+    @apply bg-cumquat-surface-3;
+  }
+  .cumquat-button--sm {
+    @apply h-8 px-3 text-xs;
+  }
+  .cumquat-button--md {
+    @apply h-10 px-4 text-sm;
+  }
+  .cumquat-button--lg {
+    @apply h-11 px-6 text-base;
+  }
+  .cumquat-button--block {
+    @apply w-full;
+  }
+  .cumquat-button__spinner {
+    @apply size-4 animate-spin;
+  }
+  .cumquat-button__spinner-track {
+    @apply opacity-25;
+  }
+
+  /* ---------- Icon ---------- */
+  .cumquat-icon {
+    @apply size-4 shrink-0;
+  }
+
+  /* ---------- Input ---------- */
+  .cumquat-input {
+    @apply relative inline-flex w-full items-center;
+  }
+  .cumquat-input__inner {
+    @apply w-full rounded-cumquat border border-cumquat-border bg-cumquat-surface px-3 text-cumquat-text transition-colors;
+    @apply placeholder:text-cumquat-text-muted focus:border-cumquat-accent focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20;
+    @apply disabled:cursor-not-allowed disabled:bg-cumquat-surface-3 disabled:opacity-60;
+  }
+  .cumquat-input--sm .cumquat-input__inner {
+    @apply h-8 text-xs;
+  }
+  .cumquat-input--md .cumquat-input__inner {
+    @apply h-10 text-sm;
+  }
+  .cumquat-input--lg .cumquat-input__inner {
+    @apply h-11 text-base;
+  }
+  .cumquat-input--invalid .cumquat-input__inner {
+    @apply border-cumquat-danger focus:border-cumquat-danger focus:ring-cumquat-danger/20;
+  }
+  .cumquat-input--prefix .cumquat-input__inner {
+    @apply pl-9;
+  }
+  .cumquat-input--suffix .cumquat-input__inner {
+    @apply pr-9;
+  }
+  .cumquat-input__prefix {
+    @apply pointer-events-none absolute left-3 flex items-center text-cumquat-text-muted;
+  }
+  .cumquat-input__suffix {
+    @apply pointer-events-none absolute right-3 flex items-center text-cumquat-text-muted;
+  }
+
+  /* ---------- Card ---------- */
+  .cumquat-card {
+    @apply overflow-hidden rounded-cumquat bg-cumquat-surface transition-shadow;
+  }
+  .cumquat-card--bordered {
+    @apply border border-cumquat-border;
+  }
+  .cumquat-card--hoverable:hover {
+    @apply shadow-cumquat-overlay;
+  }
+  .cumquat-card__header {
+    @apply border-b border-cumquat-border px-5 py-4;
+  }
+  .cumquat-card__title {
+    @apply text-base font-semibold text-cumquat-text;
+  }
+  .cumquat-card__body {
+    @apply px-5 py-4 text-sm text-cumquat-text;
+  }
+  .cumquat-card__footer {
+    @apply border-t border-cumquat-border bg-cumquat-surface-2 px-5 py-3 text-sm text-cumquat-text-muted;
+  }
+
+  /* ---------- Divider ---------- */
+  .cumquat-divider {
+    @apply flex items-center text-sm text-cumquat-text-muted;
+  }
+  .cumquat-divider--horizontal {
+    @apply my-4 w-full;
+  }
+  .cumquat-divider--vertical {
+    @apply mx-1 h-4 self-stretch;
+  }
+  .cumquat-divider__line {
+    @apply flex-1;
+  }
+  .cumquat-divider--horizontal .cumquat-divider__line {
+    @apply h-px bg-cumquat-border;
+  }
+  .cumquat-divider--horizontal.cumquat-divider--dashed .cumquat-divider__line {
+    @apply h-0 border-t border-dashed border-cumquat-border bg-transparent;
+  }
+  .cumquat-divider--vertical .cumquat-divider__line {
+    @apply w-px bg-cumquat-border;
+  }
+  .cumquat-divider--vertical.cumquat-divider--dashed .cumquat-divider__line {
+    @apply w-0 border-l border-dashed border-cumquat-border bg-transparent;
+  }
+  .cumquat-divider__label {
+    @apply px-3;
+  }
+
+  /* ---------- Avatar ---------- */
+  .cumquat-avatar {
+    @apply inline-flex shrink-0 select-none items-center justify-center overflow-hidden bg-cumquat-surface-3 font-medium text-cumquat-text-muted;
+  }
+  .cumquat-avatar--sm {
+    @apply size-8 text-xs;
+  }
+  .cumquat-avatar--md {
+    @apply size-10 text-sm;
+  }
+  .cumquat-avatar--lg {
+    @apply size-12 text-base;
+  }
+  .cumquat-avatar--circle {
+    @apply rounded-full;
+  }
+  .cumquat-avatar--square {
+    @apply rounded-cumquat;
+  }
+  .cumquat-avatar__img {
+    @apply size-full object-cover;
+  }
+
+  /* ---------- Badge ---------- */
+  .cumquat-badge {
+    @apply relative inline-flex;
+  }
+  .cumquat-badge__sup {
+    @apply absolute -top-1.5 -right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full border-2 border-cumquat-surface bg-cumquat-danger px-1 text-[0.65rem] font-medium text-cumquat-text-inverse;
+  }
+  .cumquat-badge__sup--dot {
+    @apply size-2.5 min-w-0 px-0;
+  }
+
+  /* ---------- Statistic ---------- */
+  .cumquat-statistic {
+    @apply flex flex-col gap-1;
+  }
+  .cumquat-statistic__title {
+    @apply text-sm text-cumquat-text-muted;
+  }
+  .cumquat-statistic__value {
+    @apply flex items-baseline gap-0.5 font-semibold text-cumquat-text;
+  }
+  .cumquat-statistic__prefix {
+    @apply text-base;
+  }
+  .cumquat-statistic__number {
+    @apply text-3xl tracking-tight tabular-nums;
+  }
+  .cumquat-statistic__suffix {
+    @apply text-base text-cumquat-text-muted;
+  }
+
+  /* ---------- Typography ---------- */
+  .cumquat-typography {
+    @apply m-0 text-base text-cumquat-text;
+  }
+  .cumquat-typography--1 {
+    @apply text-3xl font-bold;
+  }
+  .cumquat-typography--2 {
+    @apply text-2xl font-bold;
+  }
+  .cumquat-typography--3 {
+    @apply text-xl font-semibold;
+  }
+  .cumquat-typography--4 {
+    @apply text-lg font-semibold;
+  }
+  .cumquat-typography--ellipsis {
+    @apply truncate;
+  }
+  .cumquat-typography__copy {
+    @apply ml-1.5 inline-flex size-5 cursor-pointer items-center justify-center align-text-bottom text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-typography__copy:hover {
+    @apply text-cumquat-accent;
+  }
+  .cumquat-typography__copy-icon {
+    @apply size-3.5;
+  }
+  .cumquat-typography__copy-icon--success {
+    @apply text-cumquat-success;
+  }
+
+  /* ---------- Tag ---------- */
+  .cumquat-tag {
+    @apply inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium;
+  }
+  .cumquat-tag--default {
+    @apply bg-cumquat-surface-3 text-cumquat-text;
+  }
+  .cumquat-tag--primary {
+    @apply bg-cumquat-accent-soft text-cumquat-accent;
+  }
+  .cumquat-tag--success {
+    @apply bg-cumquat-success-soft text-cumquat-success;
+  }
+  .cumquat-tag--warning {
+    @apply bg-cumquat-warning-soft text-cumquat-warning;
+  }
+  .cumquat-tag--danger {
+    @apply bg-cumquat-danger-soft text-cumquat-danger;
+  }
+  .cumquat-tag__close {
+    @apply cursor-pointer opacity-60 transition-opacity;
+  }
+  .cumquat-tag__close:hover {
+    @apply opacity-100;
+  }
+  .cumquat-tag__close-icon {
+    @apply size-3;
+  }
+
+  /* ---------- Empty ---------- */
+  .cumquat-empty {
+    @apply flex flex-col items-center justify-center gap-3 px-6 py-12;
+  }
+  .cumquat-empty__image {
+    @apply size-16 text-cumquat-border-strong;
+  }
+  .cumquat-empty__description {
+    @apply text-sm text-cumquat-text-muted;
+  }
+}
+
+/*
+ * 基础主题 · form-controls 场景组件
+ * （Select / Checkbox / Radio / RadioGroup / Switch / InputNumber / Rate /
+ *   Segmented / AutoComplete / Mention / Form / FormItem / TreeSelect / Slider）
+ */
+@layer components {
+  /* ---------- Select ---------- */
+  .cumquat-select {
+    @apply relative inline-block w-full;
+  }
+  .cumquat-select__trigger {
+    @apply flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-cumquat border border-cumquat-border px-3 text-sm transition-colors;
+    @apply focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20;
+    @apply disabled:cursor-not-allowed disabled:bg-cumquat-surface-3 disabled:opacity-60;
+  }
+  .cumquat-select__trigger--open {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-select__value {
+    @apply text-cumquat-text;
+  }
+  .cumquat-select__value--placeholder {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-select__arrow {
+    @apply size-4 text-cumquat-text-muted transition-transform;
+  }
+  .cumquat-select__arrow--open {
+    @apply rotate-180;
+  }
+  .cumquat-select__dropdown {
+    @apply absolute z-20 mt-1.5 max-h-60 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
+  }
+  .cumquat-select__option {
+    @apply cursor-pointer px-3 py-2 text-sm text-cumquat-text transition-colors;
+  }
+  .cumquat-select__option:not(.cumquat-select__option--disabled):not(
+      .cumquat-select__option--active
+    ):hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-select__option--active {
+    @apply bg-cumquat-accent-soft font-medium text-cumquat-accent;
+  }
+  .cumquat-select__option--disabled {
+    @apply cursor-not-allowed text-cumquat-text-muted opacity-50;
+  }
+
+  /* ---------- Checkbox ---------- */
+  .cumquat-checkbox {
+    @apply inline-flex cursor-pointer items-center gap-2 text-sm text-cumquat-text select-none;
+  }
+  .cumquat-checkbox--disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  .cumquat-checkbox__input {
+    @apply sr-only;
+  }
+  .cumquat-checkbox__input:focus-visible + .cumquat-checkbox__box {
+    @apply outline-2 outline-offset-2 outline-cumquat-accent;
+  }
+  .cumquat-checkbox__box {
+    @apply flex size-4.5 shrink-0 items-center justify-center rounded border border-cumquat-border-strong bg-cumquat-surface transition-colors;
+  }
+  .cumquat-checkbox__box--active {
+    @apply border-cumquat-accent bg-cumquat-accent text-cumquat-text-inverse;
+  }
+  .cumquat-checkbox__icon {
+    @apply size-3;
+  }
+
+  /* ---------- Radio ---------- */
+  .cumquat-radio {
+    @apply inline-flex cursor-pointer items-center gap-2 text-sm text-cumquat-text select-none;
+  }
+  .cumquat-radio--disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  .cumquat-radio__input {
+    @apply sr-only;
+  }
+  .cumquat-radio__input:focus-visible + .cumquat-radio__dot {
+    @apply outline-2 outline-offset-2 outline-cumquat-accent;
+  }
+  .cumquat-radio__dot {
+    @apply flex size-4.5 shrink-0 items-center justify-center rounded-full border border-cumquat-border-strong bg-cumquat-surface transition-colors;
+  }
+  .cumquat-radio__dot--checked {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-radio__inner {
+    @apply size-2 rounded-full bg-transparent transition-colors;
+  }
+  .cumquat-radio__inner--checked {
+    @apply bg-cumquat-accent;
+  }
+
+  /* ---------- RadioGroup ---------- */
+  .cumquat-radio-group--horizontal {
+    @apply flex flex-wrap items-center gap-4;
+  }
+  .cumquat-radio-group--vertical {
+    @apply flex flex-col items-start gap-2.5;
+  }
+
+  /* ---------- Switch ---------- */
+  .cumquat-switch {
+    @apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent bg-cumquat-border-strong transition-colors;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cumquat-accent;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .cumquat-switch--checked {
+    @apply bg-cumquat-accent;
+  }
+  .cumquat-switch__thumb {
+    @apply pointer-events-none inline-block size-4.5 translate-x-0.5 transform rounded-full bg-white shadow transition-transform;
+  }
+  .cumquat-switch__thumb--checked {
+    @apply translate-x-5;
+  }
+  .cumquat-switch__label {
+    @apply ml-2 text-sm text-cumquat-text select-none;
+  }
+
+  /* ---------- InputNumber ---------- */
+  .cumquat-input-number {
+    @apply inline-flex h-10 items-stretch overflow-hidden rounded-cumquat border border-cumquat-border bg-cumquat-surface transition-colors;
+    @apply focus-within:border-cumquat-accent focus-within:ring-2 focus-within:ring-cumquat-accent/20;
+  }
+  .cumquat-input-number--disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+  .cumquat-input-number__decrease {
+    @apply flex w-9 cursor-pointer items-center justify-center text-cumquat-text-muted transition-colors;
+    @apply disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .cumquat-input-number__decrease:hover {
+    @apply bg-cumquat-surface-2 text-cumquat-text;
+  }
+  .cumquat-input-number__increase {
+    @apply flex w-9 cursor-pointer items-center justify-center text-cumquat-text-muted transition-colors;
+    @apply disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .cumquat-input-number__increase:hover {
+    @apply bg-cumquat-surface-2 text-cumquat-text;
+  }
+  .cumquat-input-number__input {
+    @apply w-14 border-x border-cumquat-border bg-transparent text-center text-sm text-cumquat-text;
+    @apply focus:outline-none disabled:cursor-not-allowed;
+  }
+  .cumquat-input-number__icon {
+    @apply size-3.5;
+  }
+
+  /* ---------- Rate ---------- */
+  .cumquat-rate {
+    @apply inline-flex items-center gap-1;
+  }
+  .cumquat-rate__star {
+    @apply cursor-pointer text-cumquat-border-strong transition-transform;
+  }
+  .cumquat-rate__star:not(.cumquat-rate__star--disabled):hover {
+    @apply scale-110;
+  }
+  .cumquat-rate__star--active {
+    @apply text-cumquat-warning;
+  }
+  .cumquat-rate__star--disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  .cumquat-rate__icon {
+    @apply size-6;
+  }
+  .cumquat-rate__value {
+    @apply ml-1.5 text-sm text-cumquat-text-muted;
+  }
+
+  /* ---------- Segmented ---------- */
+  .cumquat-segmented {
+    @apply inline-flex gap-1 rounded-cumquat bg-cumquat-surface-3 p-1;
+  }
+  .cumquat-segmented__item {
+    @apply cursor-pointer rounded px-4 py-1.5 text-sm font-medium text-cumquat-text-muted transition-all;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .cumquat-segmented__item:not(.cumquat-segmented__item--active):hover {
+    @apply text-cumquat-text;
+  }
+  .cumquat-segmented__item--active {
+    @apply bg-cumquat-surface text-cumquat-text shadow-sm;
+  }
+
+  /* ---------- AutoComplete ---------- */
+  .cumquat-autocomplete {
+    @apply relative inline-block w-full;
+  }
+  .cumquat-autocomplete__input {
+    @apply h-10 w-full rounded-cumquat border border-cumquat-border bg-cumquat-surface px-3 text-sm text-cumquat-text transition-colors;
+    @apply placeholder:text-cumquat-text-muted focus:border-cumquat-accent focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20;
+  }
+  .cumquat-autocomplete__dropdown {
+    @apply absolute z-20 mt-1.5 max-h-52 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
+  }
+  .cumquat-autocomplete__option {
+    @apply cursor-pointer px-3 py-2 text-sm text-cumquat-text transition-colors;
+  }
+  .cumquat-autocomplete__option:hover {
+    @apply bg-cumquat-surface-2;
+  }
+
+  /* ---------- Mention ---------- */
+  .cumquat-mention {
+    @apply relative inline-block w-full;
+  }
+  .cumquat-mention__input {
+    @apply h-10 w-full rounded-cumquat border border-cumquat-border bg-cumquat-surface px-3 text-sm text-cumquat-text transition-colors;
+    @apply placeholder:text-cumquat-text-muted focus:border-cumquat-accent focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20;
+  }
+  .cumquat-mention__dropdown {
+    @apply absolute z-20 mt-1.5 max-h-44 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
+  }
+  .cumquat-mention__option {
+    @apply cursor-pointer px-3 py-2 text-sm text-cumquat-text transition-colors;
+  }
+  .cumquat-mention__option:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-mention__at {
+    @apply font-medium text-cumquat-accent;
+  }
+
+  /* ---------- Form ---------- */
+  .cumquat-form {
+    @apply flex flex-col gap-4;
+  }
+
+  /* ---------- FormItem ---------- */
+  .cumquat-form-item {
+    @apply flex flex-col gap-1.5;
+  }
+  .cumquat-form-item__label {
+    @apply text-sm text-cumquat-text;
+  }
+  .cumquat-form-item__required {
+    @apply mr-0.5 text-cumquat-danger;
+  }
+  .cumquat-form-item__error {
+    @apply text-xs text-cumquat-danger;
+  }
+
+  /* ---------- TreeSelect ---------- */
+  .cumquat-tree-select {
+    @apply relative inline-block w-full;
+  }
+  .cumquat-tree-select__trigger {
+    @apply flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-cumquat border border-cumquat-border px-3 text-sm transition-colors;
+    @apply focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20;
+  }
+  .cumquat-tree-select__trigger--open {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-tree-select__value {
+    @apply text-cumquat-text;
+  }
+  .cumquat-tree-select__value--placeholder {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-tree-select__arrow {
+    @apply size-4 text-cumquat-text-muted transition-transform;
+  }
+  .cumquat-tree-select__arrow--open {
+    @apply rotate-180;
+  }
+  .cumquat-tree-select__panel {
+    @apply absolute z-20 mt-1.5 max-h-64 w-full overflow-y-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1.5 shadow-cumquat-overlay;
+  }
+  .cumquat-tree-select__node {
+    @apply flex cursor-pointer items-center gap-1.5 px-3 py-2 text-sm text-cumquat-text transition-colors;
+  }
+  .cumquat-tree-select__node:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-tree-select__expander {
+    @apply flex size-4 cursor-pointer items-center justify-center text-cumquat-text-muted transition-transform;
+  }
+  .cumquat-tree-select__expander--expanded {
+    @apply rotate-90;
+  }
+  .cumquat-tree-select__expander-icon {
+    @apply size-3.5;
+  }
+  .cumquat-tree-select__expander-spacer {
+    @apply size-4 shrink-0;
+  }
+  .cumquat-tree-select__leaf {
+    @apply cursor-pointer py-2 pl-10 pr-3 text-sm text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-tree-select__leaf:not(.cumquat-tree-select__leaf--active):hover {
+    @apply bg-cumquat-surface-2 text-cumquat-text;
+  }
+  .cumquat-tree-select__leaf--active {
+    @apply bg-cumquat-accent-soft font-medium text-cumquat-accent;
+  }
+
+  /* ---------- Slider ---------- */
+  .cumquat-slider {
+    @apply flex w-full cursor-pointer items-center;
+  }
+  .cumquat-slider--disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  .cumquat-slider__track {
+    @apply relative h-1.5 w-full rounded-full bg-cumquat-surface-3;
+  }
+  .cumquat-slider__fill {
+    @apply absolute inset-y-0 left-0 rounded-full bg-cumquat-accent;
+  }
+  .cumquat-slider__thumb {
+    @apply absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cumquat-accent bg-cumquat-surface shadow transition-transform;
+  }
+  .cumquat-slider:not(.cumquat-slider--disabled) .cumquat-slider__thumb:hover {
+    @apply scale-110;
+  }
+  .cumquat-slider__value {
+    @apply ml-3 w-8 text-right text-xs text-cumquat-text-muted;
+  }
+}
+
+/*
+ * 基础主题 · overlay 场景组件
+ * （Dialog / Drawer / Dropdown / Popover / Popconfirm / Tooltip）
+ */
+@layer components {
+  /* ---------- Dialog ---------- */
+  .cumquat-dialog {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  }
+  .cumquat-dialog__mask {
+    @apply absolute inset-0 bg-black/40;
+  }
+  .cumquat-dialog__panel {
+    @apply relative flex max-h-[85vh] w-full flex-col rounded-cumquat border border-cumquat-border bg-cumquat-surface shadow-cumquat-overlay;
+  }
+  .cumquat-dialog__header {
+    @apply flex items-center justify-between border-b border-cumquat-border px-6 py-4;
+  }
+  .cumquat-dialog__title {
+    @apply text-base font-semibold text-cumquat-text;
+  }
+  .cumquat-dialog__close {
+    @apply cursor-pointer text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-dialog__close:hover {
+    @apply text-cumquat-text;
+  }
+  .cumquat-dialog__close-icon {
+    @apply size-5;
+  }
+  .cumquat-dialog__body {
+    @apply overflow-y-auto px-6 py-4 text-sm text-cumquat-text;
+  }
+  .cumquat-dialog__footer {
+    @apply flex justify-end gap-3 border-t border-cumquat-border px-6 py-4;
+  }
+
+  /* ---------- Drawer ---------- */
+  .cumquat-drawer {
+    @apply fixed inset-0 z-50;
+  }
+  .cumquat-drawer__mask {
+    @apply absolute inset-0 bg-black/40;
+  }
+  .cumquat-drawer__panel {
+    @apply absolute inset-y-0 right-0 flex w-80 max-w-full flex-col border-l border-cumquat-border bg-cumquat-surface shadow-cumquat-overlay;
+  }
+  .cumquat-drawer__header {
+    @apply flex items-center justify-between border-b border-cumquat-border px-5 py-4;
+  }
+  .cumquat-drawer__title {
+    @apply text-base font-semibold text-cumquat-text;
+  }
+  .cumquat-drawer__close {
+    @apply cursor-pointer text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-drawer__close:hover {
+    @apply text-cumquat-text;
+  }
+  .cumquat-drawer__close-icon {
+    @apply size-5;
+  }
+  .cumquat-drawer__body {
+    @apply flex-1 overflow-y-auto px-5 py-4 text-sm text-cumquat-text;
+  }
+  .cumquat-drawer__footer {
+    @apply flex justify-end gap-3 border-t border-cumquat-border px-5 py-4;
+  }
+
+  /* ---------- Dropdown ---------- */
+  .cumquat-dropdown {
+    @apply relative inline-block;
+  }
+  .cumquat-dropdown__trigger {
+    @apply inline-flex;
+  }
+  .cumquat-dropdown__menu {
+    @apply absolute left-0 z-20 mt-1.5 min-w-36 rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1.5 shadow-cumquat-overlay;
+  }
+
+  /* ---------- Popover ---------- */
+  .cumquat-popover {
+    @apply relative inline-block;
+  }
+  .cumquat-popover__trigger {
+    @apply inline-flex;
+  }
+  .cumquat-popover__content {
+    @apply absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4 text-sm shadow-cumquat-overlay;
+  }
+  .cumquat-popover__arrow {
+    @apply absolute -bottom-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-r border-b border-cumquat-border bg-cumquat-surface;
+  }
+  .cumquat-popover__title {
+    @apply mb-1.5 font-semibold text-cumquat-text;
+  }
+  .cumquat-popover__body {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-popover__footer {
+    @apply mt-3 flex justify-end gap-2;
+  }
+
+  /* ---------- Popconfirm ---------- */
+  .cumquat-popconfirm {
+    @apply relative inline-block;
+  }
+  .cumquat-popconfirm__trigger {
+    @apply inline-flex;
+  }
+  .cumquat-popconfirm__content {
+    @apply absolute bottom-full left-1/2 z-20 mb-2 w-60 -translate-x-1/2 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-3 text-sm shadow-cumquat-overlay;
+  }
+  .cumquat-popconfirm__arrow {
+    @apply absolute -bottom-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-r border-b border-cumquat-border bg-cumquat-surface;
+  }
+  .cumquat-popconfirm__text {
+    @apply text-cumquat-text;
+  }
+  .cumquat-popconfirm__actions {
+    @apply mt-2.5 flex justify-end gap-2;
+  }
+  .cumquat-popconfirm__cancel {
+    @apply cursor-pointer rounded-cumquat border border-cumquat-border px-2.5 py-1 text-xs text-cumquat-text transition-colors;
+  }
+  .cumquat-popconfirm__cancel:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-popconfirm__ok {
+    @apply cursor-pointer rounded-cumquat bg-cumquat-accent px-2.5 py-1 text-xs text-cumquat-text-inverse transition-colors;
+  }
+  .cumquat-popconfirm__ok:hover {
+    @apply bg-cumquat-accent-hover;
+  }
+
+  /* ---------- Tooltip ---------- */
+  .cumquat-tooltip {
+    @apply relative inline-flex;
+  }
+  .cumquat-tooltip__content {
+    @apply pointer-events-none absolute z-20 rounded-md bg-cumquat-text px-2.5 py-1.5 text-xs whitespace-nowrap text-cumquat-text-inverse shadow-cumquat-overlay;
+  }
+  .cumquat-tooltip__content--top {
+    @apply bottom-full left-1/2 mb-1.5 -translate-x-1/2;
+  }
+  .cumquat-tooltip__content--bottom {
+    @apply top-full left-1/2 mt-1.5 -translate-x-1/2;
+  }
+}
+
+/*
+ * 基础主题 · data-display 场景组件
+ * （Table / Pagination / Tabs / Collapse / Tree / Cascader / Timeline / Steps / Descriptions / Carousel / Progress / Image）
+ */
+@layer components {
+  /* ---------- Table ---------- */
+  .cumquat-table {
+    @apply w-full overflow-x-auto rounded-cumquat border border-cumquat-border;
+  }
+  .cumquat-table__table {
+    @apply w-full border-collapse bg-cumquat-surface text-sm;
+  }
+  .cumquat-table__head-row {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-table__th {
+    @apply border-b border-cumquat-border px-4 py-3 font-medium text-cumquat-text-muted;
+  }
+  .cumquat-table__th--left,
+  .cumquat-table__td--left {
+    @apply text-left;
+  }
+  .cumquat-table__th--center,
+  .cumquat-table__td--center {
+    @apply text-center;
+  }
+  .cumquat-table__th--right,
+  .cumquat-table__td--right {
+    @apply text-right;
+  }
+  .cumquat-table__row {
+    @apply transition-colors;
+  }
+  .cumquat-table__row:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-table__row--striped {
+    @apply bg-cumquat-surface-2/60;
+  }
+  .cumquat-table__td {
+    @apply border-b border-cumquat-border px-4 py-3 text-cumquat-text;
+  }
+  .cumquat-table__empty {
+    @apply px-4 py-10 text-center text-cumquat-text-muted;
+  }
+  .cumquat-table__loading {
+    @apply inline-block size-5 animate-spin rounded-full border-2 border-cumquat-border border-t-cumquat-accent;
+  }
+
+  /* ---------- Pagination ---------- */
+  .cumquat-pagination {
+    @apply inline-flex items-center gap-1.5;
+  }
+  .cumquat-pagination__prev,
+  .cumquat-pagination__next {
+    @apply flex size-8 cursor-pointer items-center justify-center rounded-cumquat border border-cumquat-border bg-cumquat-surface text-cumquat-text transition-colors;
+    @apply disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .cumquat-pagination__prev:hover,
+  .cumquat-pagination__next:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-pagination__icon {
+    @apply size-4;
+  }
+  .cumquat-pagination__ellipsis {
+    @apply px-1 text-cumquat-text-muted;
+  }
+  .cumquat-pagination__page {
+    @apply flex size-8 cursor-pointer items-center justify-center rounded-cumquat border border-cumquat-border bg-cumquat-surface text-sm text-cumquat-text transition-colors;
+  }
+  .cumquat-pagination__page:not(.cumquat-pagination__page--active):hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-pagination__page--active {
+    @apply border-cumquat-accent bg-cumquat-accent font-medium text-cumquat-text-inverse;
+  }
+
+  /* ---------- Tabs ---------- */
+  .cumquat-tabs {
+    @apply flex flex-col gap-4;
+  }
+  .cumquat-tabs__nav {
+    @apply flex items-center gap-1 border-b border-cumquat-border;
+  }
+  .cumquat-tabs__tab {
+    @apply relative -mb-px cursor-pointer border-b-2 border-transparent px-4 py-2.5 text-sm font-medium text-cumquat-text-muted transition-colors;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .cumquat-tabs__tab:not(.cumquat-tabs__tab--active):hover {
+    @apply text-cumquat-text;
+  }
+  .cumquat-tabs__tab--active {
+    @apply border-cumquat-accent text-cumquat-accent;
+  }
+  .cumquat-tabs__panel {
+    @apply text-sm text-cumquat-text;
+  }
+
+  /* ---------- Collapse ---------- */
+  .cumquat-collapse {
+    @apply flex flex-col divide-y divide-cumquat-border rounded-cumquat border border-cumquat-border bg-cumquat-surface;
+  }
+  .cumquat-collapse__header {
+    @apply flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3.5 text-left text-sm font-medium text-cumquat-text transition-colors;
+  }
+  .cumquat-collapse__header:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-collapse__chevron {
+    @apply size-4 shrink-0 text-cumquat-text-muted transition-transform;
+  }
+  .cumquat-collapse__chevron--expanded {
+    @apply rotate-180;
+  }
+  .cumquat-collapse__content {
+    @apply px-4 pb-4 text-sm text-cumquat-text-muted;
+  }
+
+  /* ---------- Tree ---------- */
+  .cumquat-tree {
+    @apply flex flex-col gap-0.5 text-sm;
+  }
+  .cumquat-tree__row {
+    @apply flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 transition-colors;
+  }
+  .cumquat-tree__row:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-tree__expander {
+    @apply flex size-4 cursor-pointer items-center justify-center text-cumquat-text-muted transition-transform;
+  }
+  .cumquat-tree__expander--expanded {
+    @apply rotate-90;
+  }
+  .cumquat-tree__expander-icon {
+    @apply size-3.5;
+  }
+  .cumquat-tree__expander-placeholder {
+    @apply size-4 shrink-0;
+  }
+  .cumquat-tree__checkbox {
+    @apply size-3.5 cursor-pointer accent-cumquat-accent;
+  }
+  .cumquat-tree__label {
+    @apply text-cumquat-text;
+  }
+
+  /* ---------- Cascader ---------- */
+  .cumquat-cascader {
+    @apply relative inline-block w-full;
+  }
+  .cumquat-cascader__trigger {
+    @apply flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-cumquat border border-cumquat-border px-3 text-sm transition-colors;
+    @apply focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20;
+  }
+  .cumquat-cascader__trigger--open {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-cascader__value {
+    @apply text-cumquat-text;
+  }
+  .cumquat-cascader__value--placeholder {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-cascader__trigger-icon {
+    @apply size-4 text-cumquat-text-muted;
+  }
+  .cumquat-cascader__panel {
+    @apply absolute z-20 mt-1.5 flex rounded-cumquat border border-cumquat-border bg-cumquat-surface shadow-cumquat-overlay;
+  }
+  .cumquat-cascader__column {
+    @apply max-h-60 min-w-40 overflow-y-auto border-r border-cumquat-border py-1.5 last:border-r-0;
+  }
+  .cumquat-cascader__option {
+    @apply flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm text-cumquat-text transition-colors;
+  }
+  .cumquat-cascader__option:not(.cumquat-cascader__option--selected):hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-cascader__option--selected {
+    @apply bg-cumquat-accent-soft font-medium text-cumquat-accent;
+  }
+  .cumquat-cascader__option-icon {
+    @apply size-3.5 text-cumquat-text-muted;
+  }
+
+  /* ---------- Timeline ---------- */
+  .cumquat-timeline {
+    @apply flex flex-col;
+  }
+  .cumquat-timeline__item {
+    @apply relative flex gap-4 pb-6 last:pb-0;
+  }
+  .cumquat-timeline__line {
+    @apply absolute top-3.5 left-[5.5px] h-full w-px bg-cumquat-border;
+  }
+  .cumquat-timeline__dot {
+    @apply relative z-10 mt-1.5 size-3 shrink-0 rounded-full ring-4 ring-cumquat-surface;
+  }
+  .cumquat-timeline__dot--primary {
+    @apply bg-cumquat-accent;
+  }
+  .cumquat-timeline__dot--success {
+    @apply bg-cumquat-success;
+  }
+  .cumquat-timeline__dot--warning {
+    @apply bg-cumquat-warning;
+  }
+  .cumquat-timeline__dot--danger {
+    @apply bg-cumquat-danger;
+  }
+  .cumquat-timeline__body {
+    @apply flex-1;
+  }
+  .cumquat-timeline__heading {
+    @apply flex items-baseline gap-3;
+  }
+  .cumquat-timeline__title {
+    @apply text-sm font-semibold text-cumquat-text;
+  }
+  .cumquat-timeline__time {
+    @apply text-xs text-cumquat-text-muted;
+  }
+  .cumquat-timeline__content {
+    @apply mt-1 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-timeline__extra {
+    @apply mt-1.5;
+  }
+
+  /* ---------- Steps ---------- */
+  .cumquat-steps {
+    @apply flex w-full items-start;
+  }
+  .cumquat-steps__step {
+    @apply relative flex flex-1 flex-col items-center;
+  }
+  .cumquat-steps__line {
+    @apply absolute top-4 right-1/2 h-0.5 w-full bg-cumquat-accent;
+  }
+  .cumquat-steps__line--waiting {
+    @apply bg-cumquat-border;
+  }
+  .cumquat-steps__dot {
+    @apply relative z-10 flex size-8 items-center justify-center rounded-full border-2 text-sm font-medium transition-colors;
+  }
+  .cumquat-steps__dot--done {
+    @apply border-cumquat-accent bg-cumquat-accent text-cumquat-text-inverse;
+  }
+  .cumquat-steps__dot--active {
+    @apply border-cumquat-accent bg-cumquat-surface text-cumquat-accent;
+  }
+  .cumquat-steps__dot--waiting {
+    @apply border-cumquat-border bg-cumquat-surface text-cumquat-text-muted;
+  }
+  .cumquat-steps__dot-icon {
+    @apply size-4;
+  }
+  .cumquat-steps__text {
+    @apply mt-2 flex flex-col items-center gap-0.5 text-center;
+  }
+  .cumquat-steps__title {
+    @apply text-sm font-medium text-cumquat-text;
+  }
+  .cumquat-steps__title--waiting {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-steps__description {
+    @apply text-xs text-cumquat-text-muted;
+  }
+
+  /* ---------- Descriptions ---------- */
+  .cumquat-descriptions__title {
+    @apply mb-3 text-base font-semibold text-cumquat-text;
+  }
+  .cumquat-descriptions__list {
+    @apply grid gap-x-8 gap-y-3 overflow-hidden rounded-cumquat text-sm;
+  }
+  .cumquat-descriptions--bordered .cumquat-descriptions__list {
+    @apply gap-0 border border-cumquat-border divide-y divide-cumquat-border;
+  }
+  .cumquat-descriptions__item {
+    @apply flex gap-2;
+  }
+  .cumquat-descriptions--bordered .cumquat-descriptions__item {
+    @apply flex-col gap-0;
+  }
+  .cumquat-descriptions__label {
+    @apply shrink-0 text-cumquat-text-muted;
+  }
+  .cumquat-descriptions--bordered .cumquat-descriptions__label {
+    @apply bg-cumquat-surface-2 px-4 py-2.5 font-medium;
+  }
+  .cumquat-descriptions__value {
+    @apply text-cumquat-text;
+  }
+  .cumquat-descriptions--bordered .cumquat-descriptions__value {
+    @apply px-4 py-2.5;
+  }
+
+  /* ---------- Carousel ---------- */
+  .cumquat-carousel {
+    @apply relative w-full overflow-hidden rounded-cumquat border border-cumquat-border bg-cumquat-surface-2;
+  }
+  .cumquat-carousel__slide {
+    @apply flex size-full flex-col items-center justify-center gap-2 bg-cumquat-surface-3;
+  }
+  .cumquat-carousel__slide-text {
+    @apply text-2xl font-semibold text-cumquat-text-muted;
+  }
+  .cumquat-carousel__prev,
+  .cumquat-carousel__next {
+    @apply absolute top-1/2 z-10 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-cumquat-surface/80 text-cumquat-text shadow transition-opacity;
+  }
+  .cumquat-carousel__prev {
+    @apply left-3;
+  }
+  .cumquat-carousel__next {
+    @apply right-3;
+  }
+  .cumquat-carousel__prev:hover,
+  .cumquat-carousel__next:hover {
+    @apply bg-cumquat-surface;
+  }
+  .cumquat-carousel__arrow-icon {
+    @apply size-5;
+  }
+  .cumquat-carousel__indicators {
+    @apply absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-2;
+  }
+  .cumquat-carousel__indicator {
+    @apply h-2 w-2 cursor-pointer rounded-full bg-cumquat-border-strong transition-all;
+  }
+  .cumquat-carousel__indicator:not(.cumquat-carousel__indicator--active):hover {
+    @apply bg-cumquat-text-muted;
+  }
+  .cumquat-carousel__indicator--active {
+    @apply w-6 bg-cumquat-accent;
+  }
+
+  /* ---------- Progress ---------- */
+  .cumquat-progress {
+    @apply flex w-full items-center gap-3;
+  }
+  .cumquat-progress__track {
+    @apply h-2 flex-1 overflow-hidden rounded-full bg-cumquat-surface-3;
+  }
+  .cumquat-progress__bar {
+    @apply h-full rounded-full transition-[width] duration-300;
+  }
+  .cumquat-progress__bar--normal {
+    @apply bg-cumquat-accent;
+  }
+  .cumquat-progress__bar--success {
+    @apply bg-cumquat-success;
+  }
+  .cumquat-progress__bar--warning {
+    @apply bg-cumquat-warning;
+  }
+  .cumquat-progress__bar--danger {
+    @apply bg-cumquat-danger;
+  }
+  .cumquat-progress__text {
+    @apply w-10 text-right text-xs text-cumquat-text-muted;
+  }
+
+  /* ---------- Image ---------- */
+  .cumquat-image {
+    @apply relative inline-block overflow-hidden bg-cumquat-surface-2;
+  }
+  .cumquat-image--rounded {
+    @apply rounded-cumquat;
+  }
+  .cumquat-image__img {
+    @apply block size-full object-cover;
+  }
+  .cumquat-image__fallback {
+    @apply flex size-full min-h-32 min-w-32 flex-col items-center justify-center gap-1.5 text-cumquat-text-muted;
+  }
+  .cumquat-image__fallback-icon {
+    @apply size-8;
+  }
+  .cumquat-image__fallback-text {
+    @apply text-xs;
+  }
+}
+
+/*
+ * 基础主题 · feedback 场景组件
+ *（Message / Alert / Notification / Loading / Skeleton / Result / Upload）
+ */
+@layer components {
+  /* ---------- Message ---------- */
+  .cumquat-message {
+    @apply flex items-center gap-2.5 rounded-cumquat px-4 py-2.5 text-sm shadow-cumquat-overlay;
+  }
+  .cumquat-message--info {
+    @apply bg-cumquat-info-soft text-cumquat-info;
+  }
+  .cumquat-message--success {
+    @apply bg-cumquat-success-soft text-cumquat-success;
+  }
+  .cumquat-message--warning {
+    @apply bg-cumquat-warning-soft text-cumquat-warning;
+  }
+  .cumquat-message--danger {
+    @apply bg-cumquat-danger-soft text-cumquat-danger;
+  }
+  .cumquat-message__dot {
+    @apply size-2 shrink-0 rounded-full;
+  }
+  .cumquat-message__dot--info {
+    @apply bg-cumquat-info;
+  }
+  .cumquat-message__dot--success {
+    @apply bg-cumquat-success;
+  }
+  .cumquat-message__dot--warning {
+    @apply bg-cumquat-warning;
+  }
+  .cumquat-message__dot--danger {
+    @apply bg-cumquat-danger;
+  }
+  .cumquat-message__body {
+    @apply flex-1;
+  }
+  .cumquat-message__close {
+    @apply cursor-pointer opacity-60 transition-opacity;
+  }
+  .cumquat-message__close:hover {
+    @apply opacity-100;
+  }
+  .cumquat-message__close-icon {
+    @apply size-3.5;
+  }
+
+  /* ---------- Alert ---------- */
+  .cumquat-alert {
+    @apply flex items-start gap-3 rounded-cumquat px-4 py-3;
+  }
+  .cumquat-alert--info {
+    @apply bg-cumquat-info-soft text-cumquat-info;
+  }
+  .cumquat-alert--success {
+    @apply bg-cumquat-success-soft text-cumquat-success;
+  }
+  .cumquat-alert--warning {
+    @apply bg-cumquat-warning-soft text-cumquat-warning;
+  }
+  .cumquat-alert--danger {
+    @apply bg-cumquat-danger-soft text-cumquat-danger;
+  }
+  .cumquat-alert__icon {
+    @apply mt-0.5 size-4 shrink-0;
+  }
+  .cumquat-alert__body {
+    @apply flex-1;
+  }
+  .cumquat-alert__title {
+    @apply font-semibold;
+  }
+  .cumquat-alert__content {
+    @apply text-sm opacity-90;
+  }
+  .cumquat-alert__close {
+    @apply cursor-pointer opacity-60 transition-opacity;
+  }
+  .cumquat-alert__close:hover {
+    @apply opacity-100;
+  }
+  .cumquat-alert__close-icon {
+    @apply size-4;
+  }
+
+  /* ---------- Notification ---------- */
+  .cumquat-notification {
+    @apply w-80 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4 shadow-cumquat-overlay;
+  }
+  .cumquat-notification__inner {
+    @apply flex items-start gap-3;
+  }
+  .cumquat-notification__dot {
+    @apply mt-1.5 size-2 shrink-0 rounded-full;
+  }
+  .cumquat-notification__dot--info {
+    @apply bg-cumquat-info;
+  }
+  .cumquat-notification__dot--success {
+    @apply bg-cumquat-success;
+  }
+  .cumquat-notification__dot--warning {
+    @apply bg-cumquat-warning;
+  }
+  .cumquat-notification__dot--danger {
+    @apply bg-cumquat-danger;
+  }
+  .cumquat-notification__body {
+    @apply flex-1;
+  }
+  .cumquat-notification__title {
+    @apply text-sm font-semibold text-cumquat-text;
+  }
+  .cumquat-notification__content {
+    @apply mt-0.5 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-notification__close {
+    @apply cursor-pointer text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-notification__close:hover {
+    @apply text-cumquat-text;
+  }
+  .cumquat-notification__close-icon {
+    @apply size-4;
+  }
+
+  /* ---------- Loading ---------- */
+  .cumquat-loading {
+    @apply inline-flex items-center gap-2.5;
+  }
+  .cumquat-loading__spinner {
+    @apply inline-block animate-spin rounded-full border-cumquat-border border-t-cumquat-accent;
+  }
+  .cumquat-loading__spinner--sm {
+    @apply size-4 border-2;
+  }
+  .cumquat-loading__spinner--md {
+    @apply size-6 border-2;
+  }
+  .cumquat-loading__spinner--lg {
+    @apply size-9 border-4;
+  }
+  .cumquat-loading__text {
+    @apply text-sm text-cumquat-text-muted;
+  }
+
+  /* ---------- Skeleton ---------- */
+  .cumquat-skeleton {
+    @apply flex animate-pulse gap-3;
+  }
+  .cumquat-skeleton__avatar {
+    @apply size-10 shrink-0 rounded-full bg-cumquat-surface-3;
+  }
+  .cumquat-skeleton__lines {
+    @apply flex flex-1 flex-col gap-2.5;
+  }
+  .cumquat-skeleton__line {
+    @apply h-3.5 rounded bg-cumquat-surface-3;
+  }
+  .cumquat-skeleton__line--full {
+    @apply w-full;
+  }
+  .cumquat-skeleton__line--last {
+    @apply w-2/3;
+  }
+
+  /* ---------- Result ---------- */
+  .cumquat-result {
+    @apply flex flex-col items-center gap-3 px-6 py-10 text-center;
+  }
+  .cumquat-result__icon {
+    @apply flex size-16 items-center justify-center rounded-full;
+  }
+  .cumquat-result--success .cumquat-result__icon {
+    @apply bg-cumquat-success-soft text-cumquat-success;
+  }
+  .cumquat-result--error .cumquat-result__icon {
+    @apply bg-cumquat-danger-soft text-cumquat-danger;
+  }
+  .cumquat-result--warning .cumquat-result__icon {
+    @apply bg-cumquat-warning-soft text-cumquat-warning;
+  }
+  .cumquat-result--info .cumquat-result__icon {
+    @apply bg-cumquat-info-soft text-cumquat-info;
+  }
+  .cumquat-result__icon-svg {
+    @apply size-8;
+  }
+  .cumquat-result__title {
+    @apply text-lg font-semibold text-cumquat-text;
+  }
+  .cumquat-result__subtitle {
+    @apply text-sm text-cumquat-text-muted;
+  }
+  .cumquat-result__extra {
+    @apply mt-2 flex gap-3;
+  }
+
+  /* ---------- Upload ---------- */
+  .cumquat-upload {
+    @apply flex flex-col gap-3;
+  }
+  .cumquat-upload__dragger {
+    @apply flex flex-col items-center justify-center gap-2 rounded-cumquat border-2 border-dashed px-6 py-8 text-center transition-colors;
+    @apply border-cumquat-border-strong;
+  }
+  .cumquat-upload__dragger:hover {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-upload__dragger--dragging {
+    @apply border-cumquat-accent bg-cumquat-accent-soft;
+  }
+  .cumquat-upload__icon {
+    @apply size-8 text-cumquat-text-muted;
+  }
+  .cumquat-upload__hint {
+    @apply text-sm text-cumquat-text;
+  }
+  .cumquat-upload__hint-action {
+    @apply font-medium text-cumquat-accent;
+  }
+  .cumquat-upload__list {
+    @apply flex flex-col gap-1.5;
+  }
+  .cumquat-upload__item {
+    @apply flex items-center gap-2 rounded-cumquat bg-cumquat-surface-2 px-3 py-2 text-sm;
+  }
+  .cumquat-upload__file-icon {
+    @apply size-4 shrink-0 text-cumquat-text-muted;
+  }
+  .cumquat-upload__name {
+    @apply flex-1 truncate text-cumquat-text;
+  }
+  .cumquat-upload__size {
+    @apply text-xs text-cumquat-text-muted;
+  }
+  .cumquat-upload__progressing {
+    @apply inline-block size-3.5 animate-spin rounded-full border-2 border-cumquat-border border-t-cumquat-accent;
+  }
+  .cumquat-upload__remove {
+    @apply cursor-pointer text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-upload__remove:hover {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-upload__remove-icon {
+    @apply size-4;
+  }
+}
+
+/*
+ * 基础主题 · navigation 场景组件
+ * （Breadcrumb / Menu / Anchor / BackTop / Affix / FloatButton / DatePicker /
+ *   TimePicker / Calendar / ColorPicker / Transfer / VirtualList / Layout / Grid / Space）
+ */
+@layer components {
+  /* ---------- Breadcrumb ---------- */
+  .cumquat-breadcrumb {
+    @apply flex flex-wrap items-center gap-1.5 text-sm;
+  }
+  .cumquat-breadcrumb__separator {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-breadcrumb__link {
+    @apply text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-breadcrumb__link:hover {
+    @apply text-cumquat-accent;
+  }
+  .cumquat-breadcrumb__current {
+    @apply font-medium;
+  }
+  .cumquat-breadcrumb__current--last {
+    @apply text-cumquat-text;
+  }
+  .cumquat-breadcrumb__current--muted {
+    @apply text-cumquat-text-muted;
+  }
+
+  /* ---------- Menu ---------- */
+  .cumquat-menu {
+    @apply flex w-56 flex-col gap-0.5 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-2;
+  }
+  .cumquat-menu__group {
+    @apply flex w-full cursor-pointer items-center justify-between rounded px-3 py-2 text-sm font-medium text-cumquat-text transition-colors;
+  }
+  .cumquat-menu__group:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-menu__chevron {
+    @apply size-3.5 text-cumquat-text-muted transition-transform;
+  }
+  .cumquat-menu__chevron--expanded {
+    @apply rotate-180;
+  }
+  .cumquat-menu__subgroup {
+    @apply flex flex-col gap-0.5 pl-3;
+  }
+  .cumquat-menu__item {
+    @apply cursor-pointer rounded px-3 py-2 text-left text-sm transition-colors;
+  }
+  .cumquat-menu__item--active {
+    @apply bg-cumquat-accent-soft font-medium text-cumquat-accent;
+  }
+  .cumquat-menu__item--inactive {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-menu__item--inactive:hover {
+    @apply bg-cumquat-surface-2 text-cumquat-text;
+  }
+
+  /* ---------- Anchor ---------- */
+  .cumquat-anchor {
+    @apply flex flex-col gap-0.5 border-l-2 border-cumquat-border;
+  }
+  .cumquat-anchor__link {
+    @apply -ml-0.5 border-l-2 px-4 py-1.5 text-sm transition-colors;
+  }
+  .cumquat-anchor__link--active {
+    @apply border-cumquat-accent font-medium text-cumquat-accent;
+  }
+  .cumquat-anchor__link--inactive {
+    @apply border-transparent text-cumquat-text-muted;
+  }
+  .cumquat-anchor__link--inactive:hover {
+    @apply text-cumquat-text;
+  }
+
+  /* ---------- BackTop ---------- */
+  .cumquat-back-top {
+    @apply flex size-11 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-cumquat-text shadow-cumquat-overlay transition-colors;
+  }
+  .cumquat-back-top:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-back-top__icon {
+    @apply size-5;
+  }
+
+  /* ---------- FloatButton ---------- */
+  .cumquat-float-button {
+    @apply fixed right-6 bottom-6 z-40 flex flex-col items-center gap-2.5;
+  }
+  .cumquat-float-button__actions {
+    @apply flex flex-col items-center gap-2.5;
+  }
+  .cumquat-float-button__action {
+    @apply flex size-10 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-xs text-cumquat-text shadow-cumquat-overlay transition-transform;
+  }
+  .cumquat-float-button__action:hover {
+    @apply scale-105;
+  }
+  .cumquat-float-button__trigger {
+    @apply flex size-12 cursor-pointer items-center justify-center rounded-full bg-cumquat-accent text-cumquat-text-inverse shadow-cumquat-overlay transition-colors;
+  }
+  .cumquat-float-button__trigger:hover {
+    @apply bg-cumquat-accent-hover;
+  }
+  .cumquat-float-button__icon {
+    @apply size-5 transition-transform;
+  }
+  .cumquat-float-button__icon--expanded {
+    @apply rotate-45;
+  }
+
+  /* ---------- DatePicker ---------- */
+  .cumquat-date-picker {
+    @apply relative inline-block w-64;
+  }
+  .cumquat-date-picker__trigger {
+    @apply flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-cumquat border border-cumquat-border px-3 text-sm transition-colors;
+  }
+  .cumquat-date-picker__trigger:focus {
+    @apply outline-none ring-2 ring-cumquat-accent/20;
+  }
+  .cumquat-date-picker__trigger--open {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-date-picker__value--selected {
+    @apply text-cumquat-text;
+  }
+  .cumquat-date-picker__value--placeholder {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-date-picker__icon {
+    @apply size-4 text-cumquat-text-muted;
+  }
+  .cumquat-date-picker__panel {
+    @apply absolute z-20 mt-1.5 w-full rounded-cumquat border border-cumquat-border bg-cumquat-surface p-3 shadow-cumquat-overlay;
+  }
+  .cumquat-date-picker__month {
+    @apply mb-2 text-center text-sm font-semibold text-cumquat-text;
+  }
+  .cumquat-date-picker__grid {
+    @apply grid grid-cols-7 gap-0.5 text-center text-xs;
+  }
+  .cumquat-date-picker__weekday {
+    @apply py-1 text-cumquat-text-muted;
+  }
+  .cumquat-date-picker__day {
+    @apply flex aspect-square cursor-pointer items-center justify-center rounded transition-colors;
+  }
+  .cumquat-date-picker__day--empty {
+    @apply cursor-default text-transparent;
+  }
+  .cumquat-date-picker__day--selected {
+    @apply bg-cumquat-accent font-medium text-cumquat-text-inverse;
+  }
+  .cumquat-date-picker__day--default {
+    @apply text-cumquat-text;
+  }
+  .cumquat-date-picker__day--default:hover {
+    @apply bg-cumquat-surface-2;
+  }
+
+  /* ---------- TimePicker ---------- */
+  .cumquat-time-picker {
+    @apply relative inline-block w-40;
+  }
+  .cumquat-time-picker__trigger {
+    @apply flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-cumquat border border-cumquat-border px-3 text-sm transition-colors;
+  }
+  .cumquat-time-picker__trigger:focus {
+    @apply outline-none ring-2 ring-cumquat-accent/20;
+  }
+  .cumquat-time-picker__trigger--open {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-time-picker__value--selected {
+    @apply text-cumquat-text;
+  }
+  .cumquat-time-picker__value--placeholder {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-time-picker__icon {
+    @apply size-4 text-cumquat-text-muted;
+  }
+  .cumquat-time-picker__panel {
+    @apply absolute z-20 mt-1.5 flex w-full gap-1 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-2 shadow-cumquat-overlay;
+  }
+  .cumquat-time-picker__hours,
+  .cumquat-time-picker__minutes {
+    @apply max-h-40 flex-1 overflow-y-auto text-center text-xs;
+  }
+  .cumquat-time-picker__hour,
+  .cumquat-time-picker__minute {
+    @apply cursor-pointer rounded px-2 py-1.5 transition-colors;
+  }
+  .cumquat-time-picker__hour--selected,
+  .cumquat-time-picker__minute--selected {
+    @apply bg-cumquat-accent text-cumquat-text-inverse;
+  }
+  .cumquat-time-picker__hour--default,
+  .cumquat-time-picker__minute--default {
+    @apply text-cumquat-text;
+  }
+  .cumquat-time-picker__hour--default:hover,
+  .cumquat-time-picker__minute--default:hover {
+    @apply bg-cumquat-surface-2;
+  }
+
+  /* ---------- Calendar ---------- */
+  .cumquat-calendar {
+    @apply inline-block rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4;
+  }
+  .cumquat-calendar__header {
+    @apply mb-3 flex items-center justify-between;
+  }
+  .cumquat-calendar__nav {
+    @apply flex size-8 cursor-pointer items-center justify-center rounded text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-calendar__nav:hover {
+    @apply bg-cumquat-surface-2 text-cumquat-text;
+  }
+  .cumquat-calendar__nav-icon {
+    @apply size-4;
+  }
+  .cumquat-calendar__month {
+    @apply text-sm font-semibold text-cumquat-text;
+  }
+  .cumquat-calendar__grid {
+    @apply grid grid-cols-7 gap-1 text-center text-sm;
+  }
+  .cumquat-calendar__weekday {
+    @apply py-1.5 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-calendar__day {
+    @apply flex aspect-square cursor-pointer items-center justify-center rounded-cumquat text-cumquat-text transition-colors;
+  }
+  .cumquat-calendar__day--empty {
+    @apply cursor-default text-transparent;
+  }
+  .cumquat-calendar__day--selected {
+    @apply bg-cumquat-accent font-medium text-cumquat-text-inverse;
+  }
+  .cumquat-calendar__day--default:hover {
+    @apply bg-cumquat-surface-2;
+  }
+
+  /* ---------- ColorPicker ---------- */
+  .cumquat-color-picker {
+    @apply relative inline-block;
+  }
+  .cumquat-color-picker__trigger {
+    @apply flex h-10 w-40 cursor-pointer items-center gap-2.5 rounded-cumquat border border-cumquat-border bg-cumquat-surface px-2.5 text-sm transition-colors;
+  }
+  .cumquat-color-picker__trigger:focus {
+    @apply outline-none ring-2 ring-cumquat-accent/20;
+  }
+  .cumquat-color-picker__trigger--open {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-color-picker__swatch {
+    @apply size-5 rounded border border-cumquat-border;
+  }
+  .cumquat-color-picker__value {
+    @apply font-mono text-xs text-cumquat-text uppercase;
+  }
+  .cumquat-color-picker__panel {
+    @apply absolute z-20 mt-1.5 w-64 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-3 shadow-cumquat-overlay;
+  }
+  .cumquat-color-picker__area {
+    @apply relative h-28 cursor-pointer rounded-cumquat;
+  }
+  .cumquat-color-picker__gradient-dark {
+    @apply absolute inset-0 rounded-cumquat bg-gradient-to-r from-black/60 to-transparent;
+  }
+  .cumquat-color-picker__gradient-light {
+    @apply absolute inset-0 rounded-cumquat bg-gradient-to-t from-white to-transparent;
+  }
+  .cumquat-color-picker__thumb {
+    @apply absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow;
+  }
+  .cumquat-color-picker__hue {
+    @apply relative mt-3 h-2.5 cursor-pointer rounded-full;
+    background: linear-gradient(
+      to right,
+      #ff0000,
+      #ffff00,
+      #00ff00,
+      #00ffff,
+      #0000ff,
+      #ff00ff,
+      #ff0000
+    );
+  }
+  .cumquat-color-picker__hue-thumb {
+    @apply absolute top-1/2 left-1/3 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-cumquat-surface shadow;
+  }
+  .cumquat-color-picker__presets {
+    @apply mt-3 grid grid-cols-10 gap-1.5;
+  }
+  .cumquat-color-picker__preset {
+    @apply size-4.5 cursor-pointer rounded border transition-transform;
+  }
+  .cumquat-color-picker__preset:hover {
+    @apply scale-110;
+  }
+  .cumquat-color-picker__preset--selected {
+    @apply border-cumquat-text ring-2 ring-cumquat-accent ring-offset-1;
+  }
+  .cumquat-color-picker__preset--default {
+    @apply border-cumquat-border;
+  }
+
+  /* ---------- Transfer ---------- */
+  .cumquat-transfer {
+    @apply flex items-center gap-3;
+  }
+  .cumquat-transfer__panel {
+    @apply flex w-56 flex-col rounded-cumquat border border-cumquat-border bg-cumquat-surface;
+  }
+  .cumquat-transfer__header {
+    @apply border-b border-cumquat-border px-3 py-2.5 text-sm font-medium text-cumquat-text;
+  }
+  .cumquat-transfer__list {
+    @apply max-h-56 overflow-y-auto p-1.5;
+  }
+  .cumquat-transfer__item {
+    @apply cursor-pointer rounded px-2.5 py-1.5 text-sm transition-colors;
+  }
+  .cumquat-transfer__item--left {
+    @apply text-cumquat-text;
+  }
+  .cumquat-transfer__item--left:hover {
+    @apply bg-cumquat-accent-soft;
+  }
+  .cumquat-transfer__item--right {
+    @apply text-cumquat-accent;
+  }
+  .cumquat-transfer__item--right:hover {
+    @apply bg-cumquat-danger-soft text-cumquat-danger;
+  }
+  .cumquat-transfer__empty {
+    @apply px-2.5 py-6 text-center text-xs text-cumquat-text-muted;
+  }
+  .cumquat-transfer__actions {
+    @apply flex flex-col gap-2;
+  }
+  .cumquat-transfer__action {
+    @apply flex size-8 items-center justify-center rounded-full bg-cumquat-surface-3 text-cumquat-text-muted;
+  }
+  .cumquat-transfer__action-icon {
+    @apply size-4;
+  }
+
+  /* ---------- VirtualList ---------- */
+  .cumquat-virtual-list {
+    @apply overflow-y-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface;
+  }
+  .cumquat-virtual-list__item {
+    @apply flex items-center gap-3 border-b border-cumquat-border px-4 text-sm text-cumquat-text;
+  }
+  .cumquat-virtual-list__item:last-child {
+    @apply border-b-0;
+  }
+  .cumquat-virtual-list__index {
+    @apply w-8 text-xs text-cumquat-text-muted tabular-nums;
+  }
+
+  /* ---------- Layout ---------- */
+  .cumquat-layout {
+    @apply w-full;
+  }
+  .cumquat-layout--vertical {
+    @apply flex flex-col;
+  }
+  .cumquat-layout--horizontal {
+    @apply flex flex-row;
+  }
+
+  /* ---------- Grid ---------- */
+  .cumquat-grid {
+    @apply grid;
+  }
+  .cumquat-grid--cols-1 {
+    @apply grid-cols-1;
+  }
+  .cumquat-grid--cols-2 {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+  .cumquat-grid--cols-3 {
+    @apply grid-cols-1 sm:grid-cols-3;
+  }
+  .cumquat-grid--cols-4 {
+    @apply grid-cols-2 sm:grid-cols-4;
+  }
+  .cumquat-grid--gap-none {
+    @apply gap-0;
+  }
+  .cumquat-grid--gap-sm {
+    @apply gap-2;
+  }
+  .cumquat-grid--gap-md {
+    @apply gap-4;
+  }
+  .cumquat-grid--gap-lg {
+    @apply gap-6;
+  }
+
+  /* ---------- Space ---------- */
+  .cumquat-space {
+    @apply flex;
+  }
+  .cumquat-space--vertical {
+    @apply flex-col;
+  }
+  .cumquat-space--horizontal {
+    @apply items-center;
+  }
+  .cumquat-space--wrap {
+    @apply flex-wrap items-center;
+  }
+  .cumquat-space--size-sm {
+    @apply gap-1.5;
+  }
+  .cumquat-space--size-md {
+    @apply gap-3;
+  }
+  .cumquat-space--size-lg {
+    @apply gap-6;
+  }
+}
+
+/*
+ * 基础主题 · extras 场景组件
+ * （Watermark / Tour / QRCode）
+ */
+@layer components {
+  /* ---------- Watermark ---------- */
+  .cumquat-watermark {
+    @apply pointer-events-none absolute inset-0 z-10 overflow-hidden select-none;
+  }
+  .cumquat-watermark__grid {
+    @apply absolute -inset-16 flex flex-wrap content-center;
+  }
+  .cumquat-watermark__item {
+    @apply text-sm whitespace-nowrap text-cumquat-text/8;
+  }
+
+  /* ---------- Tour ---------- */
+  .cumquat-tour {
+    @apply fixed inset-0 z-50;
+  }
+  .cumquat-tour__mask {
+    @apply absolute inset-0 bg-black/50;
+  }
+  .cumquat-tour__card {
+    @apply absolute top-1/3 left-1/2 w-72 -translate-x-1/2 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4 shadow-cumquat-overlay;
+  }
+  .cumquat-tour__step-count {
+    @apply mb-1 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-tour__title {
+    @apply text-sm font-semibold text-cumquat-text;
+  }
+  .cumquat-tour__content {
+    @apply mt-1 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-tour__actions {
+    @apply mt-3 flex items-center justify-between;
+  }
+  .cumquat-tour__prev {
+    @apply cursor-pointer rounded-cumquat border border-cumquat-border px-3 py-1 text-xs text-cumquat-text transition-colors;
+  }
+  .cumquat-tour__prev:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-tour__next {
+    @apply cursor-pointer rounded-cumquat bg-cumquat-accent px-3 py-1 text-xs text-cumquat-text-inverse transition-colors;
+  }
+  .cumquat-tour__next:hover {
+    @apply bg-cumquat-accent-hover;
+  }
+
+  /* ---------- QRCode ---------- */
+  .cumquat-qrcode {
+    @apply grid bg-cumquat-surface p-2;
+  }
+  .cumquat-qrcode__cell {
+    @apply aspect-square;
+  }
+  .cumquat-qrcode__cell--dark {
+    @apply bg-cumquat-text;
+  }
+  .cumquat-qrcode__cell--light {
+    @apply bg-transparent;
+  }
+
+  /* ============================================================
+   * 统一 hover 交互增强
+   *
+   * 在所有主题下为可交互元素提供一致的悬浮反馈：
+   * - 过渡曲线统一为带弹性的 cubic-bezier，时长 0.2s；
+   * - 按钮 / 图标按钮：hover 上浮 + 阴影，active 回落；
+   * - 可悬浮卡片：上浮 + 阴影加深；
+   * - 行 / 选项：hover 时左侧轻微缩进，增强指向感。
+   * ============================================================ */
+
+  /* 统一过渡曲线：所有可交互元素 */
+  .cumquat-button,
+  .cumquat-card--hoverable,
+  .cumquat-back-top,
+  .cumquat-float-button__trigger,
+  .cumquat-float-button__action,
+  .cumquat-carousel__prev,
+  .cumquat-carousel__next,
+  .cumquat-dialog__close,
+  .cumquat-drawer__close,
+  .cumquat-message__close,
+  .cumquat-alert__close,
+  .cumquat-notification__close,
+  .cumquat-tag__close,
+  .cumquat-typography__copy,
+  .cumquat-popconfirm__cancel,
+  .cumquat-popconfirm__ok,
+  .cumquat-tour__prev,
+  .cumquat-tour__next,
+  .cumquat-pagination__prev,
+  .cumquat-pagination__next,
+  .cumquat-pagination__page,
+  .cumquat-input-number__decrease,
+  .cumquat-input-number__increase,
+  .cumquat-calendar__nav,
+  .cumquat-upload__remove {
+    @apply transition-all duration-200;
+    transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* 按钮：hover 上浮 + 阴影，active 回落 */
+  .cumquat-button:not(:disabled):not(.cumquat-button--loading):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+  }
+  .cumquat-button:not(:disabled):not(.cumquat-button--loading):active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  /* 可悬浮卡片：上浮 + 阴影加深 */
+  .cumquat-card--hoverable {
+    @apply transition-all duration-200;
+    transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .cumquat-card--hoverable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  }
+
+  /* 图标按钮类（关闭、返回顶部、悬浮按钮、轮播箭头）：hover 放大 + 阴影 */
+  .cumquat-back-top:hover,
+  .cumquat-float-button__trigger:hover,
+  .cumquat-float-button__action:hover,
+  .cumquat-carousel__prev:hover,
+  .cumquat-carousel__next:hover {
+    transform: scale(1.06);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.14);
+  }
+  .cumquat-back-top:active,
+  .cumquat-float-button__trigger:active,
+  .cumquat-float-button__action:active,
+  .cumquat-carousel__prev:active,
+  .cumquat-carousel__next:active {
+    transform: scale(0.98);
+  }
+
+  /* 行 / 选项 hover：轻微缩进增强指向感 */
+  .cumquat-table__row:hover .cumquat-table__td:first-child,
+  .cumquat-menu__item--inactive:hover,
+  .cumquat-tree__row:hover,
+  .cumquat-select__option:hover,
+  .cumquat-autocomplete__option:hover,
+  .cumquat-mention__option:hover,
+  .cumquat-cascader__option:not(.cumquat-cascader__option--selected):hover,
+  .cumquat-tree-select__node:hover,
+  .cumquat-tree-select__leaf:not(.cumquat-tree-select__leaf--active):hover {
+    padding-left: calc(var(--spacing) * 4.5);
+  }
+  .cumquat-table__td,
+  .cumquat-menu__item--inactive,
+  .cumquat-tree__row,
+  .cumquat-select__option,
+  .cumquat-autocomplete__option,
+  .cumquat-mention__option,
+  .cumquat-cascader__option,
+  .cumquat-tree-select__node,
+  .cumquat-tree-select__leaf {
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      padding-left 0.2s ease;
+  }
+}

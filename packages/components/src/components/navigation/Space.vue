@@ -14,15 +14,6 @@ const props = withDefaults(
 const slots = useSlots();
 
 const children = computed(() => slots.default?.() ?? []);
-
-const gapClass = computed(
-  () =>
-    ({
-      sm: 'gap-1.5',
-      md: 'gap-3',
-      lg: 'gap-6',
-    })[props.size],
-);
 </script>
 
 <template>
@@ -30,11 +21,11 @@ const gapClass = computed(
     class="cumquat-space"
     :class="[
       direction === 'vertical'
-        ? 'flex flex-col'
+        ? 'cumquat-space--vertical'
         : wrap
-          ? 'flex flex-wrap items-center'
-          : 'flex items-center',
-      gapClass,
+          ? 'cumquat-space--wrap'
+          : 'cumquat-space--horizontal',
+      `cumquat-space--size-${props.size}`,
     ]"
   >
     <template v-for="(child, index) in children" :key="index">

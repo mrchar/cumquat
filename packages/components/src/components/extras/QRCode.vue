@@ -40,7 +40,7 @@ const cells = computed<boolean[]>(() => {
 
 <template>
   <div
-    class="cumquat-qrcode grid bg-cumquat-surface p-2"
+    class="cumquat-qrcode"
     :style="{ gridTemplateColumns: `repeat(${size}, 1fr)`, width: '12rem', height: '12rem' }"
     role="img"
     :aria-label="`二维码：${value}`"
@@ -48,8 +48,8 @@ const cells = computed<boolean[]>(() => {
     <span
       v-for="(filled, index) in cells"
       :key="index"
-      class="cumquat-qrcode__cell aspect-square"
-      :class="filled ? 'bg-cumquat-text' : 'bg-transparent'"
+      class="cumquat-qrcode__cell"
+      :class="filled ? 'cumquat-qrcode__cell--dark' : 'cumquat-qrcode__cell--light'"
     />
   </div>
 </template>

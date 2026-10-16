@@ -76,7 +76,7 @@ function toggleCheck(node: TreeNode) {
 </script>
 
 <template>
-  <ul class="cumquat-tree flex flex-col gap-0.5 text-sm" role="tree">
+  <ul class="cumquat-tree" role="tree">
     <li
       v-for="{ node, depth, hasChildren } in visibleNodes"
       :key="node.key"
@@ -84,20 +84,17 @@ function toggleCheck(node: TreeNode) {
       role="treeitem"
       :aria-expanded="hasChildren ? expanded.has(node.key) : undefined"
     >
-      <div
-        class="cumquat-tree__row flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 transition-colors hover:bg-cumquat-surface-2"
-        :style="{ paddingLeft: `${depth * 1.25 + 0.5}rem` }"
-      >
+      <div class="cumquat-tree__row" :style="{ paddingLeft: `${depth * 1.25 + 0.5}rem` }">
         <button
           v-if="hasChildren"
           type="button"
-          class="cumquat-tree__expander flex size-4 cursor-pointer items-center justify-center text-cumquat-text-muted transition-transform"
-          :class="expanded.has(node.key) ? 'rotate-90' : ''"
+          class="cumquat-tree__expander"
+          :class="expanded.has(node.key) ? 'cumquat-tree__expander--expanded' : ''"
           :aria-label="expanded.has(node.key) ? '收起' : '展开'"
           @click.stop="toggleExpand(node)"
         >
           <svg
-            class="size-3.5"
+            class="cumquat-tree__expander-icon"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -108,20 +105,17 @@ function toggleCheck(node: TreeNode) {
             <path d="m9 18 6-6-6-6" />
           </svg>
         </button>
-        <span v-else class="size-4 shrink-0" />
+        <span v-else class="cumquat-tree__expander-placeholder" />
 
         <input
           v-if="checkable"
           type="checkbox"
-          class="cumquat-tree__checkbox size-3.5 cursor-pointer accent-cumquat-accent"
+          class="cumquat-tree__checkbox"
           :checked="isChecked(node.key)"
           @change.stop="toggleCheck(node)"
         />
 
-        <span
-          class="cumquat-tree__label text-cumquat-text"
-          @click="hasChildren && toggleExpand(node)"
-        >
+        <span class="cumquat-tree__label" @click="hasChildren && toggleExpand(node)">
           {{ node.label }}
         </span>
       </div>

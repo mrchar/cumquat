@@ -18,7 +18,7 @@ describe('Button', () => {
   it('渲染锚点类与语义类型', () => {
     const wrapper = mount(Button, { props: { type: 'primary' } });
     expect(wrapper.classes()).toContain('cumquat-button');
-    expect(wrapper.classes()).toContain('bg-cumquat-accent');
+    expect(wrapper.classes()).toContain('cumquat-button--primary');
   });
 
   it('loading 时禁用', async () => {
@@ -51,7 +51,7 @@ describe('Input', () => {
 
   it('invalid 态使用 danger 描边', () => {
     const wrapper = mount(Input, { props: { invalid: true } });
-    expect(wrapper.find('input').classes()).toContain('border-cumquat-danger');
+    expect(wrapper.classes()).toContain('cumquat-input--invalid');
   });
 });
 

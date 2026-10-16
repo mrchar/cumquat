@@ -8,11 +8,32 @@ import Feedback from './demos/feedback.vue';
 import Navigation from './demos/navigation.vue';
 import Extras from './demos/extras.vue';
 
-const dark = ref(false);
+type ThemeKey = 'light' | 'dark' | 'high-contrast' | 'glass';
 
-watch(dark, (value) => {
-  document.documentElement.classList.toggle('dark', value);
-});
+const themes: { key: ThemeKey; label: string }[] = [
+  { key: 'light', label: '亮色' },
+  { key: 'dark', label: '暗色' },
+  { key: 'high-contrast', label: '高对比' },
+  { key: 'glass', label: '玻璃' },
+];
+
+const theme = ref<ThemeKey>('light');
+
+watch(
+  theme,
+  (value) => {
+    const root = document.documentElement;
+    root.classList.remove(
+      'cq-theme-light',
+      'cq-theme-dark',
+      'cq-theme-high-contrast',
+      'cq-theme-glass',
+      'dark',
+    );
+    root.classList.add(`cq-theme-${value}`);
+  },
+  { immediate: true },
+);
 
 const groups = [
   {
@@ -151,29 +172,24 @@ const groups = [
 
     <main class="ml-60 flex-1 px-8 py-6">
       <header class="mb-8 flex justify-end">
-        <button
-          type="button"
-          class="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-cumquat border border-cumquat-border px-3 text-sm text-cumquat-text transition-colors hover:bg-cumquat-surface-2"
-          @click="dark = !dark"
+        <div
+          class="inline-flex items-center gap-1 rounded-cumquat border border-cumquat-border p-1"
         >
-          <svg
-            class="size-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
+          <button
+            v-for="item in themes"
+            :key="item.key"
+            type="button"
+            class="h-7 cursor-pointer rounded-cumquat px-3 text-sm transition-colors"
+            :class="
+              theme === item.key
+                ? 'bg-cumquat-accent text-cumquat-text-inverse'
+                : 'text-cumquat-text-muted hover:bg-cumquat-surface-2 hover:text-cumquat-text'
+            "
+            @click="theme = item.key"
           >
-            <path v-if="dark" d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-            <template v-else>
-              <circle cx="12" cy="12" r="4" />
-              <path
-                d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.3 11.3 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
-              />
-            </template>
-          </svg>
-          {{ dark ? '浅色' : '深色' }}
-        </button>
+            {{ item.label }}
+          </button>
+        </div>
       </header>
 
       <div class="flex flex-col gap-12">

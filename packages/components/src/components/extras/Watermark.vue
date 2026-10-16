@@ -13,19 +13,12 @@ withDefaults(
 </script>
 
 <template>
-  <div
-    class="cumquat-watermark pointer-events-none absolute inset-0 z-10 overflow-hidden select-none"
-    aria-hidden="true"
-  >
+  <div class="cumquat-watermark" aria-hidden="true">
     <div
-      class="cumquat-watermark__grid absolute -inset-16 flex flex-wrap content-center"
+      class="cumquat-watermark__grid"
       :style="{ gap: `${gap}px`, transform: `rotate(${rotate}deg)` }"
     >
-      <span
-        v-for="i in 24"
-        :key="i"
-        class="cumquat-watermark__item text-sm whitespace-nowrap text-cumquat-text/8"
-      >
+      <span v-for="i in 24" :key="i" class="cumquat-watermark__item">
         {{ content }}
       </span>
     </div>

@@ -16,24 +16,18 @@ withDefaults(
   }>(),
   { striped: false, loading: false, emptyText: '暂无数据' },
 );
-
-const alignClass: Record<string, string> = {
-  left: 'text-left',
-  center: 'text-center',
-  right: 'text-right',
-};
 </script>
 
 <template>
-  <div class="cumquat-table w-full overflow-x-auto rounded-cumquat border border-cumquat-border">
-    <table class="w-full border-collapse bg-cumquat-surface text-sm">
+  <div class="cumquat-table">
+    <table class="cumquat-table__table">
       <thead>
-        <tr class="cumquat-table__head-row bg-cumquat-surface-2">
+        <tr class="cumquat-table__head-row">
           <th
             v-for="col in columns"
             :key="col.key"
-            class="cumquat-table__th border-b border-cumquat-border px-4 py-3 font-medium text-cumquat-text-muted"
-            :class="alignClass[col.align ?? 'left']"
+            class="cumquat-table__th"
+            :class="`cumquat-table__th--${col.align ?? 'left'}`"
             :style="col.width ? { width: col.width } : undefined"
           >
             {{ col.title }}
@@ -44,14 +38,14 @@ const alignClass: Record<string, string> = {
         <tr
           v-for="(row, index) in rows"
           :key="index"
-          class="cumquat-table__row transition-colors hover:bg-cumquat-surface-2"
-          :class="striped && index % 2 === 1 ? 'bg-cumquat-surface-2/60' : ''"
+          class="cumquat-table__row"
+          :class="striped && index % 2 === 1 ? 'cumquat-table__row--striped' : ''"
         >
           <td
             v-for="col in columns"
             :key="col.key"
-            class="cumquat-table__td border-b border-cumquat-border px-4 py-3 text-cumquat-text"
-            :class="alignClass[col.align ?? 'left']"
+            class="cumquat-table__td"
+            :class="`cumquat-table__td--${col.align ?? 'left'}`"
           >
             <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
               {{ row[col.key] }}
@@ -59,14 +53,9 @@ const alignClass: Record<string, string> = {
           </td>
         </tr>
         <tr v-if="rows.length === 0">
-          <td
-            :colspan="columns.length"
-            class="cumquat-table__empty px-4 py-10 text-center text-cumquat-text-muted"
-          >
+          <td :colspan="columns.length" class="cumquat-table__empty">
             <template v-if="loading">
-              <span
-                class="inline-block size-5 animate-spin rounded-full border-2 border-cumquat-border border-t-cumquat-accent"
-              />
+              <span class="cumquat-table__loading" />
             </template>
             <template v-else>{{ emptyText }}</template>
           </td>

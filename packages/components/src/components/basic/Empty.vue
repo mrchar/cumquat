@@ -8,9 +8,9 @@ withDefaults(
 </script>
 
 <template>
-  <div class="cumquat-empty flex flex-col items-center justify-center gap-3 px-6 py-12">
+  <div class="cumquat-empty">
     <svg
-      class="cumquat-empty__image size-16 text-cumquat-border-strong"
+      class="cumquat-empty__image"
       viewBox="0 0 64 64"
       fill="none"
       stroke="currentColor"
@@ -22,7 +22,7 @@ withDefaults(
       <circle cx="18" cy="20" r="1.5" fill="currentColor" stroke="none" />
       <circle cx="24" cy="20" r="1.5" fill="currentColor" stroke="none" />
     </svg>
-    <p class="cumquat-empty__description text-sm text-cumquat-text-muted">
+    <p class="cumquat-empty__description">
       <slot>{{ description }}</slot>
     </p>
     <div v-if="$slots.default" class="cumquat-empty__extra">

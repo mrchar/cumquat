@@ -27,18 +27,24 @@ function pick(day: number | null) {
 </script>
 
 <template>
-  <div class="cumquat-date-picker relative inline-block w-64">
+  <div class="cumquat-date-picker">
     <button
       type="button"
-      class="cumquat-date-picker__trigger flex h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-cumquat border px-3 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20"
-      :class="open ? 'border-cumquat-accent' : 'border-cumquat-border'"
+      class="cumquat-date-picker__trigger"
+      :class="open ? 'cumquat-date-picker__trigger--open' : ''"
       @click="open = !open"
     >
-      <span :class="selected != null ? 'text-cumquat-text' : 'text-cumquat-text-muted'">
+      <span
+        :class="
+          selected != null
+            ? 'cumquat-date-picker__value--selected'
+            : 'cumquat-date-picker__value--placeholder'
+        "
+      >
         {{ selected != null ? `2026-10-${String(selected).padStart(2, '0')}` : '选择日期' }}
       </span>
       <svg
-        class="size-4 text-cumquat-text-muted"
+        class="cumquat-date-picker__icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -52,34 +58,22 @@ function pick(day: number | null) {
     </button>
 
     <Transition name="cumquat-fade">
-      <div
-        v-if="open"
-        class="cumquat-date-picker__panel absolute z-20 mt-1.5 w-full rounded-cumquat border border-cumquat-border bg-cumquat-surface p-3 shadow-cumquat-overlay"
-      >
-        <p
-          class="cumquat-date-picker__month mb-2 text-center text-sm font-semibold text-cumquat-text"
-        >
-          2026 年 10 月
-        </p>
-        <div class="cumquat-date-picker__grid grid grid-cols-7 gap-0.5 text-center text-xs">
-          <span
-            v-for="w in weeks"
-            :key="w"
-            class="cumquat-date-picker__weekday py-1 text-cumquat-text-muted"
-            >{{ w }}</span
-          >
+      <div v-if="open" class="cumquat-date-picker__panel">
+        <p class="cumquat-date-picker__month">2026 年 10 月</p>
+        <div class="cumquat-date-picker__grid">
+          <span v-for="w in weeks" :key="w" class="cumquat-date-picker__weekday">{{ w }}</span>
           <button
             v-for="(day, index) in cells"
             :key="index"
             type="button"
             :disabled="day == null"
-            class="cumquat-date-picker__day flex aspect-square cursor-pointer items-center justify-center rounded transition-colors"
+            class="cumquat-date-picker__day"
             :class="
               day == null
-                ? 'cursor-default text-transparent'
+                ? 'cumquat-date-picker__day--empty'
                 : day === selected
-                  ? 'bg-cumquat-accent font-medium text-cumquat-text-inverse'
-                  : 'text-cumquat-text hover:bg-cumquat-surface-2'
+                  ? 'cumquat-date-picker__day--selected'
+                  : 'cumquat-date-picker__day--default'
             "
             @click="pick(day)"
           >

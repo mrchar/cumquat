@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     /** 标题级别；level=0 时渲染为段落文本 */
     level?: 0 | 1 | 2 | 3 | 4;
@@ -29,34 +29,29 @@ async function copy() {
     copied.value = false;
   }, 1500);
 }
-
-const levelClass: Record<string, string> = {
-  0: 'text-base',
-  1: 'text-3xl font-bold',
-  2: 'text-2xl font-bold',
-  3: 'text-xl font-semibold',
-  4: 'text-lg font-semibold',
-};
 </script>
 
 <template>
   <component
     :is="level === 0 ? 'p' : `h${level}`"
     ref="root"
-    class="cumquat-typography m-0 text-cumquat-text"
-    :class="[levelClass[level], ellipsis ? 'truncate' : '']"
+    class="cumquat-typography"
+    :class="[
+      level > 0 ? `cumquat-typography--${level}` : '',
+      ellipsis ? 'cumquat-typography--ellipsis' : '',
+    ]"
   >
     <slot />
     <button
       v-if="copyable"
       type="button"
       :aria-label="copied ? '已复制' : '复制'"
-      class="cumquat-typography__copy ml-1.5 inline-flex size-5 cursor-pointer items-center justify-center align-text-bottom text-cumquat-text-muted transition-colors hover:text-cumquat-accent"
+      class="cumquat-typography__copy"
       @click="copy"
     >
       <svg
         v-if="!copied"
-        class="size-3.5"
+        class="cumquat-typography__copy-icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -69,7 +64,7 @@ const levelClass: Record<string, string> = {
       </svg>
       <svg
         v-else
-        class="size-3.5 text-cumquat-success"
+        class="cumquat-typography__copy-icon cumquat-typography__copy-icon--success"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

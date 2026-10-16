@@ -21,17 +21,11 @@ function pick(day: number | null) {
 </script>
 
 <template>
-  <div
-    class="cumquat-calendar inline-block rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4"
-  >
-    <header class="cumquat-calendar__header mb-3 flex items-center justify-between">
-      <button
-        type="button"
-        aria-label="上个月"
-        class="cumquat-calendar__nav flex size-8 cursor-pointer items-center justify-center rounded text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-text"
-      >
+  <div class="cumquat-calendar">
+    <header class="cumquat-calendar__header">
+      <button type="button" aria-label="上个月" class="cumquat-calendar__nav">
         <svg
-          class="size-4"
+          class="cumquat-calendar__nav-icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -42,14 +36,10 @@ function pick(day: number | null) {
           <path d="m15 18-6-6 6-6" />
         </svg>
       </button>
-      <h3 class="cumquat-calendar__month text-sm font-semibold text-cumquat-text">2026 年 10 月</h3>
-      <button
-        type="button"
-        aria-label="下个月"
-        class="cumquat-calendar__nav flex size-8 cursor-pointer items-center justify-center rounded text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-text"
-      >
+      <h3 class="cumquat-calendar__month">2026 年 10 月</h3>
+      <button type="button" aria-label="下个月" class="cumquat-calendar__nav">
         <svg
-          class="size-4"
+          class="cumquat-calendar__nav-icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -62,25 +52,20 @@ function pick(day: number | null) {
       </button>
     </header>
 
-    <div class="cumquat-calendar__grid grid grid-cols-7 gap-1 text-center text-sm">
-      <span
-        v-for="w in weeks"
-        :key="w"
-        class="cumquat-calendar__weekday py-1.5 text-xs text-cumquat-text-muted"
-        >{{ w }}</span
-      >
+    <div class="cumquat-calendar__grid">
+      <span v-for="w in weeks" :key="w" class="cumquat-calendar__weekday">{{ w }}</span>
       <button
         v-for="(day, index) in cells"
         :key="index"
         type="button"
         :disabled="day == null"
-        class="cumquat-calendar__day flex aspect-square cursor-pointer items-center justify-center rounded-cumquat text-cumquat-text transition-colors"
+        class="cumquat-calendar__day"
         :class="
           day == null
-            ? 'cursor-default text-transparent'
+            ? 'cumquat-calendar__day--empty'
             : day === selected
-              ? 'bg-cumquat-accent font-medium text-cumquat-text-inverse'
-              : 'hover:bg-cumquat-surface-2'
+              ? 'cumquat-calendar__day--selected'
+              : 'cumquat-calendar__day--default'
         "
         @click="pick(day)"
       >

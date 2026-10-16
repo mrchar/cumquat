@@ -31,7 +31,9 @@ describe('Checkbox', () => {
 
   it('indeterminate 态显示横线', () => {
     const wrapper = mount(Checkbox, { props: { indeterminate: true } });
-    expect(wrapper.find('.cumquat-checkbox__box').classes()).toContain('bg-cumquat-accent');
+    expect(wrapper.find('.cumquat-checkbox__box').classes()).toContain(
+      'cumquat-checkbox__box--active',
+    );
   });
 });
 

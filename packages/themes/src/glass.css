@@ -1,0 +1,262 @@
+/*
+ * 玻璃视觉主题（Liquid Glass）
+ *
+ * 继承 basic 主题的全部样式，仅覆盖有差异的部分：
+ * 1. token 覆盖为极通透的半透明表面（@layer theme）；
+ * 2. 为组件表面附加液态玻璃光学效果（@layer components）：
+ *    - 跨浏览器基底：低透明度 + saturate + 双层 inset 边缘高光 + 对角镜面高光带；
+ *    - Chromium 渐进增强：通过 SVG feTurbulence + feDisplacementMap 实现
+ *      真实的背景折射/位移（@supports 内覆盖 backdrop-filter）。
+ * 在 <html> 上挂 cq-theme-glass 类生效。
+ *
+ * 注意：玻璃效果依赖"花背景"（本主题为白色点阵），在大面积滚动区
+ * 启用重滤镜可能影响性能。
+ */
+@layer theme {
+  .cq-theme-glass {
+    /* 品牌主色 */
+    --color-cumquat-accent: #4f46e5;
+    --color-cumquat-accent-hover: #4338ca;
+    --color-cumquat-accent-active: #3730a3;
+    --color-cumquat-accent-soft: rgb(79 70 229 / 0.12);
+
+    /* 表面：极低不透明度，配合折射产生液态感 */
+    --color-cumquat-surface: rgb(255 255 255 / 0.1);
+    --color-cumquat-surface-2: rgb(255 255 255 / 0.07);
+    --color-cumquat-surface-3: rgb(255 255 255 / 0.04);
+
+    /* 描边：亮色半透明描边模拟玻璃边缘 */
+    --color-cumquat-border: rgb(255 255 255 / 0.7);
+    --color-cumquat-border-strong: rgb(255 255 255 / 0.9);
+
+    /* 文本 */
+    --color-cumquat-text: #1e1b4b;
+    --color-cumquat-text-muted: rgb(30 27 75 / 0.62);
+    --color-cumquat-text-inverse: #ffffff;
+
+    /* 语义状态色：柔色底改半透明 */
+    --color-cumquat-success: #15803d;
+    --color-cumquat-success-soft: rgb(22 163 74 / 0.12);
+    --color-cumquat-warning: #b45309;
+    --color-cumquat-warning-soft: rgb(217 119 6 / 0.12);
+    --color-cumquat-danger: #dc2626;
+    --color-cumquat-danger-soft: rgb(220 38 38 / 0.1);
+    --color-cumquat-info: #0369a1;
+    --color-cumquat-info-soft: rgb(2 132 199 / 0.12);
+
+    /* 阴影更轻更散，配合通透感 */
+    --shadow-cumquat-overlay: 0 12px 40px rgb(31 38 135 / 0.12);
+
+    color-scheme: light;
+  }
+}
+
+@layer components {
+  /* 浮层与面板：液态玻璃基底 */
+  .cq-theme-glass .cumquat-dialog__panel,
+  .cq-theme-glass .cumquat-drawer__panel,
+  .cq-theme-glass .cumquat-dropdown__menu,
+  .cq-theme-glass .cumquat-popover__content,
+  .cq-theme-glass .cumquat-popover__arrow,
+  .cq-theme-glass .cumquat-popconfirm__content,
+  .cq-theme-glass .cumquat-popconfirm__arrow,
+  .cq-theme-glass .cumquat-tooltip__content,
+  .cq-theme-glass .cumquat-select__dropdown,
+  .cq-theme-glass .cumquat-autocomplete__dropdown,
+  .cq-theme-glass .cumquat-mention__dropdown,
+  .cq-theme-glass .cumquat-tree-select__dropdown,
+  .cq-theme-glass .cumquat-cascader__panel,
+  .cq-theme-glass .cumquat-date-picker__panel,
+  .cq-theme-glass .cumquat-time-picker__panel,
+  .cq-theme-glass .cumquat-color-picker__panel,
+  .cq-theme-glass .cumquat-tour__card,
+  .cq-theme-glass .cumquat-calendar,
+  .cq-theme-glass .cumquat-menu {
+    @apply backdrop-blur-md backdrop-saturate-180 backdrop-brightness-110;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      inset 0 1px 1px 0 rgb(255 255 255 / 0.55),
+      inset 0 -1px 1px 0 rgb(255 255 255 / 0.3),
+      var(--shadow-cumquat-overlay);
+  }
+
+  /* 镜面高光带（对角方向，屏幕混合模式） */
+  .cq-theme-glass .cumquat-dialog__panel::after,
+  .cq-theme-glass .cumquat-drawer__panel::after,
+  .cq-theme-glass .cumquat-dropdown__menu::after,
+  .cq-theme-glass .cumquat-popover__content::after,
+  .cq-theme-glass .cumquat-popconfirm__content::after,
+  .cq-theme-glass .cumquat-select__dropdown::after,
+  .cq-theme-glass .cumquat-autocomplete__dropdown::after,
+  .cq-theme-glass .cumquat-mention__dropdown::after,
+  .cq-theme-glass .cumquat-tree-select__dropdown::after,
+  .cq-theme-glass .cumquat-cascader__panel::after,
+  .cq-theme-glass .cumquat-date-picker__panel::after,
+  .cq-theme-glass .cumquat-time-picker__panel::after,
+  .cq-theme-glass .cumquat-color-picker__panel::after,
+  .cq-theme-glass .cumquat-tour__card::after,
+  .cq-theme-glass .cumquat-calendar::after,
+  .cq-theme-glass .cumquat-menu::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.25) 0%,
+      rgb(255 255 255 / 0.05) 30%,
+      transparent 50%,
+      transparent 100%
+    );
+    mix-blend-mode: screen;
+  }
+
+  /* 消息、卡片、拖拽区等悬浮表面 */
+  .cq-theme-glass .cumquat-message,
+  .cq-theme-glass .cumquat-notification,
+  .cq-theme-glass .cumquat-alert,
+  .cq-theme-glass .cumquat-card,
+  .cq-theme-glass .cumquat-upload__dragger,
+  .cq-theme-glass .cumquat-carousel__prev,
+  .cq-theme-glass .cumquat-carousel__next,
+  .cq-theme-glass .cumquat-back-top,
+  .cq-theme-glass .cumquat-float-button__action,
+  .cq-theme-glass .cumquat-float-button__trigger,
+  .cq-theme-glass .cumquat-qrcode {
+    @apply backdrop-blur-md backdrop-saturate-180 backdrop-brightness-110;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      inset 0 1px 1px 0 rgb(255 255 255 / 0.55),
+      inset 0 -1px 1px 0 rgb(255 255 255 / 0.3),
+      0 6px 28px 0 rgb(31 38 135 / 0.08);
+  }
+
+  .cq-theme-glass .cumquat-message::after,
+  .cq-theme-glass .cumquat-notification::after,
+  .cq-theme-glass .cumquat-alert::after,
+  .cq-theme-glass .cumquat-card::after,
+  .cq-theme-glass .cumquat-upload__dragger::after,
+  .cq-theme-glass .cumquat-carousel__prev::after,
+  .cq-theme-glass .cumquat-carousel__next::after,
+  .cq-theme-glass .cumquat-back-top::after,
+  .cq-theme-glass .cumquat-float-button__action::after,
+  .cq-theme-glass .cumquat-float-button__trigger::after,
+  .cq-theme-glass .cumquat-qrcode::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.25) 0%,
+      rgb(255 255 255 / 0.05) 30%,
+      transparent 50%,
+      transparent 100%
+    );
+    mix-blend-mode: screen;
+  }
+
+  /* 标签与柔色徽章：小面积液态玻璃，与主表面保持一致的通透度 */
+  .cq-theme-glass .cumquat-tag,
+  .cq-theme-glass .cumquat-badge__sup {
+    @apply backdrop-blur-md backdrop-saturate-180 backdrop-brightness-110;
+    box-shadow:
+      inset 0 1px 1px 0 rgb(255 255 255 / 0.45),
+      inset 0 -1px 1px 0 rgb(255 255 255 / 0.25);
+  }
+
+  /* 表单控件：输入框、触发器、分段器、滑块手柄 */
+  .cq-theme-glass .cumquat-input__inner,
+  .cq-theme-glass .cumquat-select__trigger,
+  .cq-theme-glass .cumquat-autocomplete__input,
+  .cq-theme-glass .cumquat-mention__input,
+  .cq-theme-glass .cumquat-input-number,
+  .cq-theme-glass .cumquat-date-picker__trigger,
+  .cq-theme-glass .cumquat-time-picker__trigger,
+  .cq-theme-glass .cumquat-color-picker__trigger,
+  .cq-theme-glass .cumquat-segmented,
+  .cq-theme-glass .cumquat-slider__thumb {
+    @apply backdrop-blur-md backdrop-saturate-180 backdrop-brightness-110;
+    box-shadow:
+      inset 0 1px 1px 0 rgb(255 255 255 / 0.45),
+      inset 0 -1px 1px 0 rgb(255 255 255 / 0.25);
+  }
+
+  /* 按钮（次要与幽灵态有表面背景，液态化后透出底层） */
+  .cq-theme-glass .cumquat-button--secondary,
+  .cq-theme-glass .cumquat-button--ghost:hover {
+    @apply backdrop-blur-md backdrop-saturate-180 backdrop-brightness-110;
+    box-shadow:
+      inset 0 1px 1px 0 rgb(255 255 255 / 0.5),
+      inset 0 -1px 1px 0 rgb(255 255 255 / 0.3);
+  }
+
+  /* Chromium 渐进增强：SVG 位移滤镜实现真实折射 */
+  @supports (backdrop-filter: url(#test)) {
+    .cq-theme-glass .cumquat-dialog__panel,
+    .cq-theme-glass .cumquat-drawer__panel,
+    .cq-theme-glass .cumquat-dropdown__menu,
+    .cq-theme-glass .cumquat-popover__content,
+    .cq-theme-glass .cumquat-popconfirm__content,
+    .cq-theme-glass .cumquat-tooltip__content,
+    .cq-theme-glass .cumquat-select__dropdown,
+    .cq-theme-glass .cumquat-autocomplete__dropdown,
+    .cq-theme-glass .cumquat-mention__dropdown,
+    .cq-theme-glass .cumquat-tree-select__dropdown,
+    .cq-theme-glass .cumquat-cascader__panel,
+    .cq-theme-glass .cumquat-date-picker__panel,
+    .cq-theme-glass .cumquat-time-picker__panel,
+    .cq-theme-glass .cumquat-color-picker__panel,
+    .cq-theme-glass .cumquat-tour__card,
+    .cq-theme-glass .cumquat-calendar,
+    .cq-theme-glass .cumquat-menu {
+      backdrop-filter: blur(2px) url(#cumquat-liquid-refraction) saturate(180%) brightness(1.1);
+    }
+
+    .cq-theme-glass .cumquat-message,
+    .cq-theme-glass .cumquat-notification,
+    .cq-theme-glass .cumquat-alert,
+    .cq-theme-glass .cumquat-card,
+    .cq-theme-glass .cumquat-upload__dragger,
+    .cq-theme-glass .cumquat-carousel__prev,
+    .cq-theme-glass .cumquat-carousel__next,
+    .cq-theme-glass .cumquat-back-top,
+    .cq-theme-glass .cumquat-float-button__action,
+    .cq-theme-glass .cumquat-float-button__trigger,
+    .cq-theme-glass .cumquat-qrcode {
+      backdrop-filter: blur(2px) url(#cumquat-liquid-refraction) saturate(180%) brightness(1.1);
+    }
+
+    /* 小面积表面同样进入折射组，保持一致的若隐若现 */
+    .cq-theme-glass .cumquat-tag,
+    .cq-theme-glass .cumquat-badge__sup,
+    .cq-theme-glass .cumquat-input__inner,
+    .cq-theme-glass .cumquat-select__trigger,
+    .cq-theme-glass .cumquat-autocomplete__input,
+    .cq-theme-glass .cumquat-mention__input,
+    .cq-theme-glass .cumquat-input-number,
+    .cq-theme-glass .cumquat-date-picker__trigger,
+    .cq-theme-glass .cumquat-time-picker__trigger,
+    .cq-theme-glass .cumquat-color-picker__trigger,
+    .cq-theme-glass .cumquat-segmented,
+    .cq-theme-glass .cumquat-slider__thumb,
+    .cq-theme-glass .cumquat-button--secondary,
+    .cq-theme-glass .cumquat-button--ghost:hover {
+      backdrop-filter: blur(2px) url(#cumquat-liquid-refraction) saturate(180%) brightness(1.1);
+    }
+  }
+}
+
+@layer base {
+  /* 页面底层：白色背景 + 细腻黑色点阵，演示玻璃的半透明与边缘折射 */
+  .cq-theme-glass body {
+    background-color: #ffffff;
+    background-image: radial-gradient(circle, rgb(0 0 0 / 0.12) 1px, transparent 1.5px);
+    background-size: 16px 16px;
+    background-attachment: fixed;
+  }
+}

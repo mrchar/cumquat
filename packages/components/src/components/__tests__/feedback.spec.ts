@@ -10,7 +10,7 @@ describe('Message', () => {
       slots: { default: '已保存' },
     });
     expect(wrapper.find('.cumquat-message').exists()).toBe(true);
-    expect(wrapper.find('.cumquat-message').classes()).toContain('bg-cumquat-success-soft');
+    expect(wrapper.find('.cumquat-message').classes()).toContain('cumquat-message--success');
     await wrapper.find('.cumquat-message__close').trigger('click');
     expect(wrapper.find('.cumquat-message').exists()).toBe(false);
   });
@@ -59,7 +59,7 @@ describe('Skeleton', () => {
 describe('Result', () => {
   it('渲染状态图标与标题', () => {
     const wrapper = mount(Result, { props: { status: 'success', title: '操作成功' } });
-    expect(wrapper.find('.cumquat-result__icon').classes()).toContain('bg-cumquat-success-soft');
+    expect(wrapper.find('.cumquat-result').classes()).toContain('cumquat-result--success');
     expect(wrapper.find('.cumquat-result__title').text()).toBe('操作成功');
   });
 });

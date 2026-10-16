@@ -25,24 +25,21 @@ function pick(option: string) {
 </script>
 
 <template>
-  <div class="cumquat-autocomplete relative inline-block w-full">
+  <div class="cumquat-autocomplete">
     <input
       v-model="model"
       type="text"
       :placeholder="placeholder"
-      class="cumquat-autocomplete__input h-10 w-full rounded-cumquat border border-cumquat-border bg-cumquat-surface px-3 text-sm text-cumquat-text transition-colors placeholder:text-cumquat-text-muted focus:border-cumquat-accent focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20"
+      class="cumquat-autocomplete__input"
       @focus="open = true"
       @blur="open = false"
     />
     <Transition name="cumquat-fade">
-      <ul
-        v-if="open && suggestions.length > 0"
-        class="cumquat-autocomplete__dropdown absolute z-20 mt-1.5 max-h-52 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay"
-      >
+      <ul v-if="open && suggestions.length > 0" class="cumquat-autocomplete__dropdown">
         <li
           v-for="option in suggestions"
           :key="option"
-          class="cumquat-autocomplete__option cursor-pointer px-3 py-2 text-sm text-cumquat-text transition-colors hover:bg-cumquat-surface-2"
+          class="cumquat-autocomplete__option"
           @mousedown.prevent="pick(option)"
         >
           {{ option }}

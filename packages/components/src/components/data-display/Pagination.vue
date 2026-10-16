@@ -36,16 +36,16 @@ function go(target: number) {
 </script>
 
 <template>
-  <nav class="cumquat-pagination inline-flex items-center gap-1.5" aria-label="分页">
+  <nav class="cumquat-pagination" aria-label="分页">
     <button
       type="button"
-      class="cumquat-pagination__prev flex size-8 cursor-pointer items-center justify-center rounded-cumquat border border-cumquat-border bg-cumquat-surface text-cumquat-text transition-colors hover:bg-cumquat-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+      class="cumquat-pagination__prev"
       :disabled="page <= 1"
       aria-label="上一页"
       @click="go(page - 1)"
     >
       <svg
-        class="size-4"
+        class="cumquat-pagination__icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -58,20 +58,12 @@ function go(target: number) {
     </button>
 
     <template v-for="(item, index) in pages" :key="`${item}-${index}`">
-      <span
-        v-if="item === 'ellipsis'"
-        class="cumquat-pagination__ellipsis px-1 text-cumquat-text-muted"
-        >…</span
-      >
+      <span v-if="item === 'ellipsis'" class="cumquat-pagination__ellipsis">…</span>
       <button
         v-else
         type="button"
-        class="cumquat-pagination__page flex size-8 cursor-pointer items-center justify-center rounded-cumquat border text-sm transition-colors"
-        :class="
-          item === page
-            ? 'border-cumquat-accent bg-cumquat-accent font-medium text-cumquat-text-inverse'
-            : 'border-cumquat-border bg-cumquat-surface text-cumquat-text hover:bg-cumquat-surface-2'
-        "
+        class="cumquat-pagination__page"
+        :class="item === page ? 'cumquat-pagination__page--active' : ''"
         :aria-current="item === page ? 'page' : undefined"
         @click="go(item)"
       >
@@ -81,13 +73,13 @@ function go(target: number) {
 
     <button
       type="button"
-      class="cumquat-pagination__next flex size-8 cursor-pointer items-center justify-center rounded-cumquat border border-cumquat-border bg-cumquat-surface text-cumquat-text transition-colors hover:bg-cumquat-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+      class="cumquat-pagination__next"
       :disabled="page >= totalPages"
       aria-label="下一页"
       @click="go(page + 1)"
     >
       <svg
-        class="size-4"
+        class="cumquat-pagination__icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

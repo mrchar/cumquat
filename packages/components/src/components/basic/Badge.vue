@@ -21,17 +21,13 @@ const text = computed(() => {
 </script>
 
 <template>
-  <span class="cumquat-badge relative inline-flex">
+  <span class="cumquat-badge">
     <slot />
     <Transition name="cumquat-fade">
       <span
         v-if="dot || count > 0"
-        class="cumquat-badge__sup absolute -top-1.5 -right-1.5 flex items-center justify-center rounded-full bg-cumquat-danger font-medium text-cumquat-text-inverse"
-        :class="
-          dot
-            ? 'size-2.5 border-2 border-cumquat-surface'
-            : 'h-4.5 min-w-4.5 border-2 border-cumquat-surface px-1 text-[0.65rem]'
-        "
+        class="cumquat-badge__sup"
+        :class="dot ? 'cumquat-badge__sup--dot' : ''"
       >
         {{ text }}
       </span>

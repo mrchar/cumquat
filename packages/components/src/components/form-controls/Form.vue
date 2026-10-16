@@ -14,11 +14,7 @@ function onSubmit(event: Event) {
 </script>
 
 <template>
-  <form
-    class="cumquat-form flex flex-col gap-4"
-    :class="labelPosition === 'left' ? '' : ''"
-    @submit="onSubmit"
-  >
+  <form class="cumquat-form" :class="labelPosition === 'left' ? '' : ''" @submit="onSubmit">
     <slot />
   </form>
 </template>

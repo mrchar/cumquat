@@ -21,19 +21,14 @@ function go(item: AnchorItem) {
 </script>
 
 <template>
-  <nav
-    class="cumquat-anchor flex flex-col gap-0.5 border-l-2 border-cumquat-border"
-    aria-label="锚点导航"
-  >
+  <nav class="cumquat-anchor" aria-label="锚点导航">
     <a
       v-for="item in items"
       :key="item.href"
       :href="item.href"
-      class="cumquat-anchor__link -ml-0.5 border-l-2 px-4 py-1.5 text-sm transition-colors"
+      class="cumquat-anchor__link"
       :class="
-        active === item.href
-          ? 'border-cumquat-accent font-medium text-cumquat-accent'
-          : 'border-transparent text-cumquat-text-muted hover:text-cumquat-text'
+        active === item.href ? 'cumquat-anchor__link--active' : 'cumquat-anchor__link--inactive'
       "
       @click="go(item)"
     >

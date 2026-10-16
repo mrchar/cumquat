@@ -22,32 +22,18 @@ function stateOf(index: number): 'done' | 'active' | 'waiting' {
 </script>
 
 <template>
-  <ol class="cumquat-steps flex w-full items-start">
-    <li
-      v-for="(step, index) in steps"
-      :key="step.key"
-      class="cumquat-steps__step relative flex flex-1 flex-col items-center"
-      :class="index < steps.length - 1 ? '' : ''"
-    >
+  <ol class="cumquat-steps">
+    <li v-for="(step, index) in steps" :key="step.key" class="cumquat-steps__step">
       <!-- 连接线 -->
       <span
         v-if="index > 0"
-        class="cumquat-steps__line absolute top-4 right-1/2 h-0.5 w-full"
-        :class="stateOf(index) === 'waiting' ? 'bg-cumquat-border' : 'bg-cumquat-accent'"
+        class="cumquat-steps__line"
+        :class="stateOf(index) === 'waiting' ? 'cumquat-steps__line--waiting' : ''"
       />
-      <span
-        class="cumquat-steps__dot relative z-10 flex size-8 items-center justify-center rounded-full border-2 text-sm font-medium transition-colors"
-        :class="
-          stateOf(index) === 'done'
-            ? 'border-cumquat-accent bg-cumquat-accent text-cumquat-text-inverse'
-            : stateOf(index) === 'active'
-              ? 'border-cumquat-accent bg-cumquat-surface text-cumquat-accent'
-              : 'border-cumquat-border bg-cumquat-surface text-cumquat-text-muted'
-        "
-      >
+      <span class="cumquat-steps__dot" :class="`cumquat-steps__dot--${stateOf(index)}`">
         <svg
           v-if="stateOf(index) === 'done'"
-          class="size-4"
+          class="cumquat-steps__dot-icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -59,17 +45,14 @@ function stateOf(index: number): 'done' | 'active' | 'waiting' {
         </svg>
         <template v-else>{{ index + 1 }}</template>
       </span>
-      <div class="cumquat-steps__text mt-2 flex flex-col items-center gap-0.5 text-center">
+      <div class="cumquat-steps__text">
         <span
-          class="cumquat-steps__title text-sm font-medium"
-          :class="stateOf(index) === 'waiting' ? 'text-cumquat-text-muted' : 'text-cumquat-text'"
+          class="cumquat-steps__title"
+          :class="stateOf(index) === 'waiting' ? 'cumquat-steps__title--waiting' : ''"
         >
           {{ step.title }}
         </span>
-        <span
-          v-if="step.description"
-          class="cumquat-steps__description text-xs text-cumquat-text-muted"
-        >
+        <span v-if="step.description" class="cumquat-steps__description">
           {{ step.description }}
         </span>
       </div>

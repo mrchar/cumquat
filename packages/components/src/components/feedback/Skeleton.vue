@@ -11,17 +11,14 @@ withDefaults(
 </script>
 
 <template>
-  <div class="cumquat-skeleton flex animate-pulse gap-3" aria-hidden="true">
-    <div
-      v-if="avatar"
-      class="cumquat-skeleton__avatar size-10 shrink-0 rounded-full bg-cumquat-surface-3"
-    />
-    <div class="cumquat-skeleton__lines flex flex-1 flex-col gap-2.5">
+  <div class="cumquat-skeleton" aria-hidden="true">
+    <div v-if="avatar" class="cumquat-skeleton__avatar" />
+    <div class="cumquat-skeleton__lines">
       <div
         v-for="i in rows"
         :key="i"
-        class="cumquat-skeleton__line h-3.5 rounded bg-cumquat-surface-3"
-        :class="i === rows ? 'w-2/3' : 'w-full'"
+        class="cumquat-skeleton__line"
+        :class="i === rows ? 'cumquat-skeleton__line--last' : 'cumquat-skeleton__line--full'"
       />
     </div>
   </div>

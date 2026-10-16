@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@cumquat/components": "workspace:*",
+    "@cumquat/themes": "workspace:*",
     "vue": "catalog:"
   },
   "devDependencies": {

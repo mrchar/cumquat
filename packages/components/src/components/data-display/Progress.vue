@@ -13,23 +13,14 @@ const props = withDefaults(
 );
 
 const clamped = computed(() => Math.min(100, Math.max(0, props.value)));
-
-const barClass: Record<string, string> = {
-  normal: 'bg-cumquat-accent',
-  success: 'bg-cumquat-success',
-  warning: 'bg-cumquat-warning',
-  danger: 'bg-cumquat-danger',
-};
 </script>
 
 <template>
-  <div class="cumquat-progress flex w-full items-center gap-3">
-    <div
-      class="cumquat-progress__track h-2 flex-1 overflow-hidden rounded-full bg-cumquat-surface-3"
-    >
+  <div class="cumquat-progress">
+    <div class="cumquat-progress__track">
       <div
-        class="cumquat-progress__bar h-full rounded-full transition-[width] duration-300"
-        :class="barClass[status]"
+        class="cumquat-progress__bar"
+        :class="`cumquat-progress__bar--${status}`"
         :style="{ width: `${clamped}%` }"
         role="progressbar"
         :aria-valuenow="clamped"
@@ -37,11 +28,6 @@ const barClass: Record<string, string> = {
         aria-valuemax="100"
       />
     </div>
-    <span
-      v-if="showText"
-      class="cumquat-progress__text w-10 text-right text-xs text-cumquat-text-muted"
-    >
-      {{ clamped }}%
-    </span>
+    <span v-if="showText" class="cumquat-progress__text"> {{ clamped }}% </span>
   </div>
 </template>

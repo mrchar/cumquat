@@ -17,23 +17,18 @@ function pick() {
 </script>
 
 <template>
-  <label
-    class="cumquat-radio inline-flex cursor-pointer items-center gap-2 text-sm text-cumquat-text select-none"
-    :class="disabled ? 'cursor-not-allowed opacity-50' : ''"
-    @click="pick"
-  >
-    <input v-model="model" type="radio" :value="value" class="peer sr-only" :disabled="disabled" />
-    <span
-      class="cumquat-radio__dot flex size-4.5 shrink-0 items-center justify-center rounded-full border transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cumquat-accent"
-      :class="
-        model === value
-          ? 'border-cumquat-accent'
-          : 'border-cumquat-border-strong bg-cumquat-surface'
-      "
-    >
+  <label class="cumquat-radio" :class="disabled ? 'cumquat-radio--disabled' : ''" @click="pick">
+    <input
+      v-model="model"
+      type="radio"
+      :value="value"
+      class="cumquat-radio__input"
+      :disabled="disabled"
+    />
+    <span class="cumquat-radio__dot" :class="model === value ? 'cumquat-radio__dot--checked' : ''">
       <span
-        class="cumquat-radio__inner size-2 rounded-full transition-colors"
-        :class="model === value ? 'bg-cumquat-accent' : 'bg-transparent'"
+        class="cumquat-radio__inner"
+        :class="model === value ? 'cumquat-radio__inner--checked' : ''"
       />
     </span>
     <span v-if="label || $slots.default" class="cumquat-radio__label">

@@ -1,0 +1,15 @@
+{
+  "name": "@cumquat/themes",
+  "version": "0.1.0",
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    "./basic.css": "./src/basic.css",
+    "./light.css": "./src/light.css",
+    "./dark.css": "./src/dark.css",
+    "./high-contrast.css": "./src/high-contrast.css",
+    "./glass.css": "./src/glass.css"
+  }
+}

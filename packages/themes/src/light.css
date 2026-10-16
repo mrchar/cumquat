@@ -1,0 +1,11 @@
+/*
+ * 亮色主题
+ *
+ * 默认即是亮色，因此本文件仅声明 color-scheme。
+ * 所有 token 默认值由 basic 主题的 @theme 提供。
+ */
+@layer theme {
+  .cq-theme-light {
+    color-scheme: light;
+  }
+}

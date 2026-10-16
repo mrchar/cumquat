@@ -19,23 +19,11 @@ function onError() {
 </script>
 
 <template>
-  <span
-    class="cumquat-image relative inline-block overflow-hidden bg-cumquat-surface-2"
-    :class="rounded ? 'rounded-cumquat' : ''"
-  >
-    <img
-      v-if="!failed"
-      :src="src"
-      :alt="alt"
-      class="cumquat-image__img block size-full object-cover"
-      @error="onError"
-    />
-    <span
-      v-else
-      class="cumquat-image__fallback flex size-full min-h-32 min-w-32 flex-col items-center justify-center gap-1.5 text-cumquat-text-muted"
-    >
+  <span class="cumquat-image" :class="rounded ? 'cumquat-image--rounded' : ''">
+    <img v-if="!failed" :src="src" :alt="alt" class="cumquat-image__img" @error="onError" />
+    <span v-else class="cumquat-image__fallback">
       <svg
-        class="size-8"
+        class="cumquat-image__fallback-icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -47,7 +35,7 @@ function onError() {
         <circle cx="9" cy="9" r="2" />
         <path d="m21 15-4-4L5 23" />
       </svg>
-      <span class="text-xs">加载失败</span>
+      <span class="cumquat-image__fallback-text">加载失败</span>
     </span>
   </span>
 </template>

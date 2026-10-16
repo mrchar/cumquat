@@ -44,6 +44,9 @@ importers:
       '@cumquat/components':
         specifier: workspace:*
         version: link:../../packages/components
+      '@cumquat/themes':
+        specifier: workspace:*
+        version: link:../../packages/themes
       vue:
         specifier: 'catalog:'
         version: 3.5.44(typescript@6.0.3)
@@ -84,6 +87,8 @@ importers:
       vue-tsc:
         specifier: 'catalog:'
         version: 3.3.13(typescript@6.0.3)
+
+  packages/themes: {}
 
 packages:
 

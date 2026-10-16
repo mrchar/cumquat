@@ -1,0 +1,41 @@
+/*
+ * 暗色主题
+ *
+ * 在 <html> 上挂 cq-theme-dark 类生效；.dark 选择器保留以兼容
+ * 仅依赖 .dark 约定的宿主。
+ * 通过 Tailwind v4 的 @layer theme 覆盖同名 token，工具类自动跟随。
+ */
+@layer theme {
+  .cq-theme-dark,
+  .dark {
+    /* 品牌主色 */
+    --color-cumquat-accent: #6366f1;
+    --color-cumquat-accent-hover: #818cf8;
+    --color-cumquat-accent-active: #a5b4fc;
+    --color-cumquat-accent-soft: #312e81;
+
+    /* 表面 / 背景 */
+    --color-cumquat-surface: #0f172a;
+    --color-cumquat-surface-2: #1e293b;
+    --color-cumquat-surface-3: #273449;
+
+    /* 描边 */
+    --color-cumquat-border: #334155;
+    --color-cumquat-border-strong: #475569;
+
+    /* 文本 */
+    --color-cumquat-text: #f1f5f9;
+    --color-cumquat-text-muted: #94a3b8;
+    --color-cumquat-text-inverse: #0f172a;
+
+    /* 语义状态色（主色与亮色一致，柔色底加深） */
+    --color-cumquat-success-soft: #14532d;
+    --color-cumquat-warning-soft: #713f12;
+    --color-cumquat-danger-soft: #7f1d1d;
+    --color-cumquat-info-soft: #0c4a6e;
+
+    --shadow-cumquat-overlay: 0 4px 16px rgb(0 0 0 / 0.5);
+
+    color-scheme: dark;
+  }
+}

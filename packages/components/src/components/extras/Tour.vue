@@ -38,37 +38,22 @@ function prev() {
 <template>
   <Teleport to="body">
     <Transition name="cumquat-fade">
-      <div v-if="visible" class="cumquat-tour fixed inset-0 z-50">
-        <div class="cumquat-tour__mask absolute inset-0 bg-black/50" />
-        <div
-          role="dialog"
-          aria-modal="true"
-          class="cumquat-tour__card absolute top-1/3 left-1/2 w-72 -translate-x-1/2 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4 shadow-cumquat-overlay"
-        >
-          <p v-if="step" class="cumquat-tour__step-count mb-1 text-xs text-cumquat-text-muted">
-            {{ current + 1 }} / {{ steps.length }}
-          </p>
-          <h4 class="cumquat-tour__title text-sm font-semibold text-cumquat-text">
+      <div v-if="visible" class="cumquat-tour">
+        <div class="cumquat-tour__mask" />
+        <div role="dialog" aria-modal="true" class="cumquat-tour__card">
+          <p v-if="step" class="cumquat-tour__step-count">{{ current + 1 }} / {{ steps.length }}</p>
+          <h4 class="cumquat-tour__title">
             {{ step?.title }}
           </h4>
-          <p class="cumquat-tour__content mt-1 text-sm text-cumquat-text-muted">
+          <p class="cumquat-tour__content">
             {{ step?.content }}
           </p>
-          <div class="cumquat-tour__actions mt-3 flex items-center justify-between">
-            <button
-              v-if="current > 0"
-              type="button"
-              class="cumquat-tour__prev cursor-pointer rounded-cumquat border border-cumquat-border px-3 py-1 text-xs text-cumquat-text transition-colors hover:bg-cumquat-surface-2"
-              @click="prev"
-            >
+          <div class="cumquat-tour__actions">
+            <button v-if="current > 0" type="button" class="cumquat-tour__prev" @click="prev">
               上一步
             </button>
             <span v-else />
-            <button
-              type="button"
-              class="cumquat-tour__next cursor-pointer rounded-cumquat bg-cumquat-accent px-3 py-1 text-xs text-cumquat-text-inverse transition-colors hover:bg-cumquat-accent-hover"
-              @click="next"
-            >
+            <button type="button" class="cumquat-tour__next" @click="next">
               {{ current < steps.length - 1 ? '下一步' : '完成' }}
             </button>
           </div>

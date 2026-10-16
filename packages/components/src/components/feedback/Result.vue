@@ -8,13 +8,6 @@ withDefaults(
   { status: 'success', title: '', subTitle: '' },
 );
 
-const iconBoxClass: Record<string, string> = {
-  success: 'bg-cumquat-success-soft text-cumquat-success',
-  error: 'bg-cumquat-danger-soft text-cumquat-danger',
-  warning: 'bg-cumquat-warning-soft text-cumquat-warning',
-  info: 'bg-cumquat-info-soft text-cumquat-info',
-};
-
 const iconPath: Record<string, string> = {
   success: 'm5 13 4 4L19 7',
   error: 'M18 6 6 18M6 6l12 12',
@@ -24,13 +17,10 @@ const iconPath: Record<string, string> = {
 </script>
 
 <template>
-  <div class="cumquat-result flex flex-col items-center gap-3 px-6 py-10 text-center">
-    <span
-      class="cumquat-result__icon flex size-16 items-center justify-center rounded-full"
-      :class="iconBoxClass[status]"
-    >
+  <div class="cumquat-result" :class="`cumquat-result--${status}`">
+    <span class="cumquat-result__icon">
       <svg
-        class="size-8"
+        class="cumquat-result__icon-svg"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -41,16 +31,13 @@ const iconPath: Record<string, string> = {
         <path :d="iconPath[status]" />
       </svg>
     </span>
-    <h3 class="cumquat-result__title text-lg font-semibold text-cumquat-text">
+    <h3 class="cumquat-result__title">
       <slot name="title">{{ title }}</slot>
     </h3>
-    <p
-      v-if="subTitle || $slots.subTitle"
-      class="cumquat-result__subtitle text-sm text-cumquat-text-muted"
-    >
+    <p v-if="subTitle || $slots.subTitle" class="cumquat-result__subtitle">
       <slot name="subTitle">{{ subTitle }}</slot>
     </p>
-    <div v-if="$slots.default" class="cumquat-result__extra mt-2 flex gap-3">
+    <div v-if="$slots.default" class="cumquat-result__extra">
       <slot />
     </div>
   </div>

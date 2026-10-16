@@ -13,21 +13,12 @@ const props = withDefaults(
   { src: '', alt: '', size: 'md', shape: 'circle', text: '' },
 );
 
-const sizeClass: Record<string, string> = {
-  sm: 'size-8 text-xs',
-  md: 'size-10 text-sm',
-  lg: 'size-12 text-base',
-};
-
 const displayText = computed(() => props.text || props.alt?.charAt(0) || '');
 </script>
 
 <template>
-  <span
-    class="cumquat-avatar inline-flex shrink-0 select-none items-center justify-center overflow-hidden bg-cumquat-surface-3 font-medium text-cumquat-text-muted"
-    :class="[sizeClass[size], shape === 'circle' ? 'rounded-full' : 'rounded-cumquat']"
-  >
-    <img v-if="src" :src="src" :alt="alt" class="cumquat-avatar__img size-full object-cover" />
+  <span class="cumquat-avatar" :class="[`cumquat-avatar--${size}`, `cumquat-avatar--${shape}`]">
+    <img v-if="src" :src="src" :alt="alt" class="cumquat-avatar__img" />
     <slot v-else>{{ displayText }}</slot>
   </span>
 </template>

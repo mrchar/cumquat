@@ -26,19 +26,16 @@ function increase() {
 </script>
 
 <template>
-  <div
-    class="cumquat-input-number inline-flex h-10 items-stretch overflow-hidden rounded-cumquat border border-cumquat-border bg-cumquat-surface transition-colors focus-within:border-cumquat-accent focus-within:ring-2 focus-within:ring-cumquat-accent/20"
-    :class="disabled ? 'cursor-not-allowed opacity-60' : ''"
-  >
+  <div class="cumquat-input-number" :class="disabled ? 'cumquat-input-number--disabled' : ''">
     <button
       type="button"
       aria-label="减少"
-      class="cumquat-input-number__decrease flex w-9 cursor-pointer items-center justify-center text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-text disabled:cursor-not-allowed disabled:opacity-40"
+      class="cumquat-input-number__decrease"
       :disabled="!canDecrease"
       @click="decrease"
     >
       <svg
-        class="size-3.5"
+        class="cumquat-input-number__icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -51,18 +48,18 @@ function increase() {
     <input
       v-model.number="model"
       type="text"
-      class="cumquat-input-number__input w-14 border-x border-cumquat-border bg-transparent text-center text-sm text-cumquat-text focus:outline-none disabled:cursor-not-allowed"
+      class="cumquat-input-number__input"
       :disabled="disabled"
     />
     <button
       type="button"
       aria-label="增加"
-      class="cumquat-input-number__increase flex w-9 cursor-pointer items-center justify-center text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-text disabled:cursor-not-allowed disabled:opacity-40"
+      class="cumquat-input-number__increase"
       :disabled="!canIncrease"
       @click="increase"
     >
       <svg
-        class="size-3.5"
+        class="cumquat-input-number__icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

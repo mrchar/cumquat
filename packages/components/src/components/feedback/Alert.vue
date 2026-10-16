@@ -12,13 +12,6 @@ withDefaults(
 
 const visible = defineModel<boolean>({ default: true });
 
-const typeClass: Record<string, string> = {
-  info: 'bg-cumquat-info-soft text-cumquat-info',
-  success: 'bg-cumquat-success-soft text-cumquat-success',
-  warning: 'bg-cumquat-warning-soft text-cumquat-warning',
-  danger: 'bg-cumquat-danger-soft text-cumquat-danger',
-};
-
 const iconPath: Record<string, string> = {
   info: 'M12 8h.01M11 12h1v4h1',
   success: 'm5 13 4 4L19 7',
@@ -30,15 +23,10 @@ const iconPath: Record<string, string> = {
 
 <template>
   <Transition name="cumquat-fade">
-    <div
-      v-if="visible"
-      role="alert"
-      class="cumquat-alert flex items-start gap-3 rounded-cumquat px-4 py-3"
-      :class="typeClass[type]"
-    >
+    <div v-if="visible" role="alert" class="cumquat-alert" :class="`cumquat-alert--${type}`">
       <svg
         v-if="showIcon"
-        class="cumquat-alert__icon mt-0.5 size-4 shrink-0"
+        class="cumquat-alert__icon"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -48,11 +36,11 @@ const iconPath: Record<string, string> = {
       >
         <path :d="iconPath[type]" />
       </svg>
-      <div class="cumquat-alert__body flex-1">
-        <p v-if="title || $slots.title" class="cumquat-alert__title font-semibold">
+      <div class="cumquat-alert__body">
+        <p v-if="title || $slots.title" class="cumquat-alert__title">
           <slot name="title">{{ title }}</slot>
         </p>
-        <div class="cumquat-alert__content text-sm opacity-90">
+        <div class="cumquat-alert__content">
           <slot />
         </div>
       </div>
@@ -60,11 +48,11 @@ const iconPath: Record<string, string> = {
         v-if="closable"
         type="button"
         aria-label="关闭"
-        class="cumquat-alert__close cursor-pointer opacity-60 transition-opacity hover:opacity-100"
+        class="cumquat-alert__close"
         @click="visible = false"
       >
         <svg
-          class="size-4"
+          class="cumquat-alert__close-icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

@@ -33,39 +33,26 @@ function toLeft(item: TransferItem) {
 </script>
 
 <template>
-  <div class="cumquat-transfer flex items-center gap-3">
-    <div
-      class="cumquat-transfer__panel flex w-56 flex-col rounded-cumquat border border-cumquat-border bg-cumquat-surface"
-    >
-      <header
-        class="cumquat-transfer__header border-b border-cumquat-border px-3 py-2.5 text-sm font-medium text-cumquat-text"
-      >
-        {{ titles[0] }}
-      </header>
-      <ul class="cumquat-transfer__list max-h-56 overflow-y-auto p-1.5">
+  <div class="cumquat-transfer">
+    <div class="cumquat-transfer__panel">
+      <header class="cumquat-transfer__header">{{ titles[0] }}</header>
+      <ul class="cumquat-transfer__list">
         <li
           v-for="item in leftItems"
           :key="item.key"
-          class="cumquat-transfer__item cursor-pointer rounded px-2.5 py-1.5 text-sm text-cumquat-text transition-colors hover:bg-cumquat-accent-soft"
+          class="cumquat-transfer__item cumquat-transfer__item--left"
           @click="toRight(item)"
         >
           {{ item.label }}
         </li>
-        <li
-          v-if="leftItems.length === 0"
-          class="px-2.5 py-6 text-center text-xs text-cumquat-text-muted"
-        >
-          无数据
-        </li>
+        <li v-if="leftItems.length === 0" class="cumquat-transfer__empty">无数据</li>
       </ul>
     </div>
 
-    <div class="cumquat-transfer__actions flex flex-col gap-2">
-      <span
-        class="flex size-8 items-center justify-center rounded-full bg-cumquat-surface-3 text-cumquat-text-muted"
-      >
+    <div class="cumquat-transfer__actions">
+      <span class="cumquat-transfer__action">
         <svg
-          class="size-4"
+          class="cumquat-transfer__action-icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -76,11 +63,9 @@ function toLeft(item: TransferItem) {
           <path d="m9 18 6-6-6-6" />
         </svg>
       </span>
-      <span
-        class="flex size-8 items-center justify-center rounded-full bg-cumquat-surface-3 text-cumquat-text-muted"
-      >
+      <span class="cumquat-transfer__action">
         <svg
-          class="size-4"
+          class="cumquat-transfer__action-icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -88,34 +73,23 @@ function toLeft(item: TransferItem) {
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <path d="m15 18-6-6 6-6" />
+          <path d="m15 18-6-6-6-6" />
         </svg>
       </span>
     </div>
 
-    <div
-      class="cumquat-transfer__panel flex w-56 flex-col rounded-cumquat border border-cumquat-border bg-cumquat-surface"
-    >
-      <header
-        class="cumquat-transfer__header border-b border-cumquat-border px-3 py-2.5 text-sm font-medium text-cumquat-text"
-      >
-        {{ titles[1] }}
-      </header>
-      <ul class="cumquat-transfer__list max-h-56 overflow-y-auto p-1.5">
+    <div class="cumquat-transfer__panel">
+      <header class="cumquat-transfer__header">{{ titles[1] }}</header>
+      <ul class="cumquat-transfer__list">
         <li
           v-for="item in rightItems"
           :key="item.key"
-          class="cumquat-transfer__item cursor-pointer rounded px-2.5 py-1.5 text-sm text-cumquat-accent transition-colors hover:bg-cumquat-danger-soft hover:text-cumquat-danger"
+          class="cumquat-transfer__item cumquat-transfer__item--right"
           @click="toLeft(item)"
         >
           {{ item.label }}
         </li>
-        <li
-          v-if="rightItems.length === 0"
-          class="px-2.5 py-6 text-center text-xs text-cumquat-text-muted"
-        >
-          无数据
-        </li>
+        <li v-if="rightItems.length === 0" class="cumquat-transfer__empty">无数据</li>
       </ul>
     </div>
   </div>

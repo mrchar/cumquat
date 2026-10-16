@@ -41,26 +41,23 @@ function pick(member: string) {
 </script>
 
 <template>
-  <div class="cumquat-mention relative inline-block w-full">
+  <div class="cumquat-mention">
     <input
       v-model="model"
       type="text"
       :placeholder="placeholder"
-      class="cumquat-mention__input h-10 w-full rounded-cumquat border border-cumquat-border bg-cumquat-surface px-3 text-sm text-cumquat-text transition-colors placeholder:text-cumquat-text-muted focus:border-cumquat-accent focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20"
+      class="cumquat-mention__input"
       @input="onInput"
     />
     <Transition name="cumquat-fade">
-      <ul
-        v-if="open && suggestions.length > 0"
-        class="cumquat-mention__dropdown absolute z-20 mt-1.5 max-h-44 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay"
-      >
+      <ul v-if="open && suggestions.length > 0" class="cumquat-mention__dropdown">
         <li
           v-for="member in suggestions"
           :key="member"
-          class="cumquat-mention__option cursor-pointer px-3 py-2 text-sm text-cumquat-text transition-colors hover:bg-cumquat-surface-2"
+          class="cumquat-mention__option"
           @mousedown.prevent="pick(member)"
         >
-          <span class="font-medium text-cumquat-accent">@</span>{{ member }}
+          <span class="cumquat-mention__at">@</span>{{ member }}
         </li>
       </ul>
     </Transition>

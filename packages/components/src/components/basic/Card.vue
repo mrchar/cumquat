@@ -13,27 +13,18 @@ withDefaults(
 
 <template>
   <section
-    class="cumquat-card overflow-hidden rounded-cumquat bg-cumquat-surface transition-shadow"
-    :class="[
-      bordered ? 'border border-cumquat-border' : '',
-      hoverable ? 'hover:shadow-cumquat-overlay' : '',
-    ]"
+    class="cumquat-card"
+    :class="[bordered ? 'cumquat-card--bordered' : '', hoverable ? 'cumquat-card--hoverable' : '']"
   >
-    <header
-      v-if="title || $slots.header"
-      class="cumquat-card__header border-b border-cumquat-border px-5 py-4"
-    >
+    <header v-if="title || $slots.header" class="cumquat-card__header">
       <slot name="header">
-        <h3 class="text-base font-semibold text-cumquat-text">{{ title }}</h3>
+        <h3 class="cumquat-card__title">{{ title }}</h3>
       </slot>
     </header>
-    <div class="cumquat-card__body px-5 py-4 text-sm text-cumquat-text">
+    <div class="cumquat-card__body">
       <slot />
     </div>
-    <footer
-      v-if="$slots.footer"
-      class="cumquat-card__footer border-t border-cumquat-border bg-cumquat-surface-2 px-5 py-3 text-sm text-cumquat-text-muted"
-    >
+    <footer v-if="$slots.footer" class="cumquat-card__footer">
       <slot name="footer" />
     </footer>
   </section>

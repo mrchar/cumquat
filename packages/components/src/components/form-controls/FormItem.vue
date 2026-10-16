@@ -11,12 +11,12 @@ withDefaults(
 </script>
 
 <template>
-  <div class="cumquat-form-item flex flex-col gap-1.5">
-    <label v-if="label" class="cumquat-form-item__label text-sm text-cumquat-text">
-      <span v-if="required" class="cumquat-form-item__required mr-0.5 text-cumquat-danger">*</span>
+  <div class="cumquat-form-item">
+    <label v-if="label" class="cumquat-form-item__label">
+      <span v-if="required" class="cumquat-form-item__required">*</span>
       {{ label }}
     </label>
     <slot />
-    <p v-if="error" class="cumquat-form-item__error text-xs text-cumquat-danger">{{ error }}</p>
+    <p v-if="error" class="cumquat-form-item__error">{{ error }}</p>
   </div>
 </template>

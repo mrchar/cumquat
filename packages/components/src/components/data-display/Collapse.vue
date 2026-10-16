@@ -29,20 +29,18 @@ function toggle(key: string) {
 </script>
 
 <template>
-  <div
-    class="cumquat-collapse flex flex-col divide-y divide-cumquat-border rounded-cumquat border border-cumquat-border bg-cumquat-surface"
-  >
+  <div class="cumquat-collapse">
     <div v-for="item in items" :key="item.key" class="cumquat-collapse__item">
       <button
         type="button"
-        class="cumquat-collapse__header flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3.5 text-left text-sm font-medium text-cumquat-text transition-colors hover:bg-cumquat-surface-2"
+        class="cumquat-collapse__header"
         :aria-expanded="expanded.has(item.key)"
         @click="toggle(item.key)"
       >
         {{ item.title }}
         <svg
-          class="cumquat-collapse__chevron size-4 shrink-0 text-cumquat-text-muted transition-transform"
-          :class="expanded.has(item.key) ? 'rotate-180' : ''"
+          class="cumquat-collapse__chevron"
+          :class="expanded.has(item.key) ? 'cumquat-collapse__chevron--expanded' : ''"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -53,10 +51,7 @@ function toggle(key: string) {
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
-      <div
-        v-if="expanded.has(item.key)"
-        class="cumquat-collapse__content px-4 pb-4 text-sm text-cumquat-text-muted"
-      >
+      <div v-if="expanded.has(item.key)" class="cumquat-collapse__content">
         {{ item.content }}
       </div>
     </div>

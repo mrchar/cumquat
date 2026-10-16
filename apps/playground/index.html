@@ -6,6 +6,28 @@
     <title>Cumquat 组件演示</title>
   </head>
   <body>
+    <!-- 液态玻璃 SVG 折射滤镜（Chromium 渐进增强） -->
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
+      <defs>
+        <filter id="cumquat-liquid-refraction" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.008 0.008"
+            numOctaves="2"
+            seed="4"
+            result="noise"
+          />
+          <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="blurred"
+            scale="60"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+      </defs>
+    </svg>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
