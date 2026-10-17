@@ -2,13 +2,14 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import {
   useDismiss,
+  useFetchResource,
   useFloating,
   useFormField,
   useListboxNavigation,
   useOpen,
   useSelectModel,
 } from '@cumquat/composables';
-import type { AsyncStateLike } from '@cumquat/composables';
+import type { AsyncStateLike, Fetch } from '@cumquat/composables';
 
 export interface SelectOption {
   label: string;
@@ -32,6 +33,11 @@ const props = withDefaults(
     name?: string;
     /** 远程数据状态：传入后优先于 options 渲染，组件自身不发请求 */
     state?: AsyncStateLike<SelectOption[]>;
+    /**
+     * 统一远程请求方法：挂载即请求，搜索词变化自动防抖重取，
+     * 返回选项数组或 { list, total }
+     */
+    fetch?: Fetch<SelectOption>;
   }>(),
   {
     options: () => [],
@@ -42,6 +48,7 @@ const props = withDefaults(
     clearable: false,
     name: undefined,
     state: undefined,
+    fetch: undefined,
   },
 );
 
@@ -50,16 +57,26 @@ const emit = defineEmits<{
   change: [value: V | V[] | null];
 }>();
 
-/** 远程四态归一：优先消费外部 AsyncStateLike */
-const remoteLoading = computed(() => props.state?.status === 'pending');
-const remoteError = computed(() =>
-  props.state?.status === 'error' ? props.state.error : undefined,
+/* ---------------- fetch 统一请求机制（keyword 防抖 300ms） ---------------- */
+const { enabled: fetchEnabled, state: fetchState } = useFetchResource<SelectOption[]>(
+  () => props.fetch,
+  {
+    // select 在下方初始化；getQuery 仅在 post watcher 中求值，届时已就绪
+    getQuery: () => ({ keyword: select.keyword.value }),
+    initialData: [] as SelectOption[],
+    debounce: 300,
+  },
 );
-const allOptions = computed<SelectOption[]>(() => {
-  if (props.state && props.state.status !== 'pending') return props.state.data ?? [];
-  if (props.state) return props.state.data ?? [];
-  return props.options;
-});
+
+/** 远程四态归一：fetch 优先，其次外部 state，最后本地 options */
+const activeState = computed<AsyncStateLike<SelectOption[]> | undefined>(() =>
+  fetchEnabled.value ? fetchState.value : props.state,
+);
+const remoteLoading = computed(() => activeState.value?.status === 'pending');
+const remoteError = computed(() =>
+  activeState.value?.status === 'error' ? activeState.value.error : undefined,
+);
+const allOptions = computed<SelectOption[]>(() => activeState.value?.data ?? props.options);
 
 const field = useFormField<V | V[] | null>({
   name: props.name,
@@ -72,7 +89,9 @@ const field = useFormField<V | V[] | null>({
 const select = useSelectModel<V, string>({
   options: allOptions,
   multiple: props.multiple,
-  filterable: props.filterable,
+  // fetch 模式下同样启用关键词输入，但过滤在服务端，本地谓词直通
+  filterable: props.filterable || !!props.fetch,
+  filterMethod: props.fetch ? () => true : undefined,
   modelValue: field.value,
   // select 自身不持有写回调，写入统一回灌 field（由其决定受控 emit / 内部落值）
   onChange: (next) => field.handleChange(next as V | V[] | null),
@@ -218,7 +237,7 @@ function clearSelection(event: MouseEvent) {
         </span>
       </template>
       <input
-        v-else-if="filterable"
+        v-else-if="filterable || fetch"
         v-model="select.keyword.value"
         class="cumquat-select__search"
         :placeholder="String(select.selectedLabel.value ?? placeholder)"
@@ -294,7 +313,12 @@ function clearSelection(event: MouseEvent) {
         </template>
 
         <li v-if="remoteLoading" class="cumquat-select__loading cq-state--pending">加载中…</li>
-        <li v-else-if="remoteError" class="cumquat-select__error cq-state--error">加载失败</li>
+        <li v-else-if="remoteError" class="cumquat-select__error cq-state--error">
+          加载失败
+          <button type="button" class="cumquat-select__retry" @click.stop="activeState?.retry?.()">
+            重试
+          </button>
+        </li>
         <li v-else-if="select.filteredOptions.value.length === 0" class="cumquat-select__empty">
           暂无数据
         </li>

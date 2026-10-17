@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import {
   Breadcrumb,
@@ -22,6 +22,8 @@ import type { MenuItem } from '../navigation/Menu.vue';
 import type { AnchorItem } from '../navigation/Anchor.vue';
 import type { TransferItem } from '../navigation/Transfer.vue';
 import type { FloatAction } from '../navigation/FloatButton.vue';
+
+const wait = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe('Breadcrumb', () => {
   const items: BreadcrumbItem[] = [
@@ -54,6 +56,18 @@ describe('Menu', () => {
     expect(wrapper.find('.cumquat-menu__subgroup').exists()).toBe(true);
     await wrapper.find('.cumquat-menu__subgroup .cumquat-menu__item').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['users']);
+  });
+
+  it('fetch：挂载即拉菜单项并渲染', async () => {
+    const fetcher = vi.fn(async () => [
+      { key: 'dashboard', label: '仪表盘' },
+      { key: 'settings', label: '设置' },
+    ]);
+    const wrapper = mount(Menu, { props: { fetch: fetcher } });
+    await wait();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(wrapper.findAll('.cumquat-menu__item')).toHaveLength(2);
+    expect(wrapper.findAll('.cumquat-menu__item')[0].text()).toContain('仪表盘');
   });
 });
 
@@ -136,6 +150,19 @@ describe('Calendar', () => {
     await day.trigger('click');
     expect(day.classes()).toContain('cumquat-calendar__day--selected');
   });
+
+  it('fetch：挂载携带区间 filters.range，切月自动重取', async () => {
+    const fetcher = vi.fn(async () => []);
+    const wrapper = mount(Calendar, { props: { fetch: fetcher } });
+    await wait();
+    const firstRange = fetcher.mock.calls[0][0].filters.range as string[];
+    expect(firstRange).toHaveLength(2);
+    expect(firstRange[0] < firstRange[1]).toBe(true);
+    await wrapper.find('button[aria-label="下一个"]').trigger('click');
+    await wait();
+    const nextRange = fetcher.mock.calls.at(-1)?.[0].filters.range as string[];
+    expect(nextRange[1]).not.toBe(firstRange[1]);
+  });
 });
 
 describe('ColorPicker', () => {
@@ -167,6 +194,31 @@ describe('VirtualList', () => {
   it('静态渲染列表项', () => {
     const wrapper = mount(VirtualList, { props: { items: ['a', 'b', 'c'] } });
     expect(wrapper.findAll('.cumquat-virtual-list__item')).toHaveLength(3);
+  });
+
+  it('fetch：首页挂载即拉，触底以递增 pagination 累积', async () => {
+    const fetcher = vi.fn(
+      async ({ pagination }: { pagination: { currentPage: number; pageSize: number } }) => ({
+        list: Array.from(
+          { length: pagination.currentPage === 1 ? 20 : 5 },
+          (_, i) => `item-${(pagination.currentPage - 1) * 20 + i + 1}`,
+        ),
+        total: 25,
+      }),
+    );
+    const wrapper = mount(VirtualList, { props: { fetch: fetcher } });
+    await wait();
+    expect(fetcher.mock.calls[0][0].pagination).toEqual({ currentPage: 1, pageSize: 20 });
+    expect(wrapper.find('.cumquat-virtual-list__inner').attributes('style')).toContain(
+      'height: 800px',
+    );
+    await wrapper.find('.cumquat-virtual-list').trigger('scroll');
+    await wait();
+    await wait();
+    expect(fetcher.mock.calls.at(-1)?.[0].pagination).toEqual({ currentPage: 2, pageSize: 20 });
+    expect(wrapper.find('.cumquat-virtual-list__inner').attributes('style')).toContain(
+      'height: 1000px',
+    );
   });
 });
 

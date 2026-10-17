@@ -1,29 +1,44 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import {
+  useFetchResource,
   useRovingFocus,
   useTreeModel,
   useTypeahead,
   type TreeFlatNode,
 } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
 
 export interface TreeNode {
   key: string;
   label: string;
   disabled?: boolean;
   children?: TreeNode[];
+  /** 远程懒加载时显式标记：true 叶子；false 表示子级尚未加载 */
+  leaf?: boolean;
 }
 
 const props = withDefaults(
   defineProps<{
-    nodes: TreeNode[];
+    nodes?: TreeNode[];
     /** 是否显示勾选框 */
     checkable?: boolean;
     defaultExpandAll?: boolean;
     /** 受控勾选集合（保存被点选的节点自身 key） */
     checked?: string[];
+    /**
+     * 统一远程请求：挂载拉取根节点；展开未加载节点时以
+     * { filters: { parentKey } } 拉取子级，返回节点数组或 { list, total }
+     */
+    fetch?: Fetch<TreeNode>;
   }>(),
-  { checkable: false, defaultExpandAll: false, checked: undefined },
+  {
+    nodes: () => [],
+    checkable: false,
+    defaultExpandAll: false,
+    checked: undefined,
+    fetch: undefined,
+  },
 );
 
 const emit = defineEmits<{
@@ -43,9 +58,74 @@ function collectParentKeys(nodes: TreeNode[], acc: string[] = []): string[] {
   return acc;
 }
 
+/* ---------------- fetch：根节点挂载即拉，展开懒加载子级 ---------------- */
+function findNode(nodes: TreeNode[], key: string): TreeNode | undefined {
+  for (const node of nodes) {
+    if (node.key === key) return node;
+    if (node.children) {
+      const hit = findNode(node.children, key);
+      if (hit) return hit;
+    }
+  }
+  return undefined;
+}
+
+const {
+  enabled: fetchEnabled,
+  state: fetchState,
+  refresh,
+} = useFetchResource<TreeNode[]>(() => props.fetch, {
+  getQuery: () => ({}),
+  initialData: [] as TreeNode[],
+  merge: (previous, next, query) => {
+    const parentKey = query.filters?.parentKey as string | undefined;
+    // 根结果直接替换；子结果挂到对应父节点
+    if (parentKey === undefined) return next;
+    const parent = findNode(previous, parentKey);
+    if (parent) {
+      parent.children = next;
+      if (next.length === 0) parent.leaf = true;
+    }
+    return [...previous];
+  },
+});
+
+const sourceNodes = computed<TreeNode[]>(() =>
+  fetchEnabled.value ? applyRemoteLeaf(fetchState.value?.data ?? []) : props.nodes,
+);
+
+/**
+ * 远程懒加载模式下 leaf 缺省视为「未知、可展开」（本地模式仍由 children 推导）；
+ * 服务端用 leaf: true 显式标记叶子，空子级会在 merge 时回标为叶子。
+ */
+function applyRemoteLeaf(nodes: TreeNode[]): TreeNode[] {
+  return nodes.map((node) => ({
+    ...node,
+    leaf: node.leaf ?? false,
+    children: node.children ? applyRemoteLeaf(node.children) : node.children,
+  }));
+}
+
+/** 正在加载子级的节点 key 与最近失败的节点 key */
+const loadingKeys = ref<string[]>([]);
+const failedKey = ref<string | null>(null);
+
+async function loadChildren(key: string) {
+  if (loadingKeys.value.includes(key)) return;
+  failedKey.value = null;
+  loadingKeys.value = [...loadingKeys.value, key];
+  await refresh({ filters: { parentKey: key } });
+  loadingKeys.value = loadingKeys.value.filter((item) => item !== key);
+  if (fetchState.value?.status === 'error') failedKey.value = key;
+}
+
+const rootState = computed(() =>
+  fetchEnabled.value && sourceNodes.value.length === 0 ? fetchState.value : undefined,
+);
+
 const tree = useTreeModel<string>({
-  data: () => props.nodes as unknown as Array<Record<string, unknown>>,
-  fieldNames: { value: 'key' },
+  data: () => sourceNodes.value as unknown as Array<Record<string, unknown>>,
+  fieldNames: { value: 'key', isLeaf: 'leaf' },
   // 级联选中态由组件内联推导（保存节点自身 key），保证父节点勾选时模型为 [parentKey]
   cascade: false,
   modelValue: props.checked !== undefined ? () => props.checked : undefined,
@@ -72,6 +152,8 @@ function ancestorSelfChecked(node: TreeFlatNode<string>): boolean {
 /** 视觉勾选态：自身勾选 / 祖先全选 / 全部后代叶子勾选 */
 function displayChecked(node: TreeFlatNode<string>): boolean {
   if (selfCheckedSet.value.has(node.key) || ancestorSelfChecked(node)) return true;
+  // 远程未加载的父节点没有 leafKeys，不推导为全选
+  if (node.leafKeys.length === 0) return false;
   return node.leafKeys.every((leaf) => selfCheckedSet.value.has(leaf));
 }
 
@@ -88,6 +170,20 @@ function toggleExpand(node: TreeFlatNode<string>) {
   const expanded = !tree.isExpanded(node.key);
   tree.toggleExpand(node.key);
   emit('expand', { node: node.raw as unknown as TreeNode, expanded });
+  // 远程懒加载：展开一个尚未带子级的父节点时拉取子级
+  const rawNode = node.raw as unknown as TreeNode;
+  if (expanded && props.fetch && !node.isLeaf && !rawNode.children?.length) {
+    void loadChildren(node.key);
+  }
+}
+
+/** 展开器点击：子级加载失败时点击为重试 */
+function onExpanderClick(node: TreeFlatNode<string>) {
+  if (failedKey.value === node.key && !loadingKeys.value.includes(node.key)) {
+    void loadChildren(node.key);
+    return;
+  }
+  toggleExpand(node);
 }
 
 function toggleCheck(node: TreeFlatNode<string>) {
@@ -144,67 +240,89 @@ function onTreeKeydown(event: KeyboardEvent) {
 
 <template>
   <ul ref="containerRef" class="cumquat-tree" role="tree" @keydown="onTreeKeydown">
-    <li
-      v-for="(flat, index) in tree.visibleNodes.value"
-      :key="flat.key"
-      class="cumquat-tree__node"
-      :class="[
-        flat.isLeaf ? 'cumquat-tree__node--leaf' : '',
-        flat.disabled ? 'cumquat-tree__node--disabled' : '',
-      ]"
-      role="treeitem"
-      :aria-expanded="flat.isLeaf ? undefined : tree.isExpanded(flat.key)"
-    >
-      <div
-        class="cumquat-tree__row"
-        :data-roving-index="index"
-        :tabindex="roving.getTabIndex(index)"
-        @focus="roving.onItemFocus(index)"
-        @click="onRowClick(flat)"
-      >
-        <span
-          v-for="level in flat.depth"
-          :key="level"
-          class="cumquat-tree__indent"
-          aria-hidden="true"
-        />
-        <button
-          v-if="!flat.isLeaf"
-          type="button"
-          class="cumquat-tree__expander"
-          :class="tree.isExpanded(flat.key) ? 'cumquat-tree__expander--expanded' : ''"
-          :aria-label="tree.isExpanded(flat.key) ? '收起' : '展开'"
-          @click.stop="toggleExpand(flat)"
-        >
-          <svg
-            class="cumquat-tree__expander-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m9 18 6-6-6-6" />
-          </svg>
-        </button>
-        <span v-else class="cumquat-tree__expander-placeholder" />
-
-        <input
-          v-if="checkable"
-          type="checkbox"
-          class="cumquat-tree__checkbox"
-          :checked="displayChecked(flat)"
-          :indeterminate.prop="displayIndeterminate(flat)"
-          :disabled="flat.disabled"
-          @change.stop="toggleCheck(flat)"
-          @click.stop
-        />
-
-        <span class="cumquat-tree__label" @click.stop="!flat.isLeaf && toggleExpand(flat)">
-          {{ flat.label }}
-        </span>
-      </div>
+    <li v-if="rootState?.status === 'pending'" class="cumquat-tree__state cq-state--pending">
+      加载中…
     </li>
+    <li v-else-if="rootState?.status === 'error'" class="cumquat-tree__state cq-state--error">
+      加载失败
+      <button type="button" class="cumquat-tree__retry" @click.stop="rootState?.retry?.()">
+        重试
+      </button>
+    </li>
+    <li v-else-if="fetchEnabled && tree.flatNodes.value.length === 0" class="cumquat-tree__state">
+      暂无数据
+    </li>
+    <template v-else>
+      <li
+        v-for="(flat, index) in tree.visibleNodes.value"
+        :key="flat.key"
+        class="cumquat-tree__node"
+        :class="[
+          flat.isLeaf ? 'cumquat-tree__node--leaf' : '',
+          flat.disabled ? 'cumquat-tree__node--disabled' : '',
+        ]"
+        role="treeitem"
+        :aria-expanded="flat.isLeaf ? undefined : tree.isExpanded(flat.key)"
+      >
+        <div
+          class="cumquat-tree__row"
+          :data-roving-index="index"
+          :tabindex="roving.getTabIndex(index)"
+          @focus="roving.onItemFocus(index)"
+          @click="onRowClick(flat)"
+        >
+          <span
+            v-for="level in flat.depth"
+            :key="level"
+            class="cumquat-tree__indent"
+            aria-hidden="true"
+          />
+          <span
+            v-if="loadingKeys.includes(flat.key)"
+            class="cumquat-tree__expander cumquat-tree__expander--loading cq-state--pending"
+            aria-label="加载中"
+          />
+          <button
+            v-else-if="!flat.isLeaf"
+            type="button"
+            class="cumquat-tree__expander"
+            :class="[
+              tree.isExpanded(flat.key) ? 'cumquat-tree__expander--expanded' : '',
+              failedKey === flat.key ? 'cumquat-tree__expander--error' : '',
+            ]"
+            :aria-label="tree.isExpanded(flat.key) ? '收起' : '展开'"
+            @click.stop="onExpanderClick(flat)"
+          >
+            <svg
+              class="cumquat-tree__expander-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
+          <span v-else class="cumquat-tree__expander-placeholder" />
+
+          <input
+            v-if="checkable"
+            type="checkbox"
+            class="cumquat-tree__checkbox"
+            :checked="displayChecked(flat)"
+            :indeterminate.prop="displayIndeterminate(flat)"
+            :disabled="flat.disabled"
+            @change.stop="toggleCheck(flat)"
+            @click.stop
+          />
+
+          <span class="cumquat-tree__label" @click.stop="!flat.isLeaf && toggleExpand(flat)">
+            {{ flat.label }}
+          </span>
+        </div>
+      </li>
+    </template>
   </ul>
 </template>

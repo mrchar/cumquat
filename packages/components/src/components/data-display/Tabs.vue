@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useControllableModel, useRovingFocus } from '@cumquat/composables';
+import { useControllableModel, useFetchResource, useRovingFocus } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
 
 export interface TabItem {
   key: string;
@@ -11,13 +12,15 @@ export interface TabItem {
 
 const props = withDefaults(
   defineProps<{
-    tabs: TabItem[];
+    tabs?: TabItem[];
     modelValue?: string;
     /** 允许增减页签（触发 add/remove 事件，数据由外层维护） */
     editable?: boolean;
     addText?: string;
     /** 面板懒渲染：首次激活后才挂载内容，默认 true */
     lazy?: boolean;
+    /** 统一远程请求：挂载即拉取页签项，返回数组或 { list, total } */
+    fetch?: Fetch<TabItem>;
   }>(),
   {
     tabs: () => [],
@@ -25,6 +28,7 @@ const props = withDefaults(
     editable: false,
     addText: '+',
     lazy: true,
+    fetch: undefined,
   },
 );
 
@@ -53,25 +57,50 @@ function activate(key: string) {
 /** 已访问过的页签（懒渲染依据） */
 const visitedKeys = ref<Set<string>>(new Set(active.value ? [active.value] : []));
 
-const enabledIndex = (index: number) => !!props.tabs[index] && !props.tabs[index].disabled;
+/* ---------------- fetch：挂载即拉页签，首个可用页签自动激活 ---------------- */
+const { enabled: fetchEnabled, state: fetchState } = useFetchResource<TabItem[]>(
+  () => props.fetch,
+  { getQuery: () => ({}), initialData: [] as TabItem[] },
+);
+
+const sourceTabs = computed<TabItem[]>(() =>
+  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.tabs,
+);
+const remoteLoading = computed(() => fetchState.value?.status === 'pending');
+const remoteError = computed(() =>
+  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
+);
+
+const enabledIndex = (index: number) =>
+  !!sourceTabs.value[index] && !sourceTabs.value[index].disabled;
 
 const nav = useRovingFocus({
-  count: () => props.tabs.length,
+  count: () => sourceTabs.value.length,
   isItemDisabled: (index) => !enabledIndex(index),
   orientation: 'horizontal',
   autofocus: false,
 });
 
-watch(
-  () => props.tabs,
-  (tabs) => {
-    const current = tabs[nav.activeIndex.value];
-    if (!current || current.disabled) {
-      const first = tabs.find((tab) => !tab.disabled);
-      if (first) nav.setActiveIndex(tabs.indexOf(first));
+watch(sourceTabs, (tabs) => {
+  // 远程数据就绪后，未指定激活项时自动选中第一个可用页签
+  if (
+    fetchEnabled.value &&
+    tabs.length > 0 &&
+    (!active.value || !tabs.some((tab) => tab.key === active.value))
+  ) {
+    const first = tabs.find((tab) => !tab.disabled);
+    if (first) {
+      nav.setActiveIndex(tabs.indexOf(first));
+      activate(first.key);
     }
-  },
-);
+    return;
+  }
+  const current = tabs[nav.activeIndex.value];
+  if (!current || current.disabled) {
+    const first = tabs.find((tab) => !tab.disabled);
+    if (first) nav.setActiveIndex(tabs.indexOf(first));
+  }
+});
 
 function onClickTab(tab: TabItem, index: number) {
   if (tab.disabled) return;
@@ -82,7 +111,7 @@ function onClickTab(tab: TabItem, index: number) {
 function onNavKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
-    const tab = props.tabs[nav.activeIndex.value];
+    const tab = sourceTabs.value[nav.activeIndex.value];
     if (tab && !tab.disabled) activate(tab.key);
     return;
   }
@@ -105,7 +134,7 @@ const panelMounted = computed(() => !props.lazy || visitedKeys.value.size > 0 ||
   <div class="cumquat-tabs">
     <div role="tablist" class="cumquat-tabs__nav" @keydown="onNavKeydown">
       <button
-        v-for="(tab, index) in tabs"
+        v-for="(tab, index) in sourceTabs"
         :key="tab.key"
         type="button"
         role="tab"
@@ -127,6 +156,24 @@ const panelMounted = computed(() => !props.lazy || visitedKeys.value.size > 0 ||
           @click="onRemove($event, tab)"
         />
       </button>
+      <span
+        v-if="remoteLoading && sourceTabs.length === 0"
+        class="cumquat-tabs__state cq-state--pending"
+      >
+        加载中…
+      </span>
+      <span
+        v-else-if="remoteError && sourceTabs.length === 0"
+        class="cumquat-tabs__state cq-state--error"
+      >
+        加载失败
+        <button type="button" class="cumquat-tabs__retry" @click="fetchState?.retry?.()">
+          重试
+        </button>
+      </span>
+      <span v-else-if="fetchEnabled && sourceTabs.length === 0" class="cumquat-tabs__state">
+        暂无页签
+      </span>
       <button
         v-if="editable"
         type="button"

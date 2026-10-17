@@ -124,7 +124,8 @@
   .cq-theme-glass .cumquat-back-top,
   .cq-theme-glass .cumquat-float-button__action,
   .cq-theme-glass .cumquat-float-button__trigger,
-  .cq-theme-glass .cumquat-qrcode {
+  .cq-theme-glass .cumquat-qrcode,
+  .cq-theme-glass .cumquat-code-card {
     @apply backdrop-blur-md backdrop-saturate-180 backdrop-brightness-110;
     position: relative;
     overflow: hidden;
@@ -144,7 +145,8 @@
   .cq-theme-glass .cumquat-back-top::after,
   .cq-theme-glass .cumquat-float-button__action::after,
   .cq-theme-glass .cumquat-float-button__trigger::after,
-  .cq-theme-glass .cumquat-qrcode::after {
+  .cq-theme-glass .cumquat-qrcode::after,
+  .cq-theme-glass .cumquat-code-card::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -227,7 +229,8 @@
     .cq-theme-glass .cumquat-back-top,
     .cq-theme-glass .cumquat-float-button__action,
     .cq-theme-glass .cumquat-float-button__trigger,
-    .cq-theme-glass .cumquat-qrcode {
+    .cq-theme-glass .cumquat-qrcode,
+    .cq-theme-glass .cumquat-code-card {
       backdrop-filter: blur(2px) url(#cumquat-liquid-refraction) saturate(180%) brightness(1.1);
     }
 

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { useControllableModel } from '@cumquat/composables';
+import { computed } from 'vue';
+import { useControllableModel, useFetchResource } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
 
 export interface CollapseItem {
   key: string;
@@ -10,18 +12,21 @@ export interface CollapseItem {
 
 const props = withDefaults(
   defineProps<{
-    items: CollapseItem[];
+    items?: CollapseItem[];
     /** 当前展开的 key（受控，手风琴模式同样用单元素数组） */
     activeKeys?: string[];
     defaultActiveKeys?: string[];
     /** 手风琴：同时至多展开一个面板 */
     accordion?: boolean;
+    /** 统一远程请求：挂载即拉取面板项，返回数组或 { list, total } */
+    fetch?: Fetch<CollapseItem>;
   }>(),
   {
     items: () => [],
     activeKeys: undefined,
     defaultActiveKeys: () => [],
     accordion: false,
+    fetch: undefined,
   },
 );
 
@@ -52,11 +57,41 @@ function toggle(item: CollapseItem) {
     activeSet.value = [...activeSet.value, item.key];
   }
 }
+
+/* ---------------- fetch：挂载即拉面板项 ---------------- */
+const { enabled: fetchEnabled, state: fetchState } = useFetchResource<CollapseItem[]>(
+  () => props.fetch,
+  { getQuery: () => ({}), initialData: [] as CollapseItem[] },
+);
+
+const sourceItems = computed<CollapseItem[]>(() =>
+  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items,
+);
+const remoteLoading = computed(() => fetchState.value?.status === 'pending');
+const remoteError = computed(() =>
+  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
+);
 </script>
 
 <template>
   <div class="cumquat-collapse">
-    <div v-for="item in items" :key="item.key" class="cumquat-collapse__item">
+    <p
+      v-if="remoteLoading && sourceItems.length === 0"
+      class="cumquat-collapse__state cq-state--pending"
+    >
+      加载中…
+    </p>
+    <p
+      v-else-if="remoteError && sourceItems.length === 0"
+      class="cumquat-collapse__state cq-state--error"
+    >
+      加载失败
+      <button type="button" class="cumquat-collapse__retry" @click="fetchState?.retry?.()">
+        重试
+      </button>
+    </p>
+    <p v-else-if="sourceItems.length === 0" class="cumquat-collapse__state">暂无数据</p>
+    <div v-for="item in sourceItems" :key="item.key" class="cumquat-collapse__item">
       <button
         type="button"
         class="cumquat-collapse__header"

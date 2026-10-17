@@ -1,15 +1,16 @@
 import { computed, ref, watch } from 'vue';
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import { useControllableModel } from '../core/useControllableModel';
 
 export type PaginationPageItem = number | 'start-ellipsis' | 'end-ellipsis';
 
 export interface UsePaginationOptions {
-  /** 当前页（受控） */
-  currentPage?: number;
+  /** 当前页（受控；传 getter 保持外部变化的响应性） */
+  currentPage?: MaybeRefOrGetter<number>;
   defaultCurrentPage?: number;
   onPageChange?: (page: number) => void;
-  pageSize?: number;
+  /** 页大小（受控；传 getter 保持外部变化的响应性） */
+  pageSize?: MaybeRefOrGetter<number>;
   defaultPageSize?: number;
   onPageSizeChange?: (size: number) => void;
   /** 总条数，默认 0 */

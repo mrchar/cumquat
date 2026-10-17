@@ -175,6 +175,29 @@ export type {
   UsePaginationOptions,
   UsePaginationReturn,
 } from './data/usePagination';
+export {
+  useFetch,
+  useFetchResource,
+  createFetchController,
+  normalizeFetchResult,
+  isPagedResult,
+  isUseFetchReturn,
+  FETCH_RESOURCE,
+} from './data/fetch';
+export type {
+  Fetch,
+  FetchLike,
+  FetchPagination,
+  FetchQuery,
+  FetchSorter,
+  FetchResult,
+  PagedResult,
+  NormalizedFetch,
+  FetchController,
+  UseFetchReturn,
+  UseFetchResourceOptions,
+  FetchResource,
+} from './data/fetch';
 
 // L2 媒体
 export { useImageState } from './media/useImageState';

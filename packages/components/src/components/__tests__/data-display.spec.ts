@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import {
   Table,
@@ -22,6 +22,9 @@ import type { StepItem } from '../data-display/Steps.vue';
 import type { TimelineItem } from '../data-display/Timeline.vue';
 import type { DescriptionItem } from '../data-display/Descriptions.vue';
 
+/** post watcher + Promise 链走完一个宏任务周期 */
+const wait = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 describe('Table', () => {
   const columns: TableColumn[] = [
     { key: 'name', title: '名称' },
@@ -43,6 +46,115 @@ describe('Table', () => {
     const wrapper = mount(Table, { props: { columns, rows: [] } });
     expect(wrapper.find('.cumquat-table__empty').text()).toBe('暂无数据');
   });
+
+  it('fetch：挂载即请求，分页结果自动渲染并回填总数', async () => {
+    const fetcher = vi.fn(async () => ({ list: rows, total: 36 }));
+    const wrapper = mount(Table, {
+      props: { columns, fetch: fetcher, pagination: true },
+    });
+    await wait();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][0].pagination).toEqual({ currentPage: 1, pageSize: 10 });
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(2);
+    expect(wrapper.find('.cumquat-pagination__total').text()).toContain('共 36 条');
+  });
+
+  it('fetch：翻页自动以最新 pagination 重取', async () => {
+    const fetcher = vi.fn(async ({ pagination }) => ({
+      list: pagination?.currentPage === 1 ? rows : [{ name: 'Ciri', age: 30 }],
+      total: 12,
+    }));
+    const wrapper = mount(Table, {
+      props: { columns, fetch: fetcher, pagination: true },
+    });
+    await wait();
+    const pageButtons = wrapper.findAll('.cumquat-pagination__page--active');
+    expect(pageButtons.length).toBe(1);
+    await wrapper
+      .findAll('.cumquat-pagination__page')
+      .find((btn) => btn.text() === '2')!
+      .trigger('click');
+    await wait();
+    expect(fetcher.mock.calls[1][0].pagination).toEqual({ currentPage: 2, pageSize: 10 });
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(1);
+  });
+
+  it('fetch：切换每页条数以新 pageSize 重取并回第一页', async () => {
+    const fetcher = vi.fn(async ({ pagination }) => ({
+      list: Array.from({ length: pagination?.pageSize === 20 ? 20 : 10 }, (_, index) => ({
+        name: `用户 ${index + 1}`,
+        age: index,
+      })),
+      total: 57,
+    }));
+    const wrapper = mount(Table, {
+      props: { columns, fetch: fetcher, pagination: true, pageSizes: [10, 20] },
+    });
+    await wait();
+    const select = wrapper.find('.cumquat-pagination__select');
+    (select.element as HTMLSelectElement).value = '20';
+    await select.trigger('change');
+    await wait();
+    expect(fetcher.mock.calls.at(-1)?.[0].pagination).toEqual({ currentPage: 1, pageSize: 20 });
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(20);
+    expect((wrapper.find('.cumquat-pagination__select').element as HTMLSelectElement).value).toBe(
+      '20',
+    );
+  });
+
+  it('fetch：排序自动注入 sorter 重取（远程模式不本地排序）', async () => {
+    const sortableColumns: TableColumn[] = [{ key: 'name', title: '名称', sortable: true }];
+    const fetcher = vi.fn(async () => ({ list: rows, total: 2 }));
+    const wrapper = mount(Table, {
+      props: { columns: sortableColumns, fetch: fetcher },
+    });
+    await wait();
+    await wrapper.find('.cumquat-table__sorter').trigger('click');
+    await wait();
+    expect(fetcher.mock.calls.at(-1)?.[0].sorter).toEqual({ key: 'name', order: 'asc' });
+  });
+
+  it('fetch：失败展示重试，点击后以最近查询重发', async () => {
+    const fetcher = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('网络错误'))
+      .mockResolvedValueOnce({ list: rows, total: 2 });
+    const wrapper = mount(Table, { props: { columns, fetch: fetcher } });
+    await wait();
+    const retry = wrapper.find('.cumquat-table__retry');
+    expect(retry.exists()).toBe(true);
+    await retry.trigger('click');
+    await wait();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(2);
+  });
+
+  it('fetch：已有数据时重取失败保留旧数据并展示错误条，重试后恢复', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({ list: rows, total: 12 })
+      .mockRejectedValueOnce(new Error('网络错误'))
+      .mockResolvedValueOnce({ list: [{ name: 'Ciri', age: 30 }], total: 12 });
+    const wrapper = mount(Table, {
+      props: { columns, fetch: fetcher, pagination: true },
+    });
+    await wait();
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(2);
+    await wrapper
+      .findAll('.cumquat-pagination__page')
+      .find((btn) => btn.text() === '2')!
+      .trigger('click');
+    await wait();
+    const errorbar = wrapper.find('.cumquat-table__errorbar');
+    expect(errorbar.exists()).toBe(true);
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(2);
+    await errorbar.find('.cumquat-table__retry').trigger('click');
+    await wait();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher.mock.calls[2][0].pagination).toEqual({ currentPage: 2, pageSize: 10 });
+    expect(wrapper.find('.cumquat-table__errorbar').exists()).toBe(false);
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(1);
+  });
 });
 
 describe('Pagination', () => {
@@ -55,6 +167,27 @@ describe('Pagination', () => {
     const wrapper = mount(Pagination, { props: { total: 50, pageSize: 10, modelValue: 1 } });
     await wrapper.findAll('.cumquat-pagination__page')[2].trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([3]);
+  });
+
+  it('受控模式：外部 modelValue 变化同步高亮与区间', async () => {
+    const wrapper = mount(Pagination, { props: { total: 50, pageSize: 10, modelValue: 1 } });
+    expect(wrapper.find('.cumquat-pagination__page--active').text()).toBe('1');
+    await wrapper.setProps({ modelValue: 3 });
+    expect(wrapper.find('.cumquat-pagination__page--active').text()).toBe('3');
+    expect(wrapper.find('.cumquat-pagination__total').text()).toContain('第 21-30 条');
+  });
+
+  it('非受控：切换每页条数生效并回发事件', async () => {
+    const wrapper = mount(Pagination, {
+      props: { total: 50, pageSizes: [10, 20], showSizeChanger: true },
+    });
+    const select = wrapper.find('.cumquat-pagination__select');
+    (select.element as HTMLSelectElement).value = '20';
+    await select.trigger('change');
+    expect(wrapper.emitted('update:pageSize')?.[0]).toEqual([20]);
+    expect((wrapper.find('.cumquat-pagination__select').element as HTMLSelectElement).value).toBe(
+      '20',
+    );
   });
 
   it('第一页时 prev 禁用', () => {
@@ -75,6 +208,20 @@ describe('Tabs', () => {
     expect(tabButtons[0].classes()).toContain('cumquat-tabs__tab--active');
     await tabButtons[1].trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['b']);
+  });
+
+  it('fetch：挂载即拉页签并自动激活首个可用页签', async () => {
+    const fetcher = vi.fn(async () => [
+      { key: 'remote-a', label: '远程一' },
+      { key: 'remote-b', label: '远程二' },
+    ]);
+    const wrapper = mount(Tabs, { props: { fetch: fetcher } });
+    await wait();
+    expect(wrapper.findAll('.cumquat-tabs__tab')).toHaveLength(2);
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['remote-a']);
+    expect(wrapper.findAll('.cumquat-tabs__tab')[0].classes()).toContain(
+      'cumquat-tabs__tab--active',
+    );
   });
 });
 
@@ -122,6 +269,40 @@ describe('Tree', () => {
     await wrapper.find('.cumquat-tree__checkbox').setValue();
     expect(wrapper.emitted('update:checked')?.[0]).toEqual([['p1']]);
   });
+
+  it('fetch：挂载拉根节点，展开懒加载父节点时注入 parentKey', async () => {
+    const fetcher = vi.fn(async ({ filters }: { filters?: { parentKey?: string } }) =>
+      filters?.parentKey
+        ? ([{ key: 'a1', label: '懒加载子节点', leaf: true }] as TreeNode[])
+        : ([{ key: 'a', label: '懒加载父节点', leaf: false }] as TreeNode[]),
+    );
+    const wrapper = mount(Tree, { props: { fetch: fetcher } });
+    await wait();
+    expect(fetcher.mock.calls[0][0].filters).toBeUndefined();
+    expect(wrapper.findAll('.cumquat-tree__node')).toHaveLength(1);
+    await wrapper.find('.cumquat-tree__expander').trigger('click');
+    await wait();
+    await wait();
+    expect(fetcher.mock.calls.at(-1)?.[0].filters).toEqual({ parentKey: 'a' });
+    expect(wrapper.findAll('.cumquat-tree__node')).toHaveLength(2);
+    expect(wrapper.findAll('.cumquat-tree__node')[1].text()).toContain('懒加载子节点');
+  });
+
+  it('fetch：根节点未标记 leaf 时默认可展开，空子级回标为叶子', async () => {
+    const fetcher = vi.fn(async ({ filters }: { filters?: { parentKey?: string } }) =>
+      filters?.parentKey ? ([] as TreeNode[]) : ([{ key: 'a', label: '未知节点' }] as TreeNode[]),
+    );
+    const wrapper = mount(Tree, { props: { fetch: fetcher } });
+    await wait();
+    expect(wrapper.find('.cumquat-tree__expander').exists()).toBe(true);
+    await wrapper.find('.cumquat-tree__expander').trigger('click');
+    await wait();
+    await wait();
+    expect(fetcher.mock.calls.at(-1)?.[0].filters).toEqual({ parentKey: 'a' });
+    // 空响应后节点回标为叶子，不再渲染展开器
+    expect(wrapper.find('.cumquat-tree__expander').exists()).toBe(false);
+    expect(wrapper.find('.cumquat-tree__node--leaf').exists()).toBe(true);
+  });
 });
 
 describe('Cascader', () => {
@@ -146,6 +327,30 @@ describe('Cascader', () => {
       .find('.cumquat-cascader__option')
       .trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['sh']);
+  });
+
+  it('fetch：懒加载下一级时注入 parentKey 并可选中叶子', async () => {
+    const fetcher = vi.fn(async ({ filters }: { filters?: { parentKey?: string } }) =>
+      filters?.parentKey
+        ? ([{ label: '远程市', value: 'city', leaf: true }] as CascaderOption[])
+        : ([{ label: '远程省', value: 'prov', leaf: false }] as CascaderOption[]),
+    );
+    const wrapper = mount(Cascader, { props: { fetch: fetcher } });
+    await wait();
+    await wrapper.find('.cumquat-cascader__trigger').trigger('click');
+    await wrapper
+      .findAll('.cumquat-cascader__column')[0]
+      .findAll('.cumquat-cascader__option')[0]
+      .trigger('click');
+    await wait();
+    await wait();
+    expect(fetcher.mock.calls.at(-1)?.[0].filters).toEqual({ parentKey: 'prov' });
+    expect(wrapper.findAll('.cumquat-cascader__column')).toHaveLength(2);
+    await wrapper
+      .findAll('.cumquat-cascader__column')[1]
+      .find('.cumquat-cascader__option')
+      .trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['city']);
   });
 });
 

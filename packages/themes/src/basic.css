@@ -275,6 +275,18 @@
   .cumquat-statistic__suffix {
     @apply text-base text-cumquat-text-muted;
   }
+  .cumquat-statistic__state {
+    @apply text-base text-cumquat-text-muted;
+  }
+  .cumquat-statistic__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-statistic__retry {
+    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-statistic__retry:hover {
+    @apply opacity-80;
+  }
 
   /* ---------- Typography ---------- */
   .cumquat-typography {
@@ -395,6 +407,19 @@
   }
   .cumquat-select__option--disabled {
     @apply cursor-not-allowed text-cumquat-text-muted opacity-50;
+  }
+  .cumquat-select__loading,
+  .cumquat-select__empty {
+    @apply px-3 py-2 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-select__error {
+    @apply flex items-center gap-2 px-3 py-2 text-sm text-cumquat-danger;
+  }
+  .cumquat-select__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-select__retry:hover {
+    @apply opacity-80;
   }
 
   /* ---------- Checkbox ---------- */
@@ -558,6 +583,18 @@
   .cumquat-autocomplete__option:hover {
     @apply bg-cumquat-surface-2;
   }
+  .cumquat-autocomplete__state {
+    @apply flex items-center gap-2 px-3 py-2 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-autocomplete__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-autocomplete__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-autocomplete__retry:hover {
+    @apply opacity-80;
+  }
 
   /* ---------- Mention ---------- */
   .cumquat-mention {
@@ -578,6 +615,18 @@
   }
   .cumquat-mention__at {
     @apply font-medium text-cumquat-accent;
+  }
+  .cumquat-mention__loading {
+    @apply px-3 py-2 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-mention__error {
+    @apply flex items-center gap-2 px-3 py-2 text-sm text-cumquat-danger;
+  }
+  .cumquat-mention__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-mention__retry:hover {
+    @apply opacity-80;
   }
 
   /* ---------- Form ---------- */
@@ -642,6 +691,24 @@
   }
   .cumquat-tree-select__expander-spacer {
     @apply size-4 shrink-0;
+  }
+  .cumquat-tree-select__expander--loading {
+    @apply size-4 animate-spin rounded-full border-2 border-cumquat-border border-t-cumquat-accent;
+  }
+  .cumquat-tree-select__expander--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-tree-select__state {
+    @apply flex items-center gap-2 px-3 py-2 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-tree-select__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-tree-select__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-tree-select__retry:hover {
+    @apply opacity-80;
   }
   .cumquat-tree-select__indent {
     @apply size-4 shrink-0;
@@ -888,6 +955,18 @@
   .cumquat-table__loading {
     @apply inline-block size-5 animate-spin rounded-full border-2 border-cumquat-border border-t-cumquat-accent;
   }
+  .cumquat-table__retry {
+    @apply cursor-pointer bg-transparent text-cumquat-danger underline underline-offset-2;
+  }
+  .cumquat-table__retry:hover {
+    @apply opacity-80;
+  }
+  .cumquat-table--stale .cumquat-table__table {
+    @apply opacity-60 transition-opacity;
+  }
+  .cumquat-table__errorbar {
+    @apply flex items-center gap-2 border-b border-cumquat-border px-4 py-2 text-sm text-cumquat-danger;
+  }
 
   /* ---------- Pagination ---------- */
   .cumquat-pagination {
@@ -935,6 +1014,18 @@
   .cumquat-tabs__tab--active {
     @apply border-cumquat-accent text-cumquat-accent;
   }
+  .cumquat-tabs__state {
+    @apply px-4 py-2.5 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-tabs__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-tabs__retry {
+    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-tabs__retry:hover {
+    @apply opacity-80;
+  }
   .cumquat-tabs__panel {
     @apply text-sm text-cumquat-text;
   }
@@ -948,6 +1039,18 @@
   }
   .cumquat-collapse__header:hover {
     @apply bg-cumquat-surface-2;
+  }
+  .cumquat-collapse__state {
+    @apply px-4 py-4 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-collapse__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-collapse__retry {
+    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-collapse__retry:hover {
+    @apply opacity-80;
   }
   .cumquat-collapse__chevron {
     @apply size-4 shrink-0 text-cumquat-text-muted transition-transform;
@@ -999,6 +1102,24 @@
   .cumquat-tree__expander-placeholder {
     @apply size-4 shrink-0;
   }
+  .cumquat-tree__expander--loading {
+    @apply size-4 animate-spin rounded-full border-2 border-cumquat-border border-t-cumquat-accent;
+  }
+  .cumquat-tree__expander--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-tree__state {
+    @apply flex items-center gap-2 px-3 py-2 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-tree__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-tree__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-tree__retry:hover {
+    @apply opacity-80;
+  }
   .cumquat-tree__indent {
     @apply size-4 shrink-0;
   }
@@ -1047,6 +1168,18 @@
   .cumquat-cascader__option-icon {
     @apply size-3.5 text-cumquat-text-muted;
   }
+  .cumquat-cascader__state {
+    @apply flex items-center gap-2 whitespace-nowrap px-3 py-2 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-cascader__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-cascader__retry {
+    @apply cursor-pointer whitespace-nowrap bg-transparent underline underline-offset-2;
+  }
+  .cumquat-cascader__retry:hover {
+    @apply opacity-80;
+  }
 
   /* ---------- Timeline ---------- */
   .cumquat-timeline {
@@ -1072,6 +1205,18 @@
   }
   .cumquat-timeline__dot--danger {
     @apply bg-cumquat-danger;
+  }
+  .cumquat-timeline__state {
+    @apply py-4 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-timeline__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-timeline__retry {
+    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-timeline__retry:hover {
+    @apply opacity-80;
   }
   .cumquat-timeline__body {
     @apply flex-1;
@@ -1137,6 +1282,18 @@
   .cumquat-descriptions__title {
     @apply mb-3 text-base font-semibold text-cumquat-text;
   }
+  .cumquat-descriptions__state {
+    @apply py-4 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-descriptions__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-descriptions__retry {
+    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-descriptions__retry:hover {
+    @apply opacity-80;
+  }
   .cumquat-descriptions__list {
     @apply grid gap-x-8 gap-y-3 overflow-hidden rounded-cumquat text-sm;
   }
@@ -1171,6 +1328,18 @@
   }
   .cumquat-carousel__slide-text {
     @apply text-2xl font-semibold text-cumquat-text-muted;
+  }
+  .cumquat-carousel__state {
+    @apply flex size-full items-center justify-center gap-2 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-carousel__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-carousel__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-carousel__retry:hover {
+    @apply opacity-80;
   }
   .cumquat-carousel__prev,
   .cumquat-carousel__next {
@@ -1588,6 +1757,18 @@
   .cumquat-menu__item--inactive:hover {
     @apply bg-cumquat-surface-2 text-cumquat-text;
   }
+  .cumquat-menu__state {
+    @apply px-3 py-4 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-menu__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-menu__retry {
+    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-menu__retry:hover {
+    @apply opacity-80;
+  }
 
   /* ---------- Anchor ---------- */
   .cumquat-anchor {
@@ -1761,6 +1942,18 @@
   .cumquat-calendar__grid {
     @apply grid grid-cols-7 gap-1 text-center text-sm;
   }
+  .cumquat-calendar__state {
+    @apply flex items-center justify-center gap-2 py-2 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-calendar__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-calendar__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-calendar__retry:hover {
+    @apply opacity-80;
+  }
   .cumquat-calendar__weekday {
     @apply py-1.5 text-xs text-cumquat-text-muted;
   }
@@ -1873,6 +2066,18 @@
   }
   .cumquat-transfer__empty {
     @apply px-2.5 py-6 text-center text-xs text-cumquat-text-muted;
+  }
+  .cumquat-transfer__state {
+    @apply flex items-center justify-center gap-2 px-2.5 py-6 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-transfer__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-transfer__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-transfer__retry:hover {
+    @apply opacity-80;
   }
   .cumquat-transfer__actions {
     @apply flex flex-col gap-2;
@@ -2046,6 +2251,51 @@
     @apply bg-transparent;
   }
 
+  /* ---------- CodeCard ---------- */
+  .cumquat-code-card {
+    @apply overflow-hidden rounded-cumquat border border-cumquat-border bg-cumquat-surface;
+  }
+  .cumquat-code-card__header {
+    @apply border-b border-cumquat-border px-4 py-2.5;
+  }
+  .cumquat-code-card__title {
+    @apply text-sm font-medium text-cumquat-text;
+  }
+  .cumquat-code-card__preview {
+    @apply p-4;
+  }
+  .cumquat-code-card__toolbar {
+    @apply flex items-center justify-end gap-1 border-t border-cumquat-border px-2 py-1.5;
+  }
+  .cumquat-code-card__action {
+    @apply inline-flex h-7 cursor-pointer items-center gap-1 rounded-cumquat px-2 text-xs text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-text;
+  }
+  .cumquat-code-card__action--active,
+  .cumquat-code-card__action--active:hover {
+    @apply text-cumquat-accent;
+  }
+  .cumquat-code-card__action-icon {
+    @apply size-3.5;
+  }
+  .cumquat-code-card__code {
+    @apply border-t border-cumquat-border bg-cumquat-surface-2;
+  }
+  .cumquat-code-card__plain,
+  .cumquat-code-card__highlight .shiki {
+    @apply max-h-96 overflow-auto p-4 font-mono text-xs leading-relaxed text-cumquat-text;
+  }
+  .cumquat-code-card__highlight .shiki {
+    @apply bg-transparent;
+  }
+  /* shiki 双主题：默认亮色，暗色主题下切换 --shiki-dark */
+  .cumquat-code-card__highlight .shiki span {
+    color: var(--shiki-light);
+  }
+  .cq-theme-dark .cumquat-code-card__highlight .shiki span,
+  .dark .cumquat-code-card__highlight .shiki span {
+    color: var(--shiki-dark);
+  }
+
   /* ============================================================
    * 统一 hover 交互增强
    *
@@ -2081,7 +2331,8 @@
   .cumquat-input-number__decrease,
   .cumquat-input-number__increase,
   .cumquat-calendar__nav,
-  .cumquat-upload__remove {
+  .cumquat-upload__remove,
+  .cumquat-code-card__action {
     @apply transition-all duration-200;
     transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
@@ -2335,6 +2586,24 @@
   }
   .cumquat-virtual-list__item {
     @apply absolute inset-x-0 list-none;
+  }
+  .cumquat-virtual-list--stale {
+    @apply opacity-60;
+  }
+  .cumquat-virtual-list__state {
+    @apply m-0 py-6 text-center text-xs text-cumquat-text-muted;
+  }
+  .cumquat-virtual-list__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-virtual-list__state--sentinel {
+    @apply absolute inset-x-0 bottom-0 bg-cumquat-surface/80 py-1;
+  }
+  .cumquat-virtual-list__retry {
+    @apply cursor-pointer bg-transparent underline underline-offset-2;
+  }
+  .cumquat-virtual-list__retry:hover {
+    @apply opacity-80;
   }
 
   /* ---------- P4：Watermark 覆层 ---------- */

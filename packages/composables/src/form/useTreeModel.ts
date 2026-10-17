@@ -8,6 +8,8 @@ export interface TreeFieldNames {
   label: string;
   children: string;
   disabled: string;
+  /** 叶子标记字段；显式 false 表示“尚未加载子级”的父节点（远程懒加载） */
+  isLeaf: string;
 }
 
 export interface TreeFlatNode<V = string | number> {
@@ -64,6 +66,7 @@ const DEFAULT_FIELDS: TreeFieldNames = {
   label: 'label',
   children: 'children',
   disabled: 'disabled',
+  isLeaf: 'isLeaf',
 };
 
 /**
@@ -117,12 +120,16 @@ export function useTreeModel<V extends string | number = string | number>(
           };
           collect(childList);
         }
+        // isLeaf 字段显式标注时优先（true=叶子，false=远程懒加载父节点）；
+        // 未标注时回退到“无子级即叶子”
+        const leafFlag = raw[fields.isLeaf];
+        const isLeaf = leafFlag === undefined ? childList.length === 0 : leafFlag === true;
         result.push({
           key,
           label: String(raw[fields.label] ?? ''),
           depth,
           disabled: Boolean(raw[fields.disabled]),
-          isLeaf: childList.length === 0,
+          isLeaf,
           parentKey,
           childKeys,
           leafKeys,

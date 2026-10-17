@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { useIntervalFn } from '@cumquat/composables';
+import { useFetchResource, useIntervalFn } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
+
+/** 统计值：数字 / 可解析数字的字符串 / 时间（倒计时） */
+export type StatisticValue = string | number | Date;
 
 const props = withDefaults(
   defineProps<{
     title?: string;
-    /** 数值（字符串原样展示）；倒计时模式下为到期时间戳或 Date */
-    value: string | number | Date;
+    /** 数值（字符串原样展示）；倒计时模式下为到期时间戳或 Date；fetch 模式下可省略 */
+    value?: StatisticValue;
     prefix?: string;
     suffix?: string;
     /** 小数位数 */
@@ -19,9 +23,15 @@ const props = withDefaults(
     duration?: number;
     /** 倒计时模式：value 为到期时刻 */
     countdown?: boolean;
+    /**
+     * 统一远程请求：挂载即拉取聚合值（数字或 { value } 单值），
+     * value prop 与 fetch 同时存在时 fetch 优先
+     */
+    fetch?: Fetch<StatisticValue>;
   }>(),
   {
     title: '',
+    value: undefined,
     prefix: '',
     suffix: '',
     precision: undefined,
@@ -29,6 +39,7 @@ const props = withDefaults(
     animation: false,
     duration: 1000,
     countdown: false,
+    fetch: undefined,
   },
 );
 
@@ -36,10 +47,28 @@ const emit = defineEmits<{
   finish: [];
 }>();
 
+/* ---------------- fetch：挂载即拉聚合单值 ---------------- */
+const { enabled: fetchEnabled, state: fetchState } = useFetchResource<StatisticValue | undefined>(
+  () => props.fetch,
+  { getQuery: () => ({}) },
+);
+
+const remoteLoading = computed(() => fetchState.value?.status === 'pending');
+const remoteError = computed(() =>
+  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
+);
+
+/** 当前生效值：fetch 优先，其次 value prop */
+const effectiveValue = computed<StatisticValue | undefined>(() =>
+  fetchEnabled.value ? fetchState.value?.data : props.value,
+);
+
 const targetTime = computed(() => {
-  if (props.value instanceof Date) return props.value.getTime();
-  if (typeof props.value === 'number') return props.value;
-  return Number(new Date(props.value));
+  const value = effectiveValue.value;
+  if (value === undefined) return Number.NaN;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'number') return value;
+  return Number(new Date(value));
 });
 
 /* ---------- 倒计时 ---------- */
@@ -109,9 +138,11 @@ function runTween(from: number, to: number) {
 
 onBeforeUnmount(() => typeof cancelAnimationFrame === 'function' && cancelAnimationFrame(rafId));
 
-const numericValue = computed(() =>
-  props.value instanceof Date ? props.value.getTime() : Number(props.value),
-);
+const numericValue = computed(() => {
+  const value = effectiveValue.value;
+  if (value === undefined) return Number.NaN;
+  return value instanceof Date ? value.getTime() : Number(value);
+});
 
 watch(
   numericValue,
@@ -132,7 +163,9 @@ function formatNumber(value: number) {
 }
 
 const displayNumber = computed(() => {
-  if (typeof props.value === 'string' && Number.isNaN(Number(props.value))) return props.value;
+  const value = effectiveValue.value;
+  if (value === undefined) return '';
+  if (typeof value === 'string' && Number.isNaN(Number(value))) return value;
   const base = props.animation && !props.countdown ? animatedNumber.value : numericValue.value;
   return formatNumber(base);
 });
@@ -150,7 +183,21 @@ const countdownText = computed(() => {
     <span v-if="title" class="cumquat-statistic__title">{{ title }}</span>
     <p class="cumquat-statistic__value">
       <span v-if="prefix" class="cumquat-statistic__prefix">{{ prefix }}</span>
-      <span class="cumquat-statistic__number">
+      <span
+        v-if="fetchEnabled && remoteLoading && effectiveValue === undefined"
+        class="cumquat-statistic__state cq-state--pending"
+        >加载中…</span
+      >
+      <span
+        v-else-if="fetchEnabled && remoteError && effectiveValue === undefined"
+        class="cumquat-statistic__state cq-state--error"
+      >
+        加载失败
+        <button type="button" class="cumquat-statistic__retry" @click="fetchState?.retry?.()">
+          重试
+        </button>
+      </span>
+      <span v-else class="cumquat-statistic__number">
         <slot>{{ countdown ? countdownText : displayNumber }}</slot>
       </span>
       <span v-if="suffix" class="cumquat-statistic__suffix">{{ suffix }}</span>

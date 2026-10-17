@@ -77,6 +77,7 @@ import Space from './components/navigation/Space.vue';
 import Watermark from './components/extras/Watermark.vue';
 import Tour from './components/extras/Tour.vue';
 import QRCode from './components/extras/QRCode.vue';
+import CodeCard from './components/extras/CodeCard.vue';
 
 /** 组件导出名无前缀，按需导入后直接使用 */
 export {
@@ -146,6 +147,7 @@ export {
   QRCode,
   Watermark,
   Tour,
+  CodeCard,
   Mention,
   Segmented,
   VirtualList,
@@ -220,6 +222,7 @@ const registry: Record<string, unknown> = {
   CQRCode: QRCode,
   CWatermark: Watermark,
   CTour: Tour,
+  CCodeCard: CodeCard,
   CMention: Mention,
   CSegmented: Segmented,
   CVirtualList: VirtualList,
@@ -234,5 +237,16 @@ export const Cumquat = {
     }
   },
 };
+
+/** 统一数据请求机制的类型（实现见 @cumquat/composables） */
+export type {
+  Fetch,
+  FetchQuery,
+  FetchPagination,
+  FetchSorter,
+  FetchResult,
+  PagedResult,
+  UseFetchReturn,
+} from '@cumquat/composables';
 
 export default Cumquat;

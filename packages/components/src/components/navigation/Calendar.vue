@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { useDateGrid, useDateModel } from '@cumquat/composables';
+import { useDateGrid, useDateModel, useFetchResource } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
 import type { DatePanelType } from '@cumquat/composables';
 
 export interface CalendarEvent {
@@ -23,6 +24,11 @@ const props = withDefaults(
     maxDate?: string | Date;
     /** 日程/事项标记（按 yyyy-MM-dd 匹配） */
     events?: CalendarEvent[];
+    /**
+     * 统一远程请求：挂载与面板切换时自动以
+     * { filters: { range: [起始日, 结束日] } } 拉取当前区间日程
+     */
+    fetch?: Fetch<CalendarEvent>;
   }>(),
   {
     modelValue: undefined,
@@ -33,6 +39,7 @@ const props = withDefaults(
     minDate: undefined,
     maxDate: undefined,
     events: () => [],
+    fetch: undefined,
   },
 );
 
@@ -76,9 +83,40 @@ watch(grid.panelLabel, (label) => emit('panel-change', label));
 
 const weekdayLabels = ['日', '一', '二', '三', '四', '五', '六'];
 
+/* ---------------- fetch：按当前可视区间拉取日程 ---------------- */
+function formatISODate(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+const { enabled: fetchEnabled, state: fetchState } = useFetchResource<CalendarEvent[]>(
+  () => props.fetch,
+  {
+    initialData: [] as CalendarEvent[],
+    // weeks 为响应式 computed，切月后自动重取
+    getQuery: () => {
+      const weeks = grid.weeks.value;
+      const first = weeks[0]?.[0]?.date;
+      const last = weeks.at(-1)?.at(-1)?.date;
+      return {
+        filters: { range: first && last ? [formatISODate(first), formatISODate(last)] : [] },
+      };
+    },
+  },
+);
+
+const sourceEvents = computed<CalendarEvent[]>(() =>
+  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.events,
+);
+const remoteLoading = computed(() => fetchState.value?.status === 'pending');
+const remoteError = computed(() =>
+  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
+);
+
 const eventMap = computed(() => {
   const map = new Map<string, CalendarEvent[]>();
-  for (const eventItem of props.events) {
+  for (const eventItem of sourceEvents.value) {
     const list = map.get(eventItem.date) ?? [];
     list.push(eventItem);
     map.set(eventItem.date, list);
@@ -165,6 +203,22 @@ function onLabeledCell(date: Date, disabled: boolean) {
         </svg>
       </button>
     </header>
+
+    <p
+      v-if="fetchEnabled && remoteLoading && sourceEvents.length === 0"
+      class="cumquat-calendar__state cq-state--pending"
+    >
+      日程加载中…
+    </p>
+    <p
+      v-else-if="fetchEnabled && remoteError && sourceEvents.length === 0"
+      class="cumquat-calendar__state cq-state--error"
+    >
+      日程加载失败
+      <button type="button" class="cumquat-calendar__retry" @click="fetchState?.retry?.()">
+        重试
+      </button>
+    </p>
 
     <!-- 日期面板 -->
     <div v-if="grid.panelType.value === 'date'" class="cumquat-calendar__grid">

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import type { Ref } from 'vue';
+import { useFetchResource } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
 
 export interface TransferItem {
   key: string;
@@ -10,17 +12,23 @@ export interface TransferItem {
 
 const props = withDefaults(
   defineProps<{
-    data: TransferItem[];
+    data?: TransferItem[];
     modelValue?: string[];
     titles?: [string, string];
     /** 两侧搜索过滤 */
     searchable?: boolean;
+    /**
+     * 统一远程请求：挂载即请求，左侧搜索词自动防抖重取，
+     * 返回候选项数组或 { list, total }
+     */
+    fetch?: Fetch<TransferItem>;
   }>(),
   {
     data: () => [],
     modelValue: undefined,
     titles: () => ['源列表', '目标列表'],
     searchable: false,
+    fetch: undefined,
   },
 );
 
@@ -38,16 +46,28 @@ watch(
   },
 );
 
-const leftItems = computed(() =>
-  props.data.filter((item) => !selectedKeys.value.includes(item.key)),
-);
-const rightItems = computed(() =>
-  props.data.filter((item) => selectedKeys.value.includes(item.key)),
-);
-
 /* ---------- 搜索 ---------- */
 const leftKeyword = ref('');
 const rightKeyword = ref('');
+
+/* ---------- fetch：左侧候选挂载即拉，搜索词防抖重取 ---------- */
+const { enabled: fetchEnabled, state: fetchState } = useFetchResource<TransferItem[]>(
+  () => props.fetch,
+  {
+    getQuery: () => ({ keyword: leftKeyword.value }),
+    initialData: [] as TransferItem[],
+    debounce: 300,
+  },
+);
+
+/** 远程候选即源数据；已选项仍由 modelValue 在其中筛出 */
+const sourceItems = computed<TransferItem[]>(() =>
+  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.data,
+);
+const remoteLoading = computed(() => fetchState.value?.status === 'pending');
+const remoteError = computed(() =>
+  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
+);
 
 function filterItems(items: TransferItem[], keyword: string) {
   const word = keyword.trim();
@@ -55,7 +75,17 @@ function filterItems(items: TransferItem[], keyword: string) {
   return items.filter((item) => item.label.includes(word));
 }
 
-const visibleLeft = computed(() => filterItems(leftItems.value, leftKeyword.value));
+const leftItems = computed(() =>
+  sourceItems.value.filter((item) => !selectedKeys.value.includes(item.key)),
+);
+const rightItems = computed(() =>
+  sourceItems.value.filter((item) => selectedKeys.value.includes(item.key)),
+);
+
+// 远程模式下服务端已按关键词过滤，左侧不再本地过滤
+const visibleLeft = computed(() =>
+  fetchEnabled.value ? leftItems.value : filterItems(leftItems.value, leftKeyword.value),
+);
 const visibleRight = computed(() => filterItems(rightItems.value, rightKeyword.value));
 
 /* ---------- 勾选汇总 ---------- */
@@ -154,7 +184,7 @@ function moveCheckedLeft() {
         </label>
       </header>
       <input
-        v-if="searchable"
+        v-if="searchable || fetch"
         v-model="leftKeyword"
         type="text"
         class="cumquat-transfer__search"
@@ -178,7 +208,22 @@ function moveCheckedLeft() {
           />
           {{ item.label }}
         </li>
-        <li v-if="visibleLeft.length === 0" class="cumquat-transfer__empty">无数据</li>
+        <li
+          v-if="remoteLoading && visibleLeft.length === 0"
+          class="cumquat-transfer__state cq-state--pending"
+        >
+          加载中…
+        </li>
+        <li
+          v-else-if="remoteError && visibleLeft.length === 0"
+          class="cumquat-transfer__state cq-state--error"
+        >
+          加载失败
+          <button type="button" class="cumquat-transfer__retry" @click.stop="fetchState?.retry?.()">
+            重试
+          </button>
+        </li>
+        <li v-else-if="visibleLeft.length === 0" class="cumquat-transfer__empty">无数据</li>
       </ul>
     </div>
 

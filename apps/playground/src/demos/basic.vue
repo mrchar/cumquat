@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Card,
+  CodeCard,
   Divider,
   Empty,
   Icon,
@@ -16,154 +17,274 @@ import {
 
 const text = ref('');
 const tagVisible = ref(true);
+
+const buttonTypeCode = `
+  <Button type="primary">主要按钮</Button>
+  <Button>次要按钮</Button>
+  <Button type="danger">危险按钮</Button>
+  <Button type="ghost">幽灵按钮</Button>
+`;
+
+const buttonSizeCode = `
+  <Button type="primary" size="sm">小号</Button>
+  <Button type="primary">中号</Button>
+  <Button type="primary" size="lg">大号</Button>
+`;
+
+const buttonStateCode = `
+  <Button disabled>禁用</Button>
+  <Button type="primary" loading>加载中</Button>
+`;
+
+const iconCode = `
+  <Icon class="size-5 text-cumquat-warning">
+    <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2l-5-4.9 6.9-1z" />
+  </Icon>
+  <Icon class="size-5 text-cumquat-accent">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 8v4m0 4h.01" />
+  </Icon>
+  <Icon class="size-5 text-cumquat-danger">
+    <path
+      d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+    />
+  </Icon>
+`;
+
+const inputCode = `
+  <Input v-model="text" placeholder="请输入内容" class="w-64" />
+  <Input placeholder="禁用态" disabled class="w-64" />
+  <Input placeholder="校验失败态" invalid class="w-64" />
+`;
+
+const cardCode = `
+  <Card title="基础卡片" hoverable>
+    <p class="text-sm text-cumquat-text-muted">卡片内容区域，支持任意内容。</p>
+  </Card>
+  <Card title="无边框卡片" :bordered="false">
+    <p class="text-sm text-cumquat-text-muted">bordered 为 false 时不渲染描边。</p>
+  </Card>
+`;
+
+const dividerCode = `
+  <Divider label="section" />
+  <Divider :dashed="true" label="虚线" />
+  <div class="flex items-center gap-4">
+    <span class="text-sm">左侧</span>
+    <Divider orientation="vertical" />
+    <span class="text-sm">右侧</span>
+  </div>
+`;
+
+const avatarCode = `
+  <Avatar text="柠" />
+  <Avatar text="檬" size="lg" />
+  <Avatar text="Q" shape="square" />
+  <Avatar text="F" size="sm" />
+`;
+
+const badgeCode = `
+  <Badge :count="5">
+    <Avatar text="C" shape="square" />
+  </Badge>
+  <Badge :count="120">
+    <Avatar text="M" shape="square" />
+  </Badge>
+  <Badge :dot="true">
+    <Avatar text="D" shape="square" />
+  </Badge>
+`;
+
+const statisticCode = `
+  <Statistic title="下载量" :value="12834" suffix="次" />
+  <Statistic title="星标数" :value="986" suffix="颗" />
+  <Statistic title="完成率" :value="87" suffix="%" />
+`;
+
+const typographyCode = `
+  <Typography :level="1">一级标题</Typography>
+  <Typography :level="2">二级标题</Typography>
+  <Typography :level="3">三级标题</Typography>
+  <Typography>正文段落，用于展示常规文本内容。</Typography>
+  <Typography :copyable="true">点击图标复制这段文本</Typography>
+`;
+
+const tagCode = `
+  <Tag>默认标签</Tag>
+  <Tag type="success">成功</Tag>
+  <Tag type="warning">警告</Tag>
+  <Tag type="danger">危险</Tag>
+  <Tag v-model="tagVisible" closable>可关闭</Tag>
+  <Button v-if="!tagVisible" size="sm" @click="tagVisible = true">恢复标签</Button>
+`;
+
+const emptyCode = `
+  <Empty description="暂无订单数据" />
+`;
 </script>
 
 <template>
   <div class="flex flex-col gap-10">
     <section id="button" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Button 按钮</h2>
-      <div class="flex flex-col gap-3 rounded-cumquat border border-cumquat-border p-4">
-        <div class="flex flex-wrap items-center gap-3">
-          <Button type="primary">主要按钮</Button>
-          <Button>次要按钮</Button>
-          <Button type="danger">危险按钮</Button>
-          <Button type="ghost">幽灵按钮</Button>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <Button type="primary" size="sm">小号</Button>
-          <Button type="primary">中号</Button>
-          <Button type="primary" size="lg">大号</Button>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <Button disabled>禁用</Button>
-          <Button type="primary" loading>加载中</Button>
-        </div>
+      <div class="flex flex-col gap-4">
+        <CodeCard title="按钮类型" :code="buttonTypeCode">
+          <div class="flex flex-wrap items-center gap-3">
+            <Button type="primary">主要按钮</Button>
+            <Button>次要按钮</Button>
+            <Button type="danger">危险按钮</Button>
+            <Button type="ghost">幽灵按钮</Button>
+          </div>
+        </CodeCard>
+        <CodeCard title="按钮尺寸" :code="buttonSizeCode">
+          <div class="flex flex-wrap items-center gap-3">
+            <Button type="primary" size="sm">小号</Button>
+            <Button type="primary">中号</Button>
+            <Button type="primary" size="lg">大号</Button>
+          </div>
+        </CodeCard>
+        <CodeCard title="禁用与加载" :code="buttonStateCode">
+          <div class="flex flex-wrap items-center gap-3">
+            <Button disabled>禁用</Button>
+            <Button type="primary" loading>加载中</Button>
+          </div>
+        </CodeCard>
       </div>
     </section>
 
     <section id="icon" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Icon 图标</h2>
-      <div
-        class="flex flex-wrap items-center gap-4 rounded-cumquat border border-cumquat-border p-4"
-      >
-        <Icon class="size-5 text-cumquat-warning">
-          <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2l-5-4.9 6.9-1z" />
-        </Icon>
-        <Icon class="size-5 text-cumquat-accent">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 8v4m0 4h.01" />
-        </Icon>
-        <Icon class="size-5 text-cumquat-danger">
-          <path
-            d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
-          />
-        </Icon>
-      </div>
+      <CodeCard title="内置路径与语义色" :code="iconCode">
+        <div class="flex flex-wrap items-center gap-4">
+          <Icon class="size-5 text-cumquat-warning">
+            <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2l-5-4.9 6.9-1z" />
+          </Icon>
+          <Icon class="size-5 text-cumquat-accent">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v4m0 4h.01" />
+          </Icon>
+          <Icon class="size-5 text-cumquat-danger">
+            <path
+              d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+            />
+          </Icon>
+        </div>
+      </CodeCard>
     </section>
 
     <section id="input" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Input 输入框</h2>
-      <div class="flex flex-col gap-3 rounded-cumquat border border-cumquat-border p-4">
-        <Input v-model="text" placeholder="请输入内容" class="w-64" />
-        <Input placeholder="禁用态" disabled class="w-64" />
-        <Input placeholder="校验失败态" invalid class="w-64" />
-        <p class="text-sm text-cumquat-text-muted">当前值：{{ text || '（空）' }}</p>
-      </div>
+      <CodeCard title="基础、禁用与校验态" :code="inputCode">
+        <div class="flex flex-col gap-3">
+          <Input v-model="text" placeholder="请输入内容" class="w-64" />
+          <Input placeholder="禁用态" disabled class="w-64" />
+          <Input placeholder="校验失败态" invalid class="w-64" />
+          <p class="text-sm text-cumquat-text-muted">当前值：{{ text || '（空）' }}</p>
+        </div>
+      </CodeCard>
     </section>
 
     <section id="card" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Card 卡片</h2>
-      <div class="grid grid-cols-2 gap-4 rounded-cumquat border border-cumquat-border p-4">
-        <Card title="基础卡片" hoverable>
-          <p class="text-sm text-cumquat-text-muted">卡片内容区域，支持任意内容。</p>
-        </Card>
-        <Card title="无边框卡片" :bordered="false">
-          <p class="text-sm text-cumquat-text-muted">bordered 为 false 时不渲染描边。</p>
-        </Card>
-      </div>
+      <CodeCard title="悬浮与无边框" :code="cardCode">
+        <div class="grid grid-cols-2 gap-4">
+          <Card title="基础卡片" hoverable>
+            <p class="text-sm text-cumquat-text-muted">卡片内容区域，支持任意内容。</p>
+          </Card>
+          <Card title="无边框卡片" :bordered="false">
+            <p class="text-sm text-cumquat-text-muted">bordered 为 false 时不渲染描边。</p>
+          </Card>
+        </div>
+      </CodeCard>
     </section>
 
     <section id="divider" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Divider 分割线</h2>
-      <div class="flex flex-col gap-4 rounded-cumquat border border-cumquat-border p-4">
-        <Divider label="section" />
-        <Divider :dashed="true" label="虚线" />
-        <div class="flex items-center gap-4">
-          <span class="text-sm">左侧</span>
-          <Divider orientation="vertical" />
-          <span class="text-sm">右侧</span>
+      <CodeCard title="水平、虚线与垂直" :code="dividerCode">
+        <div class="flex flex-col gap-4">
+          <Divider label="section" />
+          <Divider :dashed="true" label="虚线" />
+          <div class="flex items-center gap-4">
+            <span class="text-sm">左侧</span>
+            <Divider orientation="vertical" />
+            <span class="text-sm">右侧</span>
+          </div>
         </div>
-      </div>
+      </CodeCard>
     </section>
 
     <section id="avatar" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Avatar 头像</h2>
-      <div
-        class="flex flex-wrap items-center gap-4 rounded-cumquat border border-cumquat-border p-4"
-      >
-        <Avatar text="柠" />
-        <Avatar text="檬" size="lg" />
-        <Avatar text="Q" shape="square" />
-        <Avatar text="F" size="sm" />
-      </div>
+      <CodeCard title="尺寸与形状" :code="avatarCode">
+        <div class="flex flex-wrap items-center gap-4">
+          <Avatar text="柠" />
+          <Avatar text="檬" size="lg" />
+          <Avatar text="Q" shape="square" />
+          <Avatar text="F" size="sm" />
+        </div>
+      </CodeCard>
     </section>
 
     <section id="badge" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Badge 徽标数</h2>
-      <div
-        class="flex flex-wrap items-center gap-8 rounded-cumquat border border-cumquat-border p-4"
-      >
-        <Badge :count="5">
-          <Avatar text="C" shape="square" />
-        </Badge>
-        <Badge :count="120">
-          <Avatar text="M" shape="square" />
-        </Badge>
-        <Badge :dot="true">
-          <Avatar text="D" shape="square" />
-        </Badge>
-      </div>
+      <CodeCard title="计数、溢出与红点" :code="badgeCode">
+        <div class="flex flex-wrap items-center gap-8">
+          <Badge :count="5">
+            <Avatar text="C" shape="square" />
+          </Badge>
+          <Badge :count="120">
+            <Avatar text="M" shape="square" />
+          </Badge>
+          <Badge :dot="true">
+            <Avatar text="D" shape="square" />
+          </Badge>
+        </div>
+      </CodeCard>
     </section>
 
     <section id="statistic" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Statistic 数值统计</h2>
-      <div class="flex flex-wrap gap-10 rounded-cumquat border border-cumquat-border p-4">
-        <Statistic title="下载量" :value="12834" suffix="次" />
-        <Statistic title="星标数" :value="986" suffix="颗" />
-        <Statistic title="完成率" :value="87" suffix="%" />
-      </div>
+      <CodeCard title="数值与后缀" :code="statisticCode">
+        <div class="flex flex-wrap gap-10">
+          <Statistic title="下载量" :value="12834" suffix="次" />
+          <Statistic title="星标数" :value="986" suffix="颗" />
+          <Statistic title="完成率" :value="87" suffix="%" />
+        </div>
+      </CodeCard>
     </section>
 
     <section id="typography" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Typography 排版</h2>
-      <div class="flex flex-col gap-2 rounded-cumquat border border-cumquat-border p-4">
-        <Typography :level="1">一级标题</Typography>
-        <Typography :level="2">二级标题</Typography>
-        <Typography :level="3">三级标题</Typography>
-        <Typography>正文段落，用于展示常规文本内容。</Typography>
-        <Typography :copyable="true">点击图标复制这段文本</Typography>
-      </div>
+      <CodeCard title="标题层级与复制" :code="typographyCode">
+        <div class="flex flex-col gap-2">
+          <Typography :level="1">一级标题</Typography>
+          <Typography :level="2">二级标题</Typography>
+          <Typography :level="3">三级标题</Typography>
+          <Typography>正文段落，用于展示常规文本内容。</Typography>
+          <Typography :copyable="true">点击图标复制这段文本</Typography>
+        </div>
+      </CodeCard>
     </section>
 
     <section id="tag" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Tag 标签</h2>
-      <div
-        class="flex flex-wrap items-center gap-3 rounded-cumquat border border-cumquat-border p-4"
-      >
-        <Tag>默认标签</Tag>
-        <Tag type="success">成功</Tag>
-        <Tag type="warning">警告</Tag>
-        <Tag type="danger">危险</Tag>
-        <Tag v-model="tagVisible" closable>可关闭</Tag>
-        <Button v-if="!tagVisible" size="sm" @click="tagVisible = true">恢复标签</Button>
-      </div>
+      <CodeCard title="语义类型与可关闭" :code="tagCode">
+        <div class="flex flex-wrap items-center gap-3">
+          <Tag>默认标签</Tag>
+          <Tag type="success">成功</Tag>
+          <Tag type="warning">警告</Tag>
+          <Tag type="danger">危险</Tag>
+          <Tag v-model="tagVisible" closable>可关闭</Tag>
+          <Button v-if="!tagVisible" size="sm" @click="tagVisible = true">恢复标签</Button>
+        </div>
+      </CodeCard>
     </section>
 
     <section id="empty" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Empty 空状态</h2>
-      <div class="rounded-cumquat border border-cumquat-border p-4">
+      <CodeCard title="自定义描述" :code="emptyCode">
         <Empty description="暂无订单数据" />
-      </div>
+      </CodeCard>
     </section>
   </div>
 </template>

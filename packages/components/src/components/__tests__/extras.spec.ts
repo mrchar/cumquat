@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, h, resolveComponent } from 'vue';
-import { Cumquat, Button, Watermark, Tour, QRCode } from '../../index';
+import { Cumquat, Button, Watermark, Tour, QRCode, CodeCard } from '../../index';
+import { getCodeHighlighter } from '../extras/codeHighlighter';
 
 describe('Cumquat 全量安装', () => {
   it('app.use(Cumquat) 后 <c-button> 可解析', () => {
@@ -52,6 +53,56 @@ describe('QRCode', () => {
   it('按 value 渲染网格', () => {
     const wrapper = mount(QRCode, { props: { value: 'https://cumquat.dev' } });
     expect(wrapper.findAll('.cumquat-qrcode__cell').length).toBeGreaterThan(0);
+  });
+});
+
+describe('CodeCard', () => {
+  it('渲染标题、演示插槽与工具栏，代码默认收起', () => {
+    const wrapper = mount(CodeCard, {
+      props: { title: '按钮类型', code: '<Button>确定</Button>' },
+      slots: { default: '<button>确定</button>' },
+    });
+    expect(wrapper.find('.cumquat-code-card__title').text()).toBe('按钮类型');
+    expect(wrapper.find('.cumquat-code-card__preview button').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-code-card__code').isVisible()).toBe(false);
+    const actions = wrapper.findAll('.cumquat-code-card__action');
+    expect(actions[0].text()).toBe('复制');
+    expect(actions[1].text()).toBe('展开代码');
+  });
+
+  it('清理源码公共缩进，高亮就绪前降级渲染纯文本', () => {
+    const wrapper = mount(CodeCard, {
+      props: {
+        code: '\n    <Button>确定</Button>\n    <Button>取消</Button>\n',
+        defaultExpand: true,
+      },
+    });
+    expect(wrapper.find('.cumquat-code-card__plain').text()).toBe(
+      '<Button>确定</Button>\n<Button>取消</Button>',
+    );
+  });
+
+  it('切换展开与收起代码', async () => {
+    const wrapper = mount(CodeCard, { props: { code: '<Button />' } });
+    const toggle = wrapper.findAll('.cumquat-code-card__action')[1];
+    expect(toggle.attributes('aria-expanded')).toBe('false');
+    await toggle.trigger('click');
+    expect(toggle.attributes('aria-expanded')).toBe('true');
+    expect(wrapper.find('.cumquat-code-card__code').isVisible()).toBe(true);
+  });
+});
+
+describe('codeHighlighter', () => {
+  it('输出携带明暗双主题 CSS 变量的高亮 HTML', async () => {
+    const highlighter = await getCodeHighlighter();
+    const html = highlighter.codeToHtml('<Button type="primary" />', {
+      lang: 'vue',
+      themes: { light: 'github-light', dark: 'github-dark' },
+      defaultColor: false,
+    });
+    expect(html).toContain('shiki');
+    expect(html).toContain('--shiki-light');
+    expect(html).toContain('--shiki-dark');
   });
 });
 

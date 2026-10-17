@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import {
+  useFetchResource,
   useFloating,
   useListboxNavigation,
   useOpen,
@@ -8,23 +9,31 @@ import {
   useTreeModel,
   type TreeFlatNode,
 } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
 
 export interface TreeSelectNode {
   key: string;
   label: string;
   disabled?: boolean;
   children?: TreeSelectNode[];
+  /** 远程懒加载时显式标记：true 叶子；false 表示子级尚未加载 */
+  leaf?: boolean;
 }
 
 const props = withDefaults(
   defineProps<{
-    nodes: TreeSelectNode[];
+    nodes?: TreeSelectNode[];
     modelValue?: string | null;
     placeholder?: string;
     disabled?: boolean;
     /** 可搜索（关键词过滤并自动展开命中路径） */
     filterable?: boolean;
     defaultExpandAll?: boolean;
+    /**
+     * 统一远程请求：挂载拉取根节点；展开未加载节点时以
+     * { filters: { parentKey } } 拉取子级，返回节点数组或 { list, total }
+     */
+    fetch?: Fetch<TreeSelectNode>;
   }>(),
   {
     nodes: () => [],
@@ -33,6 +42,7 @@ const props = withDefaults(
     disabled: false,
     filterable: false,
     defaultExpandAll: false,
+    fetch: undefined,
   },
 );
 
@@ -58,9 +68,83 @@ function collectParentKeys(nodes: TreeSelectNode[], acc: string[] = []): string[
   return acc;
 }
 
+function findNode(nodes: TreeSelectNode[], key: string): TreeSelectNode | undefined {
+  for (const node of nodes) {
+    if (node.key === key) return node;
+    if (node.children) {
+      const hit = findNode(node.children, key);
+      if (hit) return hit;
+    }
+  }
+  return undefined;
+}
+
+/* ---------------- fetch：根节点挂载即拉，展开懒加载子级 ---------------- */
+const {
+  enabled: fetchEnabled,
+  state: fetchState,
+  refresh,
+} = useFetchResource<TreeSelectNode[]>(() => props.fetch, {
+  getQuery: () => ({}),
+  initialData: [] as TreeSelectNode[],
+  merge: (previous, next, query) => {
+    const parentKey = query.filters?.parentKey as string | undefined;
+    if (parentKey === undefined) return next;
+    const parent = findNode(previous, parentKey);
+    if (parent) {
+      parent.children = next;
+      if (next.length === 0) parent.leaf = true;
+    }
+    return [...previous];
+  },
+});
+
+const sourceNodes = computed<TreeSelectNode[]>(() =>
+  fetchEnabled.value ? applyRemoteLeaf(fetchState.value?.data ?? []) : props.nodes,
+);
+
+/** 远程懒加载模式下 leaf 缺省视为「未知、可展开」，叶子由服务端显式标记 */
+function applyRemoteLeaf(nodes: TreeSelectNode[]): TreeSelectNode[] {
+  return nodes.map((node) => ({
+    ...node,
+    leaf: node.leaf ?? false,
+    children: node.children ? applyRemoteLeaf(node.children) : node.children,
+  }));
+}
+
+const loadingKeys = ref<string[]>([]);
+const failedKey = ref<string | null>(null);
+
+async function loadChildren(key: string) {
+  if (loadingKeys.value.includes(key)) return;
+  failedKey.value = null;
+  loadingKeys.value = [...loadingKeys.value, key];
+  await refresh({ filters: { parentKey: key } });
+  loadingKeys.value = loadingKeys.value.filter((item) => item !== key);
+  if (fetchState.value?.status === 'error') failedKey.value = key;
+}
+
+/** 展开节点；远程未加载父节点顺带拉取子级，失败时为重试 */
+function expandNode(node: TreeFlatNode<string>) {
+  if (failedKey.value === node.key && !loadingKeys.value.includes(node.key)) {
+    void loadChildren(node.key);
+    return;
+  }
+  const expanded = !tree.isExpanded(node.key);
+  tree.toggleExpand(node.key);
+  const rawNode = node.raw as unknown as TreeSelectNode;
+  if (expanded && props.fetch && !node.isLeaf && !rawNode.children?.length) {
+    void loadChildren(node.key);
+  }
+}
+
+const rootState = computed(() =>
+  fetchEnabled.value && sourceNodes.value.length === 0 ? fetchState.value : undefined,
+);
+
 const tree = useTreeModel<string>({
-  data: () => props.nodes as unknown as Array<Record<string, unknown>>,
-  fieldNames: { value: 'key' },
+  data: () => sourceNodes.value as unknown as Array<Record<string, unknown>>,
+  fieldNames: { value: 'key', isLeaf: 'leaf' },
   cascade: false,
   defaultExpandedKeys: props.defaultExpandAll ? collectParentKeys(props.nodes) : [],
 });
@@ -127,7 +211,7 @@ const nav = useListboxNavigation({
     const node = visibleNodes.value[index];
     if (!node || node.disabled) return;
     if (node.isLeaf) pickLeaf(node);
-    else tree.toggleExpand(node.key);
+    else expandNode(node);
   },
 });
 
@@ -206,70 +290,103 @@ function onSearchInput(event: Event) {
         </div>
         <ul class="cumquat-tree-select__tree" role="tree">
           <li
-            v-for="(node, index) in visibleNodes"
-            :key="node.key"
-            role="treeitem"
-            :aria-expanded="node.isLeaf ? undefined : tree.isExpanded(node.key)"
+            v-if="rootState?.status === 'pending'"
+            class="cumquat-tree-select__state cq-state--pending"
           >
-            <div
-              v-if="node.isLeaf"
-              class="cumquat-tree-select__leaf"
-              :class="[
-                selectModel.model.value === node.key ? 'cumquat-tree-select__leaf--active' : '',
-                node.disabled ? 'cumquat-tree-select__leaf--disabled' : '',
-              ]"
-              :data-roving-index="index"
-              @click="!node.disabled && pickLeaf(node)"
-              @mouseenter="nav.setActiveIndex(index)"
-            >
-              <span
-                v-for="level in node.depth"
-                :key="level"
-                class="cumquat-tree-select__indent"
-                aria-hidden="true"
-              />
-              {{ node.label }}
-            </div>
-            <div
-              v-else
-              class="cumquat-tree-select__node"
-              :class="node.disabled ? 'cumquat-tree-select__node--disabled' : ''"
-              :data-roving-index="index"
-              @click="!node.disabled && tree.toggleExpand(node.key)"
-              @mouseenter="nav.setActiveIndex(index)"
-            >
-              <span
-                v-for="level in node.depth"
-                :key="level"
-                class="cumquat-tree-select__indent"
-                aria-hidden="true"
-              />
-              <button
-                type="button"
-                class="cumquat-tree-select__expander"
-                :class="
-                  tree.isExpanded(node.key) || searchActive
-                    ? 'cumquat-tree-select__expander--expanded'
-                    : ''
-                "
-                :aria-label="tree.isExpanded(node.key) ? '收起' : '展开'"
-                @click.stop="tree.toggleExpand(node.key)"
-              >
-                <svg
-                  class="cumquat-tree-select__expander-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
-              </button>
-              {{ node.label }}
-            </div>
+            加载中…
           </li>
+          <li
+            v-else-if="rootState?.status === 'error'"
+            class="cumquat-tree-select__state cq-state--error"
+          >
+            加载失败
+            <button
+              type="button"
+              class="cumquat-tree-select__retry"
+              @click.stop="rootState?.retry?.()"
+            >
+              重试
+            </button>
+          </li>
+          <li
+            v-else-if="fetchEnabled && tree.flatNodes.value.length === 0"
+            class="cumquat-tree-select__state"
+          >
+            暂无数据
+          </li>
+          <template v-else>
+            <li
+              v-for="(node, index) in visibleNodes"
+              :key="node.key"
+              role="treeitem"
+              :aria-expanded="node.isLeaf ? undefined : tree.isExpanded(node.key)"
+            >
+              <div
+                v-if="node.isLeaf"
+                class="cumquat-tree-select__leaf"
+                :class="[
+                  selectModel.model.value === node.key ? 'cumquat-tree-select__leaf--active' : '',
+                  node.disabled ? 'cumquat-tree-select__leaf--disabled' : '',
+                ]"
+                :data-roving-index="index"
+                @click="!node.disabled && pickLeaf(node)"
+                @mouseenter="nav.setActiveIndex(index)"
+              >
+                <span
+                  v-for="level in node.depth"
+                  :key="level"
+                  class="cumquat-tree-select__indent"
+                  aria-hidden="true"
+                />
+                {{ node.label }}
+              </div>
+              <div
+                v-else
+                class="cumquat-tree-select__node"
+                :class="node.disabled ? 'cumquat-tree-select__node--disabled' : ''"
+                :data-roving-index="index"
+                @click="!node.disabled && expandNode(node)"
+                @mouseenter="nav.setActiveIndex(index)"
+              >
+                <span
+                  v-for="level in node.depth"
+                  :key="level"
+                  class="cumquat-tree-select__indent"
+                  aria-hidden="true"
+                />
+                <span
+                  v-if="loadingKeys.includes(node.key)"
+                  class="cumquat-tree-select__expander cumquat-tree-select__expander--loading cq-state--pending"
+                />
+                <button
+                  v-else
+                  type="button"
+                  class="cumquat-tree-select__expander"
+                  :class="[
+                    tree.isExpanded(node.key) || searchActive
+                      ? 'cumquat-tree-select__expander--expanded'
+                      : '',
+                    failedKey === node.key ? 'cumquat-tree-select__expander--error' : '',
+                  ]"
+                  :aria-label="tree.isExpanded(node.key) ? '收起' : '展开'"
+                  @click.stop="expandNode(node)"
+                >
+                  <svg
+                    class="cumquat-tree-select__expander-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </button>
+                {{ node.label }}
+              </div>
+            </li>
+          </template>
         </ul>
       </div>
     </Transition>

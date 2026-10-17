@@ -1,14 +1,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useAsyncSuggest, useFloating, useListboxNavigation } from '@cumquat/composables';
+import {
+  isPagedResult,
+  useAsyncSuggest,
+  useFloating,
+  useListboxNavigation,
+} from '@cumquat/composables';
+import type { Fetch, FetchResult } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
     modelValue?: string;
     /** 静态候选（本地包含匹配） */
     options?: string[];
-    /** 异步候选源；提供时替代本地过滤 */
-    fetch?: (keyword: string) => Promise<string[]>;
+    /**
+     * 异步候选源。统一签名：(query: { keyword, signal }) => Promise。
+     * 返回数组 / { list, total } 作为候选；兼容旧的 (keyword: string) => Promise<string[]>。
+     */
+    fetch?: Fetch<string> | ((keyword: string) => Promise<string[]>);
     placeholder?: string;
     disabled?: boolean;
     /** 聚焦时是否即触发建议 */
@@ -45,8 +54,28 @@ const { referenceRef, floatingRef, floatingStyles } = useFloating({
   open,
 });
 
+/** 归一 fetch 返回：数组直出，分页取 list，单值包成单元素数组 */
+function toSuggestions(raw: FetchResult<string>): string[] {
+  if (Array.isArray(raw)) return raw;
+  if (isPagedResult<string>(raw)) return raw.list;
+  return [raw];
+}
+
+/**
+ * 调用桥接：统一 fetch 收到查询对象；旧签名收到字符串。
+ * 以 String 包装对象承载 keyword——字符串方法（trim/includes 等）依旧可用。
+ */
+function callSource(word: string): Promise<string[]> {
+  if (!props.fetch) return Promise.resolve([]);
+  const query = Object(word) as string & { keyword?: string };
+  query.keyword = word;
+  return Promise.resolve(
+    (props.fetch as (arg: unknown) => Promise<FetchResult<string>>)(query),
+  ).then(toSuggestions);
+}
+
 const asyncSuggest = useAsyncSuggest<string>({
-  fetch: async (word) => (props.fetch ? props.fetch(word) : []),
+  fetch: (word) => callSource(word),
   debounce: props.debounce,
   minKeywordLength: props.minKeywordLength,
 });
@@ -61,7 +90,13 @@ const localSuggestions = computed(() => {
 const suggestions = computed(() =>
   props.fetch ? asyncSuggest.suggestions.value : localSuggestions.value,
 );
-const showDropdown = computed(() => open.value && suggestions.value.length > 0);
+const showDropdown = computed(() => {
+  if (!open.value) return false;
+  // 静态候选：仅有匹配项时展示
+  if (!props.fetch) return suggestions.value.length > 0;
+  // 异步候选：发起过请求即展示四态（加载/错误/空态/候选）
+  return asyncSuggest.status.value !== 'idle';
+});
 
 const nav = useListboxNavigation({
   count: () => suggestions.value.length,
@@ -137,23 +172,45 @@ defineExpose({ focus: () => referenceRef.value?.focus() });
         class="cumquat-autocomplete__dropdown"
         :style="floatingStyles"
       >
-        <li
-          v-for="(option, index) in suggestions"
-          :key="option"
-          class="cumquat-autocomplete__option"
-          :class="nav.activeIndex.value === index ? 'cumquat-autocomplete__option--active' : ''"
-          @mousedown.prevent="pick(option)"
-          @mouseenter="nav.setActiveIndex(index)"
-        >
-          <slot
-            name="option"
-            :option="option"
-            :index="index"
-            :active="nav.activeIndex.value === index"
+        <template v-if="suggestions.length">
+          <li
+            v-for="(option, index) in suggestions"
+            :key="option"
+            class="cumquat-autocomplete__option"
+            :class="nav.activeIndex.value === index ? 'cumquat-autocomplete__option--active' : ''"
+            @mousedown.prevent="pick(option)"
+            @mouseenter="nav.setActiveIndex(index)"
           >
-            {{ option }}
-          </slot>
+            <slot
+              name="option"
+              :option="option"
+              :index="index"
+              :active="nav.activeIndex.value === index"
+            >
+              {{ option }}
+            </slot>
+          </li>
+        </template>
+        <li
+          v-else-if="asyncSuggest.loading.value"
+          class="cumquat-autocomplete__state cq-state--pending"
+        >
+          加载中…
         </li>
+        <li
+          v-else-if="asyncSuggest.error.value"
+          class="cumquat-autocomplete__state cq-state--error"
+        >
+          加载失败
+          <button
+            type="button"
+            class="cumquat-autocomplete__retry"
+            @mousedown.prevent="asyncSuggest.run()"
+          >
+            重试
+          </button>
+        </li>
+        <li v-else class="cumquat-autocomplete__state">无匹配项</li>
       </ul>
     </Transition>
   </div>

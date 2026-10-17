@@ -88,6 +88,7 @@ const groups = [
     label: '数据展示 Data',
     items: [
       { id: 'table', label: 'Table' },
+      { id: 'remote-fetch', label: 'Fetch 远程数据' },
       { id: 'pagination', label: 'Pagination' },
       { id: 'tabs', label: 'Tabs' },
       { id: 'collapse', label: 'Collapse' },

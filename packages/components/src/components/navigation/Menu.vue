@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useControllableModel, useRovingFocus, useTypeahead } from '@cumquat/composables';
+import {
+  useControllableModel,
+  useFetchResource,
+  useRovingFocus,
+  useTypeahead,
+} from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
 
 export interface MenuItem {
   key: string;
@@ -12,18 +18,21 @@ export interface MenuItem {
 
 const props = withDefaults(
   defineProps<{
-    items: MenuItem[];
+    items?: MenuItem[];
     modelValue?: string;
     /** 折叠模式：仅展示图标，子菜单弹出（class 开关，数据同构） */
     collapsed?: boolean;
     /** 默认展开的分组 key 列表 */
     defaultExpandedKeys?: string[];
+    /** 统一远程请求：挂载即拉取菜单项，返回数组或 { list, total } */
+    fetch?: Fetch<MenuItem>;
   }>(),
   {
     items: () => [],
     modelValue: undefined,
     collapsed: false,
     defaultExpandedKeys: () => [],
+    fetch: undefined,
   },
 );
 
@@ -59,6 +68,20 @@ function pick(item: MenuItem) {
   emit('select', item);
 }
 
+/* ---------------- fetch：挂载即拉菜单项 ---------------- */
+const { enabled: fetchEnabled, state: fetchState } = useFetchResource<MenuItem[]>(
+  () => props.fetch,
+  { getQuery: () => ({}), initialData: [] as MenuItem[] },
+);
+
+const sourceItems = computed<MenuItem[]>(() =>
+  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items,
+);
+const remoteLoading = computed(() => fetchState.value?.status === 'pending');
+const remoteError = computed(() =>
+  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
+);
+
 /** 扁平化可见叶子项：roving 焦点与 typeahead 共用一份索引 */
 interface FlatEntry {
   item: MenuItem;
@@ -66,7 +89,7 @@ interface FlatEntry {
 }
 const flatLeaves = computed<FlatEntry[]>(() => {
   const list: FlatEntry[] = [];
-  for (const item of props.items) {
+  for (const item of sourceItems.value) {
     if (item.children && item.children.length > 0) {
       if (!props.collapsed && isExpanded(item.key)) {
         for (const child of item.children) list.push({ item: child, depth: 1 });
@@ -108,7 +131,21 @@ function onNavKeydown(event: KeyboardEvent) {
     :class="collapsed ? 'cumquat-menu--collapsed' : ''"
     @keydown="onNavKeydown"
   >
-    <template v-for="item in items" :key="item.key">
+    <p
+      v-if="remoteLoading && sourceItems.length === 0"
+      class="cumquat-menu__state cq-state--pending"
+    >
+      加载中…
+    </p>
+    <p
+      v-else-if="remoteError && sourceItems.length === 0"
+      class="cumquat-menu__state cq-state--error"
+    >
+      加载失败
+      <button type="button" class="cumquat-menu__retry" @click="fetchState?.retry?.()">重试</button>
+    </p>
+    <p v-else-if="fetchEnabled && sourceItems.length === 0" class="cumquat-menu__state">暂无菜单</p>
+    <template v-for="item in sourceItems" :key="item.key">
       <!-- 分组 -->
       <template v-if="item.children && item.children.length > 0">
         <button

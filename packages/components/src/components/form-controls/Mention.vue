@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
-import { useAsyncSuggest, useFloating, useListboxNavigation } from '@cumquat/composables';
+import {
+  isPagedResult,
+  useAsyncSuggest,
+  useFloating,
+  useListboxNavigation,
+} from '@cumquat/composables';
+import type { Fetch, FetchResult } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
     /** 本地候选成员；与 fetch 二选一 */
     members?: string[];
-    /** 异步候选源（输入触发符后的片段作为关键词） */
-    fetch?: (keyword: string) => Promise<string[]>;
+    /**
+     * 异步候选源（输入触发符后的片段作为关键词）。
+     * 统一签名 (query: { keyword, signal })，兼容旧的 (keyword: string)。
+     */
+    fetch?: Fetch<string> | ((keyword: string) => Promise<string[]>);
     /** 触发符，默认 @ */
     trigger?: string;
     placeholder?: string;
@@ -57,9 +66,25 @@ function detectTrigger() {
   return { at, segment };
 }
 
+/** 归一 fetch 返回：数组直出，分页取 list，单值包成单元素数组 */
+function toSuggestions(raw: FetchResult<string>): string[] {
+  if (Array.isArray(raw)) return raw;
+  if (isPagedResult<string>(raw)) return raw.list;
+  return [raw];
+}
+
+/** String 包装对象桥接统一查询对象与旧的字符串关键词签名 */
+function callSource(word: string): Promise<string[]> {
+  if (!props.fetch) return Promise.resolve(localSuggestions.value);
+  const query = Object(word) as string & { keyword?: string };
+  query.keyword = word;
+  return Promise.resolve(
+    (props.fetch as (arg: unknown) => Promise<FetchResult<string>>)(query),
+  ).then(toSuggestions);
+}
+
 const asyncSuggest = useAsyncSuggest<string>({
-  fetch: (keyword) =>
-    props.fetch ? props.fetch(keyword) : Promise.resolve(localSuggestions.value),
+  fetch: (keyword) => callSource(keyword),
   debounce: props.debounce,
 });
 
@@ -72,6 +97,7 @@ const suggestions = computed(() =>
   props.fetch ? asyncSuggest.suggestions.value : localSuggestions.value,
 );
 const loading = computed(() => (props.fetch ? asyncSuggest.loading.value : false));
+const loadError = computed(() => (props.fetch ? asyncSuggest.error.value : undefined));
 
 function refresh() {
   const hit = detectTrigger();
@@ -162,12 +188,22 @@ function onKeydown(event: KeyboardEvent) {
     />
     <Transition name="cumquat-fade">
       <ul
-        v-if="open && (suggestions.length > 0 || loading)"
+        v-if="open && (suggestions.length > 0 || loading || loadError)"
         ref="floatingRef"
         class="cumquat-mention__dropdown"
         :style="floatingStyles"
       >
-        <li v-if="loading" class="cumquat-mention__loading">加载中…</li>
+        <li v-if="loading" class="cumquat-mention__loading cq-state--pending">加载中…</li>
+        <li v-else-if="loadError" class="cumquat-mention__error cq-state--error">
+          加载失败
+          <button
+            type="button"
+            class="cumquat-mention__retry"
+            @mousedown.prevent="asyncSuggest.run()"
+          >
+            重试
+          </button>
+        </li>
         <li
           v-for="(member, index) in suggestions"
           :key="member"

@@ -1,6 +1,6 @@
 # 组件使用指南
 
-> 覆盖组件库全部 70 个组件的属性（Props）、事件（Events）、插槽（Slots）与典型用例。
+> 覆盖组件库全部 71 个组件的属性（Props）、事件（Events）、插槽（Slots）与典型用例。
 > 组件按源码目录分为七类：基础、表单控件、浮层、数据展示、反馈、导航与布局、其他。
 
 ## 引入方式
@@ -18,6 +18,7 @@ import { Button, Select, Table } from '@cumquat/vue/components';
 
 - **v-model 纯同步**：所有 `modelValue` / `open` / `visible` 等绑定值只做同步回写，异步副作用一律由外层驱动。
 - **异步状态 `:state` / `:data`**：数据型组件（Table、Select 等）可接收 `AsyncStateLike<T>`（`status / data / error / isStale? / retry?`），传入后组件内置加载 / 错误重试 / 空态 / stale 提示四态渲染，组件自身不发请求。
+- **远程资源 `:fetch`**：17 个资源型组件可绑定统一的 `Fetch<T>` 方法，挂载即请求，翻页 / 排序 / 筛选 / 搜索 / 展开自动重取，防抖、竞态、四态渲染全部内置，详见[远程数据](#远程数据fetch)。
 - **动作 `:action`**：动作型组件（Button、Popconfirm 等）接收一个同步或异步函数，执行期间自动派生 loading / disabled。
 - **受控 / 非受控统一**：所有异步 props 均可选，不传即为普通非受控组件。
 - **语义 class**：每个组件保留 `cumquat-xxx` 语义类名，作为主题化与测试锚点。
@@ -202,12 +203,13 @@ Expose：`validate()` 触发校验、`clearValidate()` 清除校验态、`focus(
 
 ### Statistic 统计数值
 
-指标数值展示，支持千分位、动画与倒计时。
+指标数值展示，支持千分位、动画与倒计时；绑定 `fetch` 时挂载即请求单值并内置四态。
 
 | Prop           | 类型                       | 默认值  | 说明                         |
 | -------------- | -------------------------- | ------- | ---------------------------- |
 | title          | `string`                   | `''`    | 标题                         |
-| value          | `string \| number \| Date` | -       | 数值；倒计时模式下为到期时刻 |
+| value          | `string \| number \| Date` | -       | 数值；倒计时模式下为到期时刻；绑定 fetch 时可省略 |
+| fetch          | `Fetch<StatisticValue>`    | -       | 远程单值；返回非数组即作为 value，优先于 value prop |
 | prefix         | `string`                   | `''`    | 前缀                         |
 | suffix         | `string`                   | `''`    | 后缀                         |
 | precision      | `number`                   | -       | 小数位数                     |
@@ -323,6 +325,7 @@ Expose：`validate()` 触发校验、`clearValidate()` 清除校验态、`focus(
 | clearable   | `boolean`                        | `false`    | 可清空                                                    |
 | name        | `string`                         | -          | 表单字段名                                                |
 | state       | `AsyncStateLike<SelectOption[]>` | -          | 远程数据状态：传入后优先于 options 渲染，组件自身不发请求 |
+| fetch       | `Fetch<SelectOption>`            | -          | 远程选项源：挂载即请求，输入时以 `query.keyword` 自动重取（防抖 300ms），自动四态 |
 
 | 事件              | 参数                      | 说明   |
 | ----------------- | ------------------------- | ------ |
@@ -333,6 +336,7 @@ Expose：`validate()` 触发校验、`clearValidate()` 清除校验态、`focus(
 <Select v-model="city" :options="cityOptions" placeholder="选择城市" clearable />
 <Select v-model="tags" :options="tagOptions" multiple filterable />
 <Select v-model="uid" :state="userListState" filterable />
+<Select v-model="uid" :fetch="fetchUsers" filterable placeholder="搜索用户" />
 ```
 
 ### Checkbox 复选框
@@ -507,7 +511,7 @@ Expose：`validate()` 触发校验、`clearValidate()` 清除校验态、`focus(
 | ---------------- | ---------------------------------------- | -------------- | -------------------------------- |
 | modelValue       | `string`                                 | -              | 绑定值（v-model）                |
 | options          | `string[]`                               | `[]`           | 静态候选（本地包含匹配）         |
-| fetch            | `(keyword: string) => Promise<string[]>` | -              | 异步候选源（提供时替代本地过滤） |
+| fetch            | `Fetch<string> \| ((keyword: string) => Promise<string[]>)` | -              | 异步候选源（提供时替代本地过滤；新签名经 query.keyword 收参，旧签名继续兼容） |
 | placeholder      | `string`                                 | `'输入以搜索'` | 占位文本                         |
 | disabled         | `boolean`                                | `false`        | 禁用                             |
 | triggerOnFocus   | `boolean`                                | `true`         | 聚焦即触发建议                   |
@@ -539,7 +543,7 @@ Expose：`focus()` 聚焦输入框。
 | ----------- | ---------------------------------------- | --------------------------------- | -------------------------------------- |
 | modelValue  | `string`                                 | -                                 | 文本绑定值（v-model）                  |
 | members     | `string[]`                               | `['Amber','Bolt','Cedar','Dawn']` | 本地候选成员（与 fetch 二选一）        |
-| fetch       | `(keyword: string) => Promise<string[]>` | -                                 | 异步候选源（触发符后的片段作为关键词） |
+| fetch       | `Fetch<string> \| ((keyword: string) => Promise<string[]>)` | -                                 | 异步候选源（触发符后的片段作为关键词；兼容旧签名） |
 | trigger     | `string`                                 | `'@'`                             | 触发符                                 |
 | placeholder | `string`                                 | `'输入 @ 唤起提及'`               | 占位文本                               |
 | debounce    | `number`                                 | `300`                             | 异步防抖（ms）                         |
@@ -616,6 +620,7 @@ Expose：`values / errors / valid / dirty / validate() / validateField(name) / r
 | disabled         | `boolean`          | `false`    | 禁用                             |
 | filterable       | `boolean`          | `false`    | 可搜索（过滤并自动展开命中路径） |
 | defaultExpandAll | `boolean`          | `false`    | 默认展开全部父节点               |
+| fetch            | `Fetch<TreeSelectNode>` | -      | 远程树：展开节点时以 `query.filters.parentKey` 请求子级，自动懒加载与四态 |
 
 | 事件              | 参数                    | 说明   |
 | ----------------- | ----------------------- | ------ |
@@ -858,7 +863,7 @@ Expose：`open()` / `close()` / `toggle()`。
 
 ### Table 表格
 
-数据列表展示，内置排序、筛选、分页、展开、选择与远程四态。组件自身不发请求，状态变化通过统一 `change` 事件回发。
+数据列表展示，内置排序、筛选、分页、展开、选择与远程四态。可二选一驱动远程数据：传入 `data` 状态时组件自身不发请求、状态变化通过统一 `change` 事件回发；直接绑定 `fetch` 方法时，翻页 / 排序 / 筛选由组件自动重取。
 
 `TableColumn` 结构：
 
@@ -891,6 +896,7 @@ interface TableColumn {
 | pageSize    | `number`                                        | `10`           | 每页条数                                   |
 | pageSizes   | `number[]`                                      | `[10, 20, 50]` | 每页条数选项                               |
 | defaultSort | `{ key: string; order: 'asc' \| 'desc' }`       | -              | 初始排序                                   |
+| fetch       | `Fetch<Row>`                                     | -              | 远程数据源：自动注入 pagination/sorter/filters；返回 `{ list, total }` 自动分页，返回数组按全量渲染 |
 
 | 事件                | 参数                                                                                            | 说明                                     |
 | ------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -904,6 +910,19 @@ interface TableColumn {
 | expanded          | 展开行内容，slot props：`{ row, index }`   |
 
 ```vue
+<Table
+  :columns="columns"
+  :fetch="fetchUsers"
+  selectable
+  pagination
+  :page-size="20"
+>
+  <template #cell-status="{ value }"><Tag>{{ value }}</Tag></template>
+</Table>
+```
+
+```vue
+<!-- 也可继续使用 data 状态模式：请求由外层 change 事件驱动 -->
 <Table
   :columns="columns"
   :data="tableState"
@@ -950,7 +969,8 @@ interface TableColumn {
 
 | Prop       | 类型        | 默认值  | 说明                                            |
 | ---------- | ----------- | ------- | ----------------------------------------------- |
-| tabs       | `TabItem[]` | `[]`    | 页签列表                                        |
+| tabs       | `TabItem[]` | `[]`    | 页签列表（绑定 fetch 时可省略）                  |
+| fetch      | `Fetch<TabItem>` | -  | 远程页签：挂载即请求，数据就绪后自动激活首个可用页签 |
 | modelValue | `string`    | -       | 激活 key（v-model）                             |
 | editable   | `boolean`   | `false` | 允许增减页签（触发 add/remove，数据由外层维护） |
 | addText    | `string`    | `'+'`   | 新增按钮文案                                    |
@@ -982,7 +1002,8 @@ interface TableColumn {
 
 | Prop              | 类型             | 默认值  | 说明                                 |
 | ----------------- | ---------------- | ------- | ------------------------------------ |
-| items             | `CollapseItem[]` | `[]`    | 面板列表                             |
+| items             | `CollapseItem[]` | `[]`    | 面板列表（绑定 fetch 时可省略） |
+| fetch             | `Fetch<CollapseItem>` | -  | 远程面板：挂载即请求，内置四态 |
 | activeKeys        | `string[]`       | -       | 展开 key（受控，v-model:activeKeys） |
 | defaultActiveKeys | `string[]`       | `[]`    | 非受控初始展开 key                   |
 | accordion         | `boolean`        | `false` | 手风琴：同时至多展开一个             |
@@ -999,13 +1020,14 @@ interface TableColumn {
 
 ### Tree 树形控件
 
-层级数据展示与勾选，含半选传播。
+层级数据展示与勾选，含半选传播；绑定 `fetch` 后为远程懒加载树。
 
-`TreeNode` 结构：`{ key: string; label: string; disabled?: boolean; children?: TreeNode[] }`。
+`TreeNode` 结构：`{ key: string; label: string; disabled?: boolean; leaf?: boolean; children?: TreeNode[] }`（远程模式用 `leaf: true` 标记叶子，避免空节点显示展开箭头）。
 
 | Prop             | 类型         | 默认值  | 说明                                   |
 | ---------------- | ------------ | ------- | -------------------------------------- |
-| nodes            | `TreeNode[]` | -       | 树数据（必填）                         |
+| nodes            | `TreeNode[]` | -       | 树数据（绑定 fetch 时可省略）          |
+| fetch            | `Fetch<TreeNode>` | -   | 远程树：展开时以 `query.filters.parentKey` 请求子级并挂回，内置加载/失败重试 |
 | checkable        | `boolean`    | `false` | 显示勾选框                             |
 | defaultExpandAll | `boolean`    | `false` | 默认展开全部父节点                     |
 | checked          | `string[]`   | -       | 受控勾选集合（保存被点选节点自身 key） |
@@ -1029,7 +1051,8 @@ interface TableColumn {
 
 | Prop           | 类型                                                  | 默认值     | 说明                               |
 | -------------- | ----------------------------------------------------- | ---------- | ---------------------------------- |
-| options        | `CascaderOption[]`                                    | -          | 级联数据（必填）                   |
+| options        | `CascaderOption[]`                                    | -          | 级联数据（绑定 fetch 时可省略） |
+| fetch          | `Fetch<CascaderOption>`                               | -          | 远程级联：展开列时以 `query.filters.parentKey` 懒加载下一列 |
 | modelValue     | `string \| number \| Array<string \| number> \| null` | -          | 叶子 value；emitPath 时为路径数组  |
 | placeholder    | `string`                                              | `'请选择'` | 占位文本                           |
 | disabled       | `boolean`                                             | `false`    | 禁用                               |
@@ -1054,7 +1077,8 @@ interface TableColumn {
 
 | Prop  | 类型             | 默认值 | 说明     |
 | ----- | ---------------- | ------ | -------- |
-| items | `TimelineItem[]` | `[]`   | 节点列表 |
+| items | `TimelineItem[]` | `[]`   | 节点列表（绑定 fetch 时可省略） |
+| fetch | `Fetch<TimelineItem>` | -   | 远程节点：挂载即请求，内置四态 |
 
 | 插槽    | 说明                                              |
 | ------- | ------------------------------------------------- |
@@ -1102,7 +1126,8 @@ Expose：`next()` / `prev()` / `goTo(index)`。
 | Prop     | 类型                | 默认值  | 说明             |
 | -------- | ------------------- | ------- | ---------------- |
 | title    | `string`            | `''`    | 标题             |
-| items    | `DescriptionItem[]` | -       | 字段列表（必填） |
+| items    | `DescriptionItem[]` | -       | 字段列表（绑定 fetch 时可省略） |
+| fetch    | `Fetch<DescriptionItem>` | -   | 远程字段：挂载即请求，内置四态 |
 | bordered | `boolean`           | `false` | 单元格带边框     |
 | column   | `number`            | `2`     | 每行列数         |
 
@@ -1123,6 +1148,7 @@ Expose：`next()` / `prev()` / `goTo(index)`。
 | interval     | `number`   | `3000`    | 播放间隔（ms）                 |
 | pauseOnHover | `boolean`  | `true`    | 悬停暂停                       |
 | loop         | `boolean`  | `true`    | 循环切换                       |
+| fetch        | `Fetch<string>` | -    | 远程轮播项：挂载即请求，内置四态 |
 
 | 事件              | 参数                              | 说明     |
 | ----------------- | --------------------------------- | -------- |
@@ -1426,7 +1452,8 @@ Expose：`service`（全局 loading 服务，可 `service.show() / hide()`）。
 
 | Prop                | 类型         | 默认值  | 说明                           |
 | ------------------- | ------------ | ------- | ------------------------------ |
-| items               | `MenuItem[]` | `[]`    | 菜单数据                       |
+| items               | `MenuItem[]` | `[]`    | 菜单数据（绑定 fetch 时可省略） |
+| fetch               | `Fetch<MenuItem>` | -  | 远程菜单：挂载即请求，内置四态 |
 | modelValue          | `string`     | -       | 选中项 key（v-model）          |
 | collapsed           | `boolean`    | `false` | 折叠模式（仅图标，子菜单弹出） |
 | defaultExpandedKeys | `string[]`   | `[]`    | 默认展开的分组 key             |
@@ -1600,6 +1627,7 @@ Expose：`service`（全局 loading 服务，可 `service.show() / hide()`）。
 | minDate        | `string \| Date`                                           | -       | 最小可选日期                     |
 | maxDate        | `string \| Date`                                           | -       | 最大可选日期                     |
 | events         | `CalendarEvent[]`                                          | `[]`    | 日程 / 事项标记                  |
+| fetch          | `Fetch<CalendarEvent>`                                     | -       | 远程日程：自动以 `query.filters.range`（当前面板首尾日期）重取，切月自动加载 |
 
 | 事件              | 参数                                                        | 说明         |
 | ----------------- | ----------------------------------------------------------- | ------------ |
@@ -1641,7 +1669,8 @@ Expose：`service`（全局 loading 服务，可 `service.show() / hide()`）。
 
 | Prop       | 类型               | 默认值                   | 说明                            |
 | ---------- | ------------------ | ------------------------ | ------------------------------- |
-| data       | `TransferItem[]`   | `[]`                     | 全部数据                        |
+| data       | `TransferItem[]`   | `[]`                     | 全部数据（绑定 fetch 时可省略） |
+| fetch      | `Fetch<TransferItem>` | -                     | 远程候选：挂载即请求，左侧搜索以 `query.keyword`（防抖 300ms）重取，远程模式不本地过滤 |
 | modelValue | `string[]`         | -                        | 右栏（已选）key 列表（v-model） |
 | titles     | `[string, string]` | `['源列表', '目标列表']` | 两侧标题                        |
 | searchable | `boolean`          | `false`                  | 两侧搜索过滤                    |
@@ -1657,11 +1686,12 @@ Expose：`service`（全局 loading 服务，可 `service.show() / hide()`）。
 
 ### VirtualList 虚拟列表
 
-超长列表的虚拟滚动，支持动态行高。
+超长列表的虚拟滚动，支持动态行高；绑定 `fetch` 后自动触底分页累积。
 
 | Prop          | 类型                                      | 默认值 | 说明                       |
 | ------------- | ----------------------------------------- | ------ | -------------------------- |
-| items         | `string[]`                                | `[]`   | 列表数据（必填）           |
+| items         | `T[]`                                     | `[]`   | 列表数据（绑定 fetch 时可省略） |
+| fetch         | `Fetch<T>`                                | -      | 远程列表：自动注入 `pagination`（每页 20），触底加载下一页并累积，内置哨兵态与重试 |
 | height        | `number`                                  | `240`  | 容器高度（px）             |
 | itemHeight    | `number`                                  | `40`   | 单项高度（px）             |
 | buffer        | `number`                                  | `2`    | 上下缓冲行数               |
@@ -1840,9 +1870,108 @@ interface TourStep {
 </Watermark>
 ```
 
+### CodeCard 代码卡片
+
+演示插槽与示例源码展示卡片，内置代码高亮（明暗主题自适应），支持复制与展开/收起。
+
+| Prop          | 类型      | 默认值  | 说明                                                          |
+| ------------- | --------- | ------- | ------------------------------------------------------------- |
+| title         | `string`  | `''`    | 卡片标题，不传则不渲染标题栏                                  |
+| code          | `string`  | -       | 示例源码（必填，支持带公共缩进的模板字符串）                  |
+| language      | `string`  | `'vue'` | 源码语言（vue / typescript / javascript / css / html / json） |
+| defaultExpand | `boolean` | `false` | 初始是否展开代码                                              |
+
+| 插槽    | 说明           |
+| ------- | -------------- |
+| default | 实时演示内容区 |
+
+```vue
+<script setup lang="ts">
+const demoCode = `
+  <Button type="primary">主要按钮</Button>
+  <Button>次要按钮</Button>
+`;
+</script>
+
+<template>
+  <CodeCard title="按钮类型" :code="demoCode">
+    <Button type="primary">主要按钮</Button>
+    <Button>次要按钮</Button>
+  </CodeCard>
+</template>
+```
+
+> 高亮器懒加载且全局单例，未就绪时降级渲染纯文本；明暗主题下自动切换代码配色。
+
+---
+
+## 远程数据（fetch）
+
+17 个资源型组件支持统一的 `fetch` 属性。开发者只绑定请求方法，组件内部自动完成
+挂载即请求、交互重取、防抖、竞态处理与四态渲染。完整机制与类型定义见
+[数据请求机制](./data-fetching.md)。
+
+```ts
+import type { Fetch } from '@cumquat/vue/components';
+
+// 返回数组 → 普通列表；返回 { list, total } → 分页；返回其他 → 单值
+const fetchUsers: Fetch<UserRow> = async (query) => {
+  const res = await fetch(
+    `/api/users?page=${query.pagination?.currentPage ?? 1}&q=${query.keyword ?? ''}`,
+    { signal: query.signal },
+  );
+  if (!res.ok) throw new Error('请求失败');
+  const body = await res.json();
+  return { list: body.records, total: body.total };
+};
+```
+
+各组件自动注入的查询片段：
+
+| 组件 | `query` 片段 | 返回形态 |
+| ---- | ------------ | -------- |
+| Table | `pagination` / `sorter` / `filters` | 数组或 `{ list, total }` |
+| Select / AutoComplete / Mention | `keyword`（300ms 防抖） | 数组 |
+| Transfer | `keyword`（300ms 防抖） | 数组 |
+| Tree / TreeSelect / Cascader | `filters.parentKey`（懒加载子级） | 数组 |
+| VirtualList | `pagination`（触底加载下一页并累积） | 数组或 `{ list, total }` |
+| Calendar | `filters.range: [首日, 末日]`（切月重取） | 数组 |
+| Statistic | `filters` | 单值 |
+| Descriptions / Timeline / Tabs / Collapse / Carousel / Menu | `filters` | 数组 |
+
+分页表格：
+
+```vue
+<Table :columns="columns" :fetch="fetchUsers" pagination :page-size="20" />
+```
+
+远程搜索下拉：
+
+```vue
+<Select v-model="userId" :fetch="searchUsers" filterable placeholder="搜索用户" />
+```
+
+懒加载树（根节点请求不带 parentKey，子节点数据标记 `leaf` 避免空展开箭头）：
+
+```ts
+const fetchOrg: Fetch<OrgNode> = async ({ filters }) => {
+  const res = await fetch(`/api/org?parent=${filters?.parentKey ?? ''}`);
+  return res.json();
+};
+```
+
+```vue
+<Tree :fetch="fetchOrg" />
+```
+
+组件外也可通过 `useFetch` 消费同一份请求状态（`data` / `total` / `status` /
+`error` / `refresh`），其 `fetch` 方法或返回对象都可直接绑给组件，详见
+[组合函数 API](./composables.md)。
+
 ---
 
 ## 附：相关文档
 
 - [组件清单与逻辑设计](./components.md)
 - [组合函数 API](./composables.md)
+- [数据请求机制](./data-fetching.md)

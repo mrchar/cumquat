@@ -6,6 +6,7 @@ import type { PaginationPageItem } from '@cumquat/composables';
 const props = withDefaults(
   defineProps<{
     total: number;
+    /** 受控每页条数；需配合 v-model:page-size 或监听 update:page-size 才能切换 */
     pageSize?: number;
     modelValue?: number;
     pageSizes?: number[];
@@ -17,7 +18,6 @@ const props = withDefaults(
     siblingCount?: number;
   }>(),
   {
-    pageSize: 10,
     modelValue: undefined,
     pageSizes: () => [10, 20, 50, 100],
     showSizeChanger: false,
@@ -50,8 +50,10 @@ const {
   setPageSize,
 } = usePagination({
   total: props.total,
-  currentPage: props.modelValue,
-  pageSize: props.pageSize,
+  // 传 getter 保持受控响应性：外部 modelValue/pageSize 变化同步到视图
+  currentPage: props.modelValue !== undefined ? () => props.modelValue : undefined,
+  pageSize: props.pageSize !== undefined ? () => props.pageSize : undefined,
+  defaultPageSize: 10,
   pageSizes: props.pageSizes,
   boundaryCount: props.boundaryCount,
   siblingCount: props.siblingCount,
@@ -60,17 +62,11 @@ const {
   onPageSizeChange: (size) => emit('update:pageSize', size),
 });
 
-// 外部 total / pageSize prop 变化时同步到模型
+// 外部 total 变化时同步到模型
 watch(
   () => props.total,
   (value) => {
     total.value = value;
-  },
-);
-watch(
-  () => props.pageSize,
-  (value) => {
-    if (value !== undefined && value !== pageSize.value) pageSize.value = value;
   },
 );
 

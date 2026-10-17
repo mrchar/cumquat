@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import {
   Button,
@@ -100,6 +100,14 @@ describe('Statistic', () => {
     expect(wrapper.find('.cumquat-statistic__title').text()).toBe('下载量');
     expect(wrapper.find('.cumquat-statistic__number').text()).toBe('1234');
     expect(wrapper.find('.cumquat-statistic__suffix').text()).toBe('次');
+  });
+
+  it('fetch 单值：挂载即请求并渲染远程数值', async () => {
+    const fetcher = vi.fn(async () => 42);
+    const wrapper = mount(Statistic, { props: { title: '在线用户', fetch: fetcher } });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(wrapper.find('.cumquat-statistic__number').text()).toBe('42');
   });
 });
 

@@ -197,9 +197,64 @@ interface ControlledProps<T> {
 
 ### 8.3 数据展示（data/）
 
-| 组合函数        | 职责                                                      | 入包依据 / 消费组件                          |
-| --------------- | --------------------------------------------------------- | -------------------------------------------- |
-| `usePagination` | 当前页/页大小、总页数、页码与省略号序列、跳页、页大小变更 | Pagination；Table 内联复用；宿主列表可独立用 |
+| 组合函数             | 职责                                                      | 入包依据 / 消费组件                          |
+| -------------------- | --------------------------------------------------------- | -------------------------------------------- |
+| `usePagination`      | 当前页/页大小、总页数、页码与省略号序列、跳页、页大小变更 | Pagination；Table 内联复用；宿主列表可独立用 |
+| `useFetch`           | 宿主侧统一资源请求：状态机、竞态后到为准、stale、刷新     | 17 个 fetch 型组件的请求源；宿主可独立用      |
+| `useFetchResource`   | 组件内部资源机制：挂载即请求、查询片段自动重取、防抖、合并 | 所有 fetch 型组件内部共用                    |
+| `createFetchController` | 纯工厂：请求序号竞态控制 + AbortController + 四态状态机 | 上述两个钩子的底层，也可单独用于测试/自定义   |
+
+#### 8.3.1 统一数据请求
+
+完整设计见 [data-fetching.md](./data-fetching.md)。最小用法：
+
+```ts
+import { useFetch } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
+
+interface UserRow {
+  id: number;
+  name: string;
+}
+
+// 宿主侧：创建一次，状态可在组件外消费，也可直接把 fetchUsers 绑给组件
+const { state, data, total, status, loading, error, isStale, refresh } =
+  useFetch<UserRow>((query) => fetchUsersApi(query));
+```
+
+`useFetch(fetcher)` 返回：
+
+| 成员      | 说明                                                                 |
+| --------- | -------------------------------------------------------------------- |
+| `fetch`   | `(query?) => Promise<FetchResult<T>>`，可直接绑给组件的 `fetch` 属性 |
+| `state`   | `ComputedRef<AsyncStateLike>`，四态（pending/error/success）+ retry  |
+| `data`    | 归一化后的负载：数组 / 分页 list / 单值                              |
+| `total`   | 分页总数；普通数组为数据条数；单值为 0                               |
+| `status` / `loading` / `error` / `isStale` | 状态便捷访问                |
+| `refresh` | 以最近查询重发；传入 query 时浅合并覆盖                              |
+
+组件作者使用 `useFetchResource`：
+
+```ts
+const { enabled, state, total, loading, error, refresh } = useFetchResource<Row[]>(
+  () => props.fetch, // 必须传 ref/getter，裸函数会被 toValue 当 getter 调用
+  {
+    getQuery: () => ({ pagination: { currentPage, pageSize }, sorter, filters }),
+    initialData: [],
+    debounce: 300,                       // 关键词类组件使用
+    merge: (previous, next, query) => …, // 累积分页 / 树懒加载挂载子级
+  },
+);
+```
+
+行为约束：
+
+- 首次绑定在微任务执行（避开 setup 中 `getQuery` 引用后置初始化状态的 TDZ），
+  查询监听器在首次绑定时才完成依赖收集；
+- 请求序号保证后到为准，旧请求通过 `AbortController` 取消；
+- 重取期间保留旧数据并标 `isStale`，失败渲染错误态且 `retry` 重放最近一次查询；
+- `merge` 模式下仅当 `pagination.currentPage <= 1` 时重置数据，
+  无分页片段的懒加载查询不重置，由 merge 依据 `filters.parentKey` 挂回子树。
 
 ### 8.4 媒体（media/）
 
@@ -222,9 +277,9 @@ components.md 的"组件逻辑清单"为准，本表只标注公共包函数的�
 | Button     | `useActionState`、`useId`                                                                                                    |
 | Icon       | —                                                                                                                            |
 | Input      | `useFormField`                                                                                                               |
-| Select     | `useFloating`、`useOpen`、`useDismiss`、`useListboxNavigation`、`useSelectModel`、`useAsyncState`、`useFormField`            |
+| Select     | `useFloating`、`useOpen`、`useDismiss`、`useListboxNavigation`、`useSelectModel`、`useAsyncState`、`useFetchResource`、`useFormField`            |
 | Form       | `useForm`、`useFormContext`                                                                                                  |
-| Table      | `usePagination`、`useAsyncState`（排序/筛选/展开/选择的编排与 change 参数组装在组件内联）                                    |
+| Table      | `usePagination`、`useAsyncState`、`useFetchResource`（排序/筛选/展开/选择的编排与 change 参数组装在组件内联）                                    |
 | Dialog     | `useModal`（内含 `useOpen`+`useDismiss`+`useScrollLock`+`useFocusTrap`+`useFocusReturn`+`useZIndex`+`useTransitionVisible`） |
 | Pagination | `usePagination`                                                                                                              |
 | Message    | `createMessage`（底座 `useToastQueue`）                                                                                      |
@@ -239,9 +294,9 @@ components.md 的"组件逻辑清单"为准，本表只标注公共包函数的�
 | Switch       | `useToggle`、`useActionState`、`useFormField`                                                           |
 | DatePicker   | `useDateGrid`、`useDateModel`、`useTimeModel`（日期时间模式）、`useFloating`、`useOpen`、`useFormField` |
 | TimePicker   | `useTimeModel`、`useFloating`、`useListboxNavigation`                                                   |
-| Tabs         | `useRovingFocus`                                                                                        |
+| Tabs         | `useRovingFocus`、`useFetchResource`                                                                                        |
 | Dropdown     | `usePopoverModel`、`useFloating`、`useListboxNavigation`                                                |
-| Menu         | `useRovingFocus`、`useTypeahead`                                                                        |
+| Menu         | `useRovingFocus`、`useTypeahead`、`useFetchResource`                                                                        |
 | Drawer       | `useModal`                                                                                              |
 | Popover      | `usePopoverModel`、`useFloating`                                                                        |
 | Card         | —                                                                                                       |
@@ -257,9 +312,9 @@ components.md 的"组件逻辑清单"为准，本表只标注公共包函数的�
 | 组件         | 复用的公共组合函数                                                      |
 | ------------ | ----------------------------------------------------------------------- |
 | InputNumber  | `useFormField`                                                          |
-| Cascader     | `useFloating`、`useListboxNavigation`                                   |
-| Tree         | `useTreeModel`、`useRovingFocus`、`useTypeahead`                        |
-| TreeSelect   | `useTreeModel`、`useSelectModel`、`useFloating`、`useListboxNavigation` |
+| Cascader     | `useFloating`、`useListboxNavigation`、`useFetchResource`                                   |
+| Tree         | `useTreeModel`、`useRovingFocus`、`useTypeahead`、`useFetchResource`                        |
+| TreeSelect   | `useTreeModel`、`useSelectModel`、`useFloating`、`useListboxNavigation`、`useFetchResource` |
 | AutoComplete | `useAsyncSuggest`、`useFloating`、`useListboxNavigation`                |
 | Breadcrumb   | —                                                                       |
 | Steps        | —（步骤状态在组件内联实现）                                             |
@@ -269,8 +324,8 @@ components.md 的"组件逻辑清单"为准，本表只标注公共包函数的�
 | Skeleton     | —                                                                       |
 | Empty        | —                                                                       |
 | Result       | —                                                                       |
-| Collapse     | —（展开集合与手风琴模式在组件内联实现）                                 |
-| Descriptions | —                                                                       |
+| Collapse     | `useFetchResource`（展开集合与手风琴模式在组件内联实现）                     |
+| Descriptions | `useFetchResource`                                                                       |
 | Layout       | `useToggle`、`useMediaQuery`                                            |
 | Grid         | `useMediaQuery`                                                         |
 | Space        | —                                                                       |
@@ -281,28 +336,28 @@ components.md 的"组件逻辑清单"为准，本表只标注公共包函数的�
 | ---------- | ------------------------------------------ |
 | Slider     | `useDraggable`                             |
 | Rate       | —（星级交互在组件内联实现）                |
-| Transfer   | —（双栏搬移在组件内联实现）                |
-| Timeline   | —                                          |
-| Carousel   | `useIntervalFn`                            |
+| Transfer   | `useFetchResource`（双栏搬移在组件内联实现）                |
+| Timeline   | `useFetchResource`                                          |
+| Carousel   | `useIntervalFn`、`useFetchResource`                            |
 | Image      | `useImageState`、`useIntersectionObserver` |
 | Affix      | `useScroll`                                |
 | Anchor     | `useScroll`、`useScrollIntoView`           |
 | BackTop    | `useScroll`                                |
-| Statistic  | —（滚动动画与倒计时在组件内联实现）        |
+| Statistic  | `useFetchResource`（滚动动画与倒计时在组件内联实现）        |
 | Typography | `useClipboard`、`useResizeObserver`        |
 
 ### P4 · 特定场景
 
 | 组件        | 复用的公共组合函数                                       |
 | ----------- | -------------------------------------------------------- |
-| Calendar    | `useDateGrid`、`useDateModel`                            |
+| Calendar    | `useDateGrid`、`useDateModel`、`useFetchResource`                            |
 | ColorPicker | `useDraggable`、`useFloating`                            |
 | QRCode      | —（点阵生成为组件内纯函数）                              |
 | Watermark   | `useResizeObserver`（防篡改直接用原生 MutationObserver） |
 | Tour        | `useScrollIntoView`、`useZIndex`                         |
-| Mention     | `useAsyncSuggest`、`useFloating`                         |
+| Mention     | `useAsyncSuggest`、`useFloating`                                         |
 | Segmented   | `useListboxNavigation`、`useControllableModel`           |
-| VirtualList | `useResizeObserver`                                      |
+| VirtualList | `useResizeObserver`、`useFetchResource`                                      |
 | FloatButton | `useToggle`、`useOpen`                                   |
 
 ## 10. 建设优先级

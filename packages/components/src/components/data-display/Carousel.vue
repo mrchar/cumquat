@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useIntervalFn } from '@cumquat/composables';
+import { useFetchResource, useIntervalFn } from '@cumquat/composables';
+import type { Fetch } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -16,6 +17,8 @@ const props = withDefaults(
     pauseOnHover?: boolean;
     /** 循环切换 */
     loop?: boolean;
+    /** 统一远程请求：挂载即拉取轮播项，返回数组或 { list, total } */
+    fetch?: Fetch<string>;
   }>(),
   {
     items: () => [],
@@ -25,6 +28,7 @@ const props = withDefaults(
     interval: 3000,
     pauseOnHover: true,
     loop: true,
+    fetch: undefined,
   },
 );
 
@@ -33,7 +37,21 @@ const emit = defineEmits<{
   change: [index: number, previous: number];
 }>();
 
-const count = computed(() => props.items.length || 3);
+/* ---------------- fetch：挂载即拉轮播项 ---------------- */
+const { enabled: fetchEnabled, state: fetchState } = useFetchResource<string[]>(() => props.fetch, {
+  getQuery: () => ({}),
+  initialData: [] as string[],
+});
+
+const sourceItems = computed<string[]>(() =>
+  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items,
+);
+const remoteLoading = computed(() => fetchState.value?.status === 'pending');
+const remoteError = computed(() =>
+  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
+);
+
+const count = computed(() => sourceItems.value.length || (fetchEnabled.value ? 0 : 3));
 
 /** 最近一次提交索引（受控 prop 不回写时按钮仍可连续切换） */
 const baseIndex = ref(props.modelValue ?? 0);
@@ -105,10 +123,34 @@ function onMouseLeave() {
     @mouseleave="onMouseLeave"
   >
     <Transition name="cumquat-fade" mode="out-in">
-      <div :key="baseIndex" class="cumquat-carousel__slide">
+      <div
+        v-if="fetchEnabled && remoteLoading && sourceItems.length === 0"
+        key="state-pending"
+        class="cumquat-carousel__state cq-state--pending"
+      >
+        加载中…
+      </div>
+      <div
+        v-else-if="fetchEnabled && remoteError && sourceItems.length === 0"
+        key="state-error"
+        class="cumquat-carousel__state cq-state--error"
+      >
+        加载失败
+        <button type="button" class="cumquat-carousel__retry" @click="fetchState?.retry?.()">
+          重试
+        </button>
+      </div>
+      <div
+        v-else-if="fetchEnabled && sourceItems.length === 0"
+        key="state-empty"
+        class="cumquat-carousel__state"
+      >
+        暂无数据
+      </div>
+      <div v-else :key="baseIndex" class="cumquat-carousel__slide">
         <slot :index="baseIndex">
           <span class="cumquat-carousel__slide-text">{{
-            items[baseIndex] ?? `Slide ${baseIndex + 1}`
+            sourceItems[baseIndex] ?? `Slide ${baseIndex + 1}`
           }}</span>
         </slot>
       </div>
