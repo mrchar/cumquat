@@ -1,0 +1,21 @@
+{
+  "name": "@cumquat/docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "dependencies": {
+    "@cumquat/components": "workspace:*",
+    "@cumquat/themes": "workspace:*",
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "tailwindcss": "^4.0.0",
+    "vitepress": "catalog:"
+  }
+}

@@ -2287,6 +2287,9 @@
   .cumquat-code-card__highlight .shiki {
     @apply bg-transparent;
   }
+  .cumquat-code-card__editor {
+    @apply block max-h-96 w-full resize-y overflow-auto border-0 bg-transparent p-4 font-mono text-xs leading-relaxed text-cumquat-text outline-none;
+  }
   /* shiki 双主题：默认亮色，暗色主题下切换 --shiki-dark */
   .cumquat-code-card__highlight .shiki span {
     color: var(--shiki-light);

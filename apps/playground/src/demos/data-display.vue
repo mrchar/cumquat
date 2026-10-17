@@ -1,22 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import {
-  Button,
-  Carousel,
-  Cascader,
-  CodeCard,
-  Collapse,
-  Descriptions,
-  Image,
-  Pagination,
-  Progress,
-  Steps,
-  Table,
-  Tabs,
-  Timeline,
-  Tree,
-} from '@cumquat/components';
+import { CodeCard } from '@cumquat/components';
 import type { Fetch, FetchQuery } from '@cumquat/components';
+import LiveDemo from '../components/LiveDemo.vue';
 
 const page = ref(1);
 const tab = ref('a');
@@ -105,9 +91,9 @@ const carouselItems = ['第一屏', '第二屏', '第三屏'];
 const demoImage =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='140'><rect width='240' height='140' rx='8' fill='%234f46e5'/><circle cx='64' cy='70' r='30' fill='%23fbbf24' opacity='0.9'/><text x='112' y='78' font-size='20' font-family='sans-serif' fill='white'>Cumquat</text></svg>";
 
-const tableCode = `
+const tableCode = ref(`
   <Table :columns="columns" :rows="rows" />
-`;
+`);
 
 /* ----------------------------- 远程 fetch 示例 ----------------------------- */
 
@@ -194,226 +180,235 @@ const fetchOrg: Fetch<OrgNode> = async (query: FetchQuery) => {
   }));
 };
 
-const remoteTableCode = `
-  <Table :columns="remoteColumns" :fetch="fetchUsers" pagination :page-size="10" />
-`;
-
-const remoteTreeCode = `
-  <Tree :fetch="fetchOrg" />
-`;
-
-const paginationCode = `
-  <Pagination v-model="page" :total="50" :page-size="10" />
-`;
-
-const tabsCode = `
-  <Tabs v-model="tab" :tabs="tabs" />
-`;
-
-const collapseCode = `
-  <Collapse :items="collapseItems" />
-`;
-
-const treeCode = `
-  <Tree
-    v-model:checked="treeChecked"
-    :nodes="treeNodes"
-    :default-expand-all="true"
-    :checkable="true"
-  />
-`;
-
-const cascaderCode = `
-  <Cascader v-model="cascaderValue" :options="cascadeOptions" class="w-56" />
-`;
-
-const timelineCode = `
-  <Timeline :items="timelineItems" />
-`;
-
-const stepsCode = `
-  <Steps :current="currentStep" :steps="stepItems" />
-  <div class="flex gap-2">
-    <Button size="sm" :disabled="currentStep <= 0" @click="currentStep--">上一步</Button>
-    <Button
-      size="sm"
-      type="primary"
-      :disabled="currentStep >= stepItems.length - 1"
-      @click="currentStep++"
-    >
-      下一步
-    </Button>
+const remoteTableCode = ref(`
+  <div class="flex flex-col gap-3">
+    <div class="flex items-center gap-3">
+      <Button size="sm" @click="failNextFetch = true">模拟下一次请求失败</Button>
+      <span class="text-sm text-cumquat-text-muted">
+        绑定 fetch 后，翻页、点表头排序、角色筛选都会自动重新请求
+      </span>
+    </div>
+    <Table :columns="remoteColumns" :fetch="fetchUsers" pagination :page-size="10" />
   </div>
-`;
+`);
 
-const descriptionsCode = `
+const remoteTreeCode = ref(`
+  <Tree :fetch="fetchOrg" />
+`);
+
+const paginationCode = ref(`
+  <div class="flex flex-wrap items-center gap-3">
+    <Pagination v-model="page" :total="50" :page-size="10" />
+    <span class="text-sm text-cumquat-text-muted">当前第 {{ page }} 页</span>
+  </div>
+`);
+
+const tabsCode = ref(`
+  <div class="flex flex-col gap-3">
+    <Tabs v-model="tab" :tabs="tabs" />
+    <p class="text-sm text-cumquat-text-muted">当前标签：{{ tab }}</p>
+  </div>
+`);
+
+const collapseCode = ref(`
+  <Collapse :items="collapseItems" />
+`);
+
+const treeCode = ref(`
+  <div class="flex flex-wrap items-start gap-6">
+    <Tree
+      v-model:checked="treeChecked"
+      :nodes="treeNodes"
+      :default-expand-all="true"
+      :checkable="true"
+    />
+    <span class="text-sm text-cumquat-text-muted"
+      >勾选：{{ treeChecked.join('、') || '（无）' }}</span
+    >
+  </div>
+`);
+
+const cascaderCode = ref(`
+  <div class="flex flex-wrap items-center gap-3">
+    <Cascader v-model="cascaderValue" :options="cascadeOptions" class="w-56" />
+    <span class="text-sm text-cumquat-text-muted"
+      >选中值：{{ cascaderValue ?? '（未选）' }}</span
+    >
+  </div>
+`);
+
+const timelineCode = ref(`
+  <Timeline :items="timelineItems" />
+`);
+
+const stepsCode = ref(`
+  <div class="flex flex-col gap-4">
+    <Steps :current="currentStep" :steps="stepItems" />
+    <div class="flex gap-2">
+      <Button size="sm" :disabled="currentStep <= 0" @click="currentStep--">上一步</Button>
+      <Button
+        size="sm"
+        type="primary"
+        :disabled="currentStep >= stepItems.length - 1"
+        @click="currentStep++"
+      >
+        下一步
+      </Button>
+    </div>
+  </div>
+`);
+
+const descriptionsCode = ref(`
   <Descriptions title="项目信息" :items="descriptionItems" :bordered="true" :column="2" />
-`;
+`);
 
-const carouselCode = `
+const carouselCode = ref(`
   <Carousel v-model="carouselIndex" :items="carouselItems" />
-`;
+`);
 
-const progressCode = `
-  <Progress :value="30" />
-  <Progress :value="66" />
-  <Progress :value="100" />
-`;
+const progressCode = ref(`
+  <div class="flex flex-col gap-3">
+    <Progress :value="30" />
+    <Progress :value="66" />
+    <Progress :value="100" />
+  </div>
+`);
 
-const imageCode = `
-  <Image :src="demoImage" alt="演示图片" :rounded="true" class="w-60" />
-  <Image
-    src="https://invalid.cumquat.dev/none.png"
-    alt="加载失败"
-    :rounded="true"
-    class="w-60"
-  />
-`;
+const imageCode = ref(`
+  <div class="flex flex-wrap items-start gap-4">
+    <Image :src="demoImage" alt="演示图片" :rounded="true" class="w-60" />
+    <Image
+      src="https://invalid.cumquat.dev/none.png"
+      alt="加载失败"
+      :rounded="true"
+      class="w-60"
+    />
+  </div>
+`);
+
+/** LiveDemo 渲染作用域：代码卡片模板中可访问的变量与函数 */
+const demoScope = {
+  page,
+  tab,
+  cascaderValue,
+  treeChecked,
+  currentStep,
+  carouselIndex,
+  columns,
+  rows,
+  tabs,
+  collapseItems,
+  treeNodes,
+  cascadeOptions,
+  timelineItems,
+  stepItems,
+  descriptionItems,
+  carouselItems,
+  demoImage,
+  remoteColumns,
+  fetchUsers,
+  fetchOrg,
+  failNextFetch,
+};
 </script>
 
 <template>
   <div class="flex flex-col gap-10">
     <section id="table" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Table 表格</h2>
-      <CodeCard title="基础表格" :code="tableCode">
-        <Table :columns="columns" :rows="rows" />
+      <CodeCard v-model:code="tableCode" editable title="基础表格">
+        <LiveDemo :code="tableCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="remote-fetch" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">远程数据 Fetch</h2>
-      <CodeCard title="分页 / 排序 / 筛选自动重取（mock 500ms）" :code="remoteTableCode">
-        <div class="mb-3 flex items-center gap-3">
-          <Button size="sm" @click="failNextFetch = true">模拟下一次请求失败</Button>
-          <span class="text-sm text-cumquat-text-muted">
-            绑定 fetch 后，翻页、点表头排序、角色筛选都会自动重新请求
-          </span>
-        </div>
-        <Table :columns="remoteColumns" :fetch="fetchUsers" pagination :page-size="10" />
+      <CodeCard
+        v-model:code="remoteTableCode"
+        editable
+        title="分页 / 排序 / 筛选自动重取（mock 500ms）"
+      >
+        <LiveDemo :code="remoteTableCode" :scope="demoScope" />
       </CodeCard>
-      <CodeCard title="懒加载树（展开节点才请求子级）" :code="remoteTreeCode">
-        <Tree :fetch="fetchOrg" />
+      <CodeCard v-model:code="remoteTreeCode" editable title="懒加载树（展开节点才请求子级）">
+        <LiveDemo :code="remoteTreeCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="pagination" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Pagination 分页</h2>
-      <CodeCard title="分页联动" :code="paginationCode">
-        <div class="flex flex-wrap items-center gap-3">
-          <Pagination v-model="page" :total="50" :page-size="10" />
-          <span class="text-sm text-cumquat-text-muted">当前第 {{ page }} 页</span>
-        </div>
+      <CodeCard v-model:code="paginationCode" editable title="分页联动">
+        <LiveDemo :code="paginationCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="tabs" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Tabs 标签页</h2>
-      <CodeCard title="标签切换" :code="tabsCode">
-        <Tabs v-model="tab" :tabs="tabs" />
-        <p class="mt-3 text-sm text-cumquat-text-muted">当前标签：{{ tab }}</p>
+      <CodeCard v-model:code="tabsCode" editable title="标签切换">
+        <LiveDemo :code="tabsCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="collapse" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Collapse 折叠面板</h2>
-      <CodeCard title="折叠面板" :code="collapseCode">
-        <Collapse :items="collapseItems" />
+      <CodeCard v-model:code="collapseCode" editable title="折叠面板">
+        <LiveDemo :code="collapseCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="tree" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Tree 树形控件</h2>
-      <CodeCard title="勾选树" :code="treeCode">
-        <div class="flex flex-wrap items-start gap-6">
-          <Tree
-            v-model:checked="treeChecked"
-            :nodes="treeNodes"
-            :default-expand-all="true"
-            :checkable="true"
-          />
-          <span class="text-sm text-cumquat-text-muted"
-            >勾选：{{ treeChecked.join('、') || '（无）' }}</span
-          >
-        </div>
+      <CodeCard v-model:code="treeCode" editable title="勾选树">
+        <LiveDemo :code="treeCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="cascader" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Cascader 级联选择</h2>
-      <CodeCard title="级联选择" :code="cascaderCode">
-        <div class="flex flex-wrap items-center gap-3">
-          <Cascader v-model="cascaderValue" :options="cascadeOptions" class="w-56" />
-          <span class="text-sm text-cumquat-text-muted"
-            >选中值：{{ cascaderValue ?? '（未选）' }}</span
-          >
-        </div>
+      <CodeCard v-model:code="cascaderCode" editable title="级联选择">
+        <LiveDemo :code="cascaderCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="timeline" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Timeline 时间轴</h2>
-      <CodeCard title="时间轴" :code="timelineCode">
-        <Timeline :items="timelineItems" />
+      <CodeCard v-model:code="timelineCode" editable title="时间轴">
+        <LiveDemo :code="timelineCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="steps" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Steps 步骤条</h2>
-      <CodeCard title="步骤条控制" :code="stepsCode">
-        <div class="flex flex-col gap-4">
-          <Steps :current="currentStep" :steps="stepItems" />
-          <div class="flex gap-2">
-            <Button size="sm" :disabled="currentStep <= 0" @click="currentStep--">上一步</Button>
-            <Button
-              size="sm"
-              type="primary"
-              :disabled="currentStep >= stepItems.length - 1"
-              @click="currentStep++"
-            >
-              下一步
-            </Button>
-          </div>
-        </div>
+      <CodeCard v-model:code="stepsCode" editable title="步骤条控制">
+        <LiveDemo :code="stepsCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="descriptions" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Descriptions 描述列表</h2>
-      <CodeCard title="描述列表" :code="descriptionsCode">
-        <Descriptions title="项目信息" :items="descriptionItems" :bordered="true" :column="2" />
+      <CodeCard v-model:code="descriptionsCode" editable title="描述列表">
+        <LiveDemo :code="descriptionsCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="carousel" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Carousel 轮播</h2>
-      <CodeCard title="轮播播放" :code="carouselCode">
-        <Carousel v-model="carouselIndex" :items="carouselItems" />
+      <CodeCard v-model:code="carouselCode" editable title="轮播播放">
+        <LiveDemo :code="carouselCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="progress" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Progress 进度条</h2>
-      <CodeCard title="进度展示" :code="progressCode">
-        <div class="flex flex-col gap-3">
-          <Progress :value="30" />
-          <Progress :value="66" />
-          <Progress :value="100" />
-        </div>
+      <CodeCard v-model:code="progressCode" editable title="进度展示">
+        <LiveDemo :code="progressCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="image" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Image 图片</h2>
-      <CodeCard title="加载与失败兜底" :code="imageCode">
-        <div class="flex flex-wrap items-start gap-4">
-          <Image :src="demoImage" alt="演示图片" :rounded="true" class="w-60" />
-          <Image
-            src="https://invalid.cumquat.dev/none.png"
-            alt="加载失败"
-            :rounded="true"
-            class="w-60"
-          />
-        </div>
+      <CodeCard v-model:code="imageCode" editable title="加载与失败兜底">
+        <LiveDemo :code="imageCode" :scope="demoScope" />
       </CodeCard>
     </section>
   </div>

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, h, resolveComponent } from 'vue';
 import { Cumquat, Button, Watermark, Tour, QRCode, CodeCard } from '../../index';
@@ -89,6 +89,37 @@ describe('CodeCard', () => {
     await toggle.trigger('click');
     expect(toggle.attributes('aria-expanded')).toBe('true');
     expect(wrapper.find('.cumquat-code-card__code').isVisible()).toBe(true);
+  });
+
+  it('editable：编辑后防抖回发最新代码，恢复按钮还原初始代码', async () => {
+    vi.useFakeTimers();
+    try {
+      const wrapper = mount(CodeCard, {
+        props: { code: '<Button>确定</Button>', editable: true },
+      });
+      // 非编辑态不显示恢复按钮
+      expect(wrapper.text()).not.toContain('恢复');
+      const editBtn = wrapper.findAll('.cumquat-code-card__action')[2];
+      expect(editBtn.text()).toBe('编辑代码');
+      await editBtn.trigger('click');
+      const editor = wrapper.find('.cumquat-code-card__editor');
+      expect(editor.exists()).toBe(true);
+      await editor.setValue('<Button>修改后</Button>');
+      // 防抖 300ms 后回发
+      expect(wrapper.emitted('update:code')).toBeUndefined();
+      vi.advanceTimersByTime(350);
+      expect(wrapper.emitted('update:code')?.[0]).toEqual(['<Button>修改后</Button>']);
+      // 修改后出现恢复按钮
+      const resetBtn = wrapper.findAll('.cumquat-code-card__action').at(-1)!;
+      expect(resetBtn.text()).toBe('恢复');
+      await resetBtn.trigger('click');
+      expect(wrapper.emitted('update:code')?.[1]).toEqual(['<Button>确定</Button>']);
+      expect(wrapper.emitted('reset')).toHaveLength(1);
+      expect(wrapper.find('.cumquat-code-card__editor').exists()).toBe(false);
+      expect(wrapper.text()).not.toContain('恢复');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# VitePress
+docs/.vitepress/cache
+
 # dotenv environment variable files
 .env
 .env.*

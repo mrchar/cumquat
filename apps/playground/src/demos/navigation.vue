@@ -1,25 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import {
-  Affix,
-  Anchor,
-  BackTop,
-  Breadcrumb,
-  Button,
-  Calendar,
-  CodeCard,
-  ColorPicker,
-  DatePicker,
-  FloatButton,
-  Grid,
-  Layout,
-  Menu,
-  Space,
-  TimePicker,
-  Transfer,
-  VirtualList,
-} from '@cumquat/components';
+import { CodeCard } from '@cumquat/components';
 import type { Fetch, FetchQuery } from '@cumquat/components';
+import LiveDemo from '../components/LiveDemo.vue';
 
 const menuActive = ref('home');
 const dateValue = ref<number | null>(null);
@@ -64,23 +47,26 @@ const floatActions = [
   { key: 'fav', label: '藏' },
 ];
 
-const breadcrumbCode = `
+const breadcrumbCode = ref(`
   <Breadcrumb :items="breadcrumbItems" />
-`;
+`);
 
-const menuCode = `
+const menuCode = ref(`
   <Menu v-model="menuActive" :items="menuItems" class="max-w-56" />
-`;
+`);
 
-const anchorCode = `
+const anchorCode = ref(`
   <Anchor :items="anchorItems" />
-`;
+`);
 
-const backTopCode = `
-  <BackTop />
-`;
+const backTopCode = ref(`
+  <div class="flex flex-wrap items-center gap-3">
+    <BackTop />
+    <span class="text-sm text-cumquat-text-muted">点击按钮返回页面顶部。</span>
+  </div>
+`);
 
-const affixCode = `
+const affixCode = ref(`
   <Affix :top="16">
     <div
       class="rounded-cumquat border border-cumquat-border bg-cumquat-surface-2 px-4 py-2 text-sm"
@@ -88,35 +74,46 @@ const affixCode = `
       吸顶内容（滚动页面时吸附在顶部）
     </div>
   </Affix>
-`;
+`);
 
-const floatButtonCode = `
-  <FloatButton :actions="floatActions" />
-`;
+const floatButtonCode = ref(`
+  <div class="flex flex-col gap-2">
+    <FloatButton :actions="floatActions" />
+    <p class="text-sm text-cumquat-text-muted">点击主按钮展开动作组。</p>
+  </div>
+`);
 
-const datePickerCode = `
-  <DatePicker v-model="dateValue" />
-`;
+const datePickerCode = ref(`
+  <div class="flex flex-wrap items-center gap-3">
+    <DatePicker v-model="dateValue" />
+    <span class="text-sm text-cumquat-text-muted">
+      选中：{{ dateValue != null ? '2026-10-' + String(dateValue).padStart(2, '0') : '（未选）' }}
+    </span>
+  </div>
+`);
 
-const timePickerCode = `
+const timePickerCode = ref(`
   <TimePicker />
-`;
+`);
 
-const calendarCode = `
+const calendarCode = ref(`
   <Calendar class="max-w-xl" />
-`;
+`);
 
-const colorPickerCode = `
-  <ColorPicker v-model="colorValue" />
-`;
+const colorPickerCode = ref(`
+  <div class="flex flex-wrap items-center gap-3">
+    <ColorPicker v-model="colorValue" />
+    <span class="text-sm text-cumquat-text-muted">当前颜色：{{ colorValue }}</span>
+  </div>
+`);
 
-const transferCode = `
+const transferCode = ref(`
   <Transfer v-model="transferTarget" :data="transferData" />
-`;
+`);
 
-const virtualListCode = `
+const virtualListCode = ref(`
   <VirtualList :items="virtualItems" class="max-w-sm" />
-`;
+`);
 
 /* 远程虚拟列表：触底自动请求下一页（每页 20 条）并累积，共 87 条 */
 const fetchVirtualItems: Fetch<string> = async (query: FetchQuery) => {
@@ -131,11 +128,11 @@ const fetchVirtualItems: Fetch<string> = async (query: FetchQuery) => {
   return { list, total };
 };
 
-const remoteVirtualListCode = `
+const remoteVirtualListCode = ref(`
   <VirtualList :fetch="fetchVirtualItems" class="max-w-sm" />
-`;
+`);
 
-const layoutCode = `
+const layoutCode = ref(`
   <Layout class="overflow-hidden rounded-cumquat border border-cumquat-border">
     <div class="flex h-10 items-center bg-cumquat-surface-3 px-4 text-sm">Header</div>
     <div class="flex min-h-28">
@@ -145,9 +142,9 @@ const layoutCode = `
       <div class="flex-1 px-4 py-3 text-sm">Content</div>
     </div>
   </Layout>
-`;
+`);
 
-const gridCode = `
+const gridCode = ref(`
   <Grid :cols="3">
     <div
       class="flex h-16 items-center justify-center rounded bg-cumquat-accent-soft text-sm text-cumquat-accent"
@@ -165,198 +162,143 @@ const gridCode = `
       3
     </div>
   </Grid>
-`;
+`);
 
-const spaceCode = `
+const spaceCode = ref(`
   <Space>
     <Button>按钮一</Button>
     <Button>按钮二</Button>
     <Button>按钮三</Button>
   </Space>
-`;
+`);
+
+/** LiveDemo 渲染作用域：代码卡片模板中可访问的变量与函数 */
+const demoScope = {
+  menuActive,
+  dateValue,
+  colorValue,
+  transferTarget,
+  breadcrumbItems,
+  menuItems,
+  anchorItems,
+  transferData,
+  virtualItems,
+  floatActions,
+  fetchVirtualItems,
+};
 </script>
 
 <template>
   <div class="flex flex-col gap-10">
     <section id="breadcrumb" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Breadcrumb 面包屑</h2>
-      <CodeCard title="基础面包屑" :code="breadcrumbCode">
-        <div>
-          <Breadcrumb :items="breadcrumbItems" />
-        </div>
+      <CodeCard v-model:code="breadcrumbCode" editable title="基础面包屑">
+        <LiveDemo :code="breadcrumbCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="menu" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Menu 导航菜单</h2>
-      <CodeCard title="导航菜单" :code="menuCode">
-        <div>
-          <Menu v-model="menuActive" :items="menuItems" class="max-w-56" />
-        </div>
+      <CodeCard v-model:code="menuCode" editable title="导航菜单">
+        <LiveDemo :code="menuCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="anchor" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Anchor 锚点</h2>
-      <CodeCard title="锚点导航" :code="anchorCode">
-        <div>
-          <Anchor :items="anchorItems" />
-        </div>
+      <CodeCard v-model:code="anchorCode" editable title="锚点导航">
+        <LiveDemo :code="anchorCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="back-top" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">BackTop 回到顶部</h2>
-      <CodeCard title="回到顶部" :code="backTopCode">
-        <div class="flex flex-wrap items-center gap-3">
-          <BackTop />
-          <span class="text-sm text-cumquat-text-muted">点击按钮返回页面顶部。</span>
-        </div>
+      <CodeCard v-model:code="backTopCode" editable title="回到顶部">
+        <LiveDemo :code="backTopCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="affix" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Affix 固钉</h2>
-      <CodeCard title="吸顶固钉" :code="affixCode">
-        <div>
-          <Affix :top="16">
-            <div
-              class="rounded-cumquat border border-cumquat-border bg-cumquat-surface-2 px-4 py-2 text-sm"
-            >
-              吸顶内容（滚动页面时吸附在顶部）
-            </div>
-          </Affix>
-        </div>
+      <CodeCard v-model:code="affixCode" editable title="吸顶固钉">
+        <LiveDemo :code="affixCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="float-button" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">FloatButton 悬浮按钮</h2>
-      <CodeCard title="悬浮动作组" :code="floatButtonCode">
-        <div>
-          <FloatButton :actions="floatActions" />
-          <p class="mt-2 text-sm text-cumquat-text-muted">点击主按钮展开动作组。</p>
-        </div>
+      <CodeCard v-model:code="floatButtonCode" editable title="悬浮动作组">
+        <LiveDemo :code="floatButtonCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="datepicker" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">DatePicker 日期选择框</h2>
-      <CodeCard title="日期选择" :code="datePickerCode">
-        <div class="flex flex-wrap items-center gap-3">
-          <DatePicker v-model="dateValue" />
-          <span class="text-sm text-cumquat-text-muted">
-            选中：{{
-              dateValue != null ? `2026-10-${String(dateValue).padStart(2, '0')}` : '（未选）'
-            }}
-          </span>
-        </div>
+      <CodeCard v-model:code="datePickerCode" editable title="日期选择">
+        <LiveDemo :code="datePickerCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="timepicker" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">TimePicker 时间选择框</h2>
-      <CodeCard title="时间选择" :code="timePickerCode">
-        <div class="flex flex-wrap items-center gap-3">
-          <TimePicker />
-        </div>
+      <CodeCard v-model:code="timePickerCode" editable title="时间选择">
+        <LiveDemo :code="timePickerCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="calendar" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Calendar 日历</h2>
-      <CodeCard title="日历面板" :code="calendarCode">
-        <div>
-          <Calendar class="max-w-xl" />
-        </div>
+      <CodeCard v-model:code="calendarCode" editable title="日历面板">
+        <LiveDemo :code="calendarCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="colorpicker" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">ColorPicker 颜色选择器</h2>
-      <CodeCard title="颜色选择" :code="colorPickerCode">
-        <div class="flex flex-wrap items-center gap-3">
-          <ColorPicker v-model="colorValue" />
-          <span class="text-sm text-cumquat-text-muted">当前颜色：{{ colorValue }}</span>
-        </div>
+      <CodeCard v-model:code="colorPickerCode" editable title="颜色选择">
+        <LiveDemo :code="colorPickerCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="transfer" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Transfer 穿梭框</h2>
-      <CodeCard title="穿梭框" :code="transferCode">
-        <div>
-          <Transfer v-model="transferTarget" :data="transferData" />
-        </div>
+      <CodeCard v-model:code="transferCode" editable title="穿梭框">
+        <LiveDemo :code="transferCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="virtual-list" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">VirtualList 虚拟列表</h2>
-      <CodeCard title="虚拟滚动" :code="virtualListCode">
-        <div>
-          <VirtualList :items="virtualItems" class="max-w-sm" />
-        </div>
+      <CodeCard v-model:code="virtualListCode" editable title="虚拟滚动">
+        <LiveDemo :code="virtualListCode" :scope="demoScope" />
       </CodeCard>
-      <CodeCard title="远程触底分页（fetch，自动累积）" :code="remoteVirtualListCode">
-        <div>
-          <VirtualList :fetch="fetchVirtualItems" class="max-w-sm" />
-        </div>
+      <CodeCard
+        v-model:code="remoteVirtualListCode"
+        editable
+        title="远程触底分页（fetch，自动累积）"
+      >
+        <LiveDemo :code="remoteVirtualListCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="layout" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Layout 布局</h2>
-      <CodeCard title="经典布局" :code="layoutCode">
-        <div>
-          <Layout class="overflow-hidden rounded-cumquat border border-cumquat-border">
-            <div class="flex h-10 items-center bg-cumquat-surface-3 px-4 text-sm">Header</div>
-            <div class="flex min-h-28">
-              <div class="w-32 bg-cumquat-surface-2 px-4 py-3 text-sm text-cumquat-text-muted">
-                Aside
-              </div>
-              <div class="flex-1 px-4 py-3 text-sm">Content</div>
-            </div>
-          </Layout>
-        </div>
+      <CodeCard v-model:code="layoutCode" editable title="经典布局">
+        <LiveDemo :code="layoutCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="grid" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Grid 栅格</h2>
-      <CodeCard title="栅格排列" :code="gridCode">
-        <div>
-          <Grid :cols="3">
-            <div
-              class="flex h-16 items-center justify-center rounded bg-cumquat-accent-soft text-sm text-cumquat-accent"
-            >
-              1
-            </div>
-            <div
-              class="flex h-16 items-center justify-center rounded bg-cumquat-accent-soft text-sm text-cumquat-accent"
-            >
-              2
-            </div>
-            <div
-              class="flex h-16 items-center justify-center rounded bg-cumquat-accent-soft text-sm text-cumquat-accent"
-            >
-              3
-            </div>
-          </Grid>
-        </div>
+      <CodeCard v-model:code="gridCode" editable title="栅格排列">
+        <LiveDemo :code="gridCode" :scope="demoScope" />
       </CodeCard>
     </section>
 
     <section id="space" class="scroll-mt-4">
       <h2 class="mb-3 text-base font-semibold text-cumquat-text">Space 间距</h2>
-      <CodeCard title="间距排列" :code="spaceCode">
-        <div>
-          <Space>
-            <Button>按钮一</Button>
-            <Button>按钮二</Button>
-            <Button>按钮三</Button>
-          </Space>
-        </div>
+      <CodeCard v-model:code="spaceCode" editable title="间距排列">
+        <LiveDemo :code="spaceCode" :scope="demoScope" />
       </CodeCard>
     </section>
   </div>

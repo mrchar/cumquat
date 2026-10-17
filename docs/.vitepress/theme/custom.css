@@ -1,0 +1,32 @@
+/**
+ * 文档站点样式：仅引入 Tailwind 的 theme 与 utilities 层，
+ * 不引入 preflight，避免重置 VitePress 默认主题的基础样式。
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* 组件库语义 token 与组件样式 */
+@import '@cumquat/themes/basic.css';
+@import '@cumquat/themes/light.css';
+@import '@cumquat/themes/dark.css';
+
+/* 跟随 VitePress 的 .dark 根类切换深色样式 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* 组件演示区在文档流中的留白 */
+.vp-doc .cumquat-code-card {
+  margin-block: 1rem;
+}
+
+.vp-doc .cumquat-live-demo {
+  padding: 1rem;
+}

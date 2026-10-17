@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "ready": "vp check && vp run -r test && vp run -r build",
-    "dev": "vp -C apps/playground dev"
+    "dev": "vp -C apps/playground dev",
+    "docs:dev": "pnpm -C docs dev",
+    "docs:build": "pnpm -C docs build",
+    "docs:preview": "pnpm -C docs preview"
   },
   "devDependencies": {
     "unplugin-vue": "catalog:",

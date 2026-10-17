@@ -1,9 +1,13 @@
+---
+title: 组合函数
+---
+
 # 组合函数库（Composables）设计文档
 
-> 基于 [components.md](./components.md) 的组件清单，梳理组件库需要沉淀为公共能力的交互逻辑。
+> 基于 `components-list.md` 的组件清单，梳理组件库需要沉淀为公共能力的交互逻辑。
 > 其中**被两个及以上组件复用的逻辑**、以及**宿主可脱离组件独立使用的逻辑**，统一沉淀为
 > Headless 组合函数包 `@cumquat/composables`；只服务单一组件的逻辑不抽取为组合函数，
-> 直接在对应组件的 `<script setup>` 中按需内联实现（逐组件清单见 components.md）。
+> 直接在对应组件的 `<script setup>` 中按需内联实现（逐组件清单见 components-list.md）。
 > 本文档先于编码，作为组合函数库的建设蓝图与验收范围。
 
 ## 1. 目标与定位
@@ -18,7 +22,7 @@
   不引入任何默认渲染代码。
 - **单组件逻辑直接内联**：与单一组件强绑定的逻辑（如二维码点阵生成、上传队列、各类专属模型）
   不进入公共包，也不另建组合函数文件，直接在该组件的 `<script setup>` 中按需要实现；
-  逐组件的内联逻辑清单登记在 [components.md](./components.md)。
+  逐组件的内联逻辑清单登记在 [components-list.md](./components-list.md)。
 
 ## 2. 设计原则
 
@@ -54,7 +58,7 @@
 - 无响应式行为的纯计算（如二维码点阵、Badge 计数上限、色彩互转）可写为组件内普通函数；
 - 组件内联逻辑同样复用公共包原语，不重复实现底层行为（如 Slider 的拖拽复用 `useDraggable`）；
 - 内联逻辑随组件测试一并验证，不单独维护测试文件；
-- 每个组件需要内联的具体逻辑，逐组件登记在 [components.md](./components.md) 的"组件逻辑清单"。
+- 每个组件需要内联的具体逻辑，逐组件登记在 [components-list.md](./components-list.md) 的"组件逻辑清单"。
 
 ### 3.3 初版评审后剔除的候选项
 
@@ -79,7 +83,7 @@
 | `useBreakpoint`                                                   | 断点取值是项目/主题层语义，不属 Headless 库                   | 宿主基于 `useMediaQuery` 自行封装   |
 | `usePrevious/useLatest/useStateScope`                             | 内部小工具/测试手段，不构成公共 API                           | 需要时作为包内 `internal/` 私有实现 |
 
-> 以上逻辑并非不实现，而是在对应组件改造时直接内联落地，逐项描述见 components.md。
+> 以上逻辑并非不实现，而是在对应组件改造时直接内联落地，逐项描述见 components-list.md。
 
 ## 4. 分层结构
 
@@ -264,8 +268,8 @@ const { enabled, state, total, loading, error, refresh } = useFetchResource<Row[
 
 ## 9. 组件 → 公共组合函数映射总表
 
-覆盖 [components.md](./components.md) 全部组件；每个组件"组件内联实现"的具体逻辑以
-components.md 的"组件逻辑清单"为准，本表只标注公共包函数的消费关系。
+覆盖 [components-list.md](./components-list.md) 全部组件；每个组件"组件内联实现"的具体逻辑以
+components-list.md 的"组件逻辑清单"为准，本表只标注公共包函数的消费关系。
 
 - 有 `use*`：该组件消费的 `@cumquat/composables` 公开组合函数；
 - "—"：纯展示组件，不消费公共组合函数（至多内部用到 `useId` 等通用能力）。
@@ -364,7 +368,7 @@ components.md 的"组件逻辑清单"为准，本表只标注公共包函数的�
 
 与组件 P0–P4 对齐，按依赖自底向上分批交付；每批只建设公共组合函数及其单测，
 随后改造消费组件——组件改造时，其专属逻辑直接在 `<script setup>` 内联实现，
-不产生组合函数文件（具体清单见 components.md）。
+不产生组合函数文件（具体清单见 components-list.md）。
 
 1. **第一批（支撑 P0，公共包 28 个）**
    - L0：`useId`、`useControllableModel`、`useEventListener`、`useResizeObserver`、
@@ -401,4 +405,4 @@ components.md 的"组件逻辑清单"为准，本表只标注公共包函数的�
   组件专属逻辑直接在 `<script setup>` 内联实现；模板仅保留语义 class 与事件绑定，
   现有组件测试不允许回归。
 - **文档同步**：每个组合函数在源码顶部以 TSDoc 注释说明用途、参数、返回与消费组件；
-  本文档与 components.md 的清单随实现进度勾选更新。
+  本文档与 components-list.md 的清单随实现进度勾选更新。
