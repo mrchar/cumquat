@@ -6,7 +6,8 @@
     "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "paths": {
-      "@cumquat/components": ["./packages/components/src/index.ts"]
+      "@cumquat/components": ["./packages/components/src/index.ts"],
+      "@cumquat/composables": ["./packages/composables/src/index.ts"]
     }
   }
 }

@@ -1,56 +1,150 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useFormField } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
+    modelValue?: number;
     /** 星星总数 */
     count?: number;
     disabled?: boolean;
-    /** 是否允许清除（再次点击取消） */
+    /** 只读态（不可交互） */
+    readonly?: boolean;
+    /** 是否允许半星 */
+    allowHalf?: boolean;
+    /** 是否允许清除（再次点击同值取消） */
     allowClear?: boolean;
   }>(),
-  { count: 5, disabled: false, allowClear: true },
+  {
+    modelValue: undefined,
+    count: 5,
+    disabled: false,
+    readonly: false,
+    allowHalf: false,
+    allowClear: true,
+  },
 );
 
-const model = defineModel<number>({ default: 0 });
+const emit = defineEmits<{
+  'update:modelValue': [value: number];
+  change: [value: number];
+  hoverChange: [value: number];
+}>();
 
-/** 悬停预览值；0 表示未悬停 */
+const field = useFormField<number>({
+  modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
+  defaultValue: 0,
+  disabled: () => props.disabled || props.readonly,
+});
+
+/** 最近一次提交值 */
+const baseValue = ref(props.modelValue ?? 0);
+watch(
+  () => props.modelValue,
+  (next) => {
+    if (next !== undefined) baseValue.value = next;
+  },
+);
+
+/** 悬停预览值；0 表示未悬停（支持 .5） */
 const hoverValue = ref(0);
 
-function displayValue() {
-  return hoverValue.value > 0 ? hoverValue.value : model.value;
+const displayValue = computed(() => hoverValue.value || baseValue.value);
+const locked = computed(() => props.disabled || props.readonly);
+
+/** 星格状态：full / half / empty */
+function starState(star: number): 'full' | 'half' | 'empty' {
+  const value = displayValue.value;
+  if (value >= star) return 'full';
+  if (props.allowHalf && value >= star - 0.5) return 'half';
+  return 'empty';
 }
 
-function pick(star: number) {
-  if (props.allowClear && star === model.value) {
-    model.value = 0;
-  } else {
-    model.value = star;
+function commit(value: number) {
+  baseValue.value = value;
+  emit('update:modelValue', value);
+  emit('change', value);
+  field.handleChange(value);
+}
+
+function pick(star: number, half = false) {
+  if (locked.value) return;
+  const next = half ? star - 0.5 : star;
+  if (props.allowClear && next === baseValue.value) commit(0);
+  else commit(next);
+}
+
+function preview(star: number, half = false) {
+  if (locked.value) return;
+  hoverValue.value = half ? star - 0.5 : star;
+  emit('hoverChange', hoverValue.value);
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (locked.value) return;
+  if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    commit(Math.min(props.count, baseValue.value + (event.shiftKey && props.allowHalf ? 0.5 : 1)));
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+    event.preventDefault();
+    commit(Math.max(0, baseValue.value - (event.shiftKey && props.allowHalf ? 0.5 : 1)));
   }
 }
 </script>
 
 <template>
-  <div class="cumquat-rate" role="radiogroup" @mouseleave="hoverValue = 0">
+  <div
+    class="cumquat-rate"
+    role="radiogroup"
+    tabindex="0"
+    :aria-readonly="readonly"
+    @mouseleave="hoverValue = 0"
+    @keydown="onKeydown"
+  >
     <button
       v-for="star in count"
       :key="star"
       type="button"
       role="radio"
-      :aria-checked="star <= model"
+      :aria-checked="baseValue >= star"
+      :aria-label="`${star} 星`"
       :disabled="disabled"
       class="cumquat-rate__star"
       :class="[
-        disabled ? 'cumquat-rate__star--disabled' : '',
-        star <= displayValue() ? 'cumquat-rate__star--active' : '',
+        locked ? 'cumquat-rate__star--disabled' : '',
+        starState(star) === 'full' ? 'cumquat-rate__star--active' : '',
+        starState(star) === 'half' ? 'cumquat-rate__star--half' : '',
       ]"
-      @mouseenter="!disabled && (hoverValue = star)"
-      @click="!disabled && pick(star)"
+      @mouseenter="preview(star, false)"
+      @mousemove="
+        allowHalf
+          ? preview(star, $event.offsetX <= ($event.currentTarget as HTMLElement).offsetWidth / 2)
+          : undefined
+      "
+      @click="
+        pick(
+          star,
+          allowHalf && $event.offsetX <= ($event.currentTarget as HTMLElement).offsetWidth / 2,
+        )
+      "
     >
+      <!-- 半星底层（灰） -->
+      <svg
+        v-if="starState(star) === 'half'"
+        class="cumquat-rate__icon cumquat-rate__icon--bg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linejoin="round"
+      >
+        <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2l-5-4.9 6.9-1z" />
+      </svg>
       <svg
         class="cumquat-rate__icon"
+        :class="starState(star) === 'half' ? 'cumquat-rate__icon--half' : ''"
         viewBox="0 0 24 24"
-        :fill="star <= displayValue() ? 'currentColor' : 'none'"
+        :fill="starState(star) !== 'empty' ? 'currentColor' : 'none'"
         stroke="currentColor"
         stroke-width="2"
         stroke-linejoin="round"
@@ -58,6 +152,6 @@ function pick(star: number) {
         <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2l-5-4.9 6.9-1z" />
       </svg>
     </button>
-    <span v-if="model > 0" class="cumquat-rate__value">{{ model }}</span>
+    <span v-if="baseValue > 0" class="cumquat-rate__value">{{ baseValue }}</span>
   </div>
 </template>

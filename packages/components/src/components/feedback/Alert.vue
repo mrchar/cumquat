@@ -1,16 +1,34 @@
 <script setup lang="ts">
-withDefaults(
+import { useControllableModel } from '@cumquat/composables';
+
+const props = withDefaults(
   defineProps<{
     type?: 'info' | 'success' | 'warning' | 'danger';
     title?: string;
     closable?: boolean;
-    /** 是否显示强调色左边条 */
+    /** 是否显示类型图标 */
     showIcon?: boolean;
+    modelValue?: boolean;
   }>(),
-  { type: 'info', title: '', closable: false, showIcon: true },
+  { type: 'info', title: '', closable: false, showIcon: true, modelValue: undefined },
 );
 
-const visible = defineModel<boolean>({ default: true });
+const emit = defineEmits<{
+  'update:modelValue': [value: boolean];
+  close: [];
+}>();
+
+const { value: visible } = useControllableModel<boolean>({
+  modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
+  defaultValue: true,
+  fallback: true,
+  onChange: (next) => emit('update:modelValue', next),
+});
+
+function close() {
+  visible.value = false;
+  emit('close');
+}
 
 const iconPath: Record<string, string> = {
   info: 'M12 8h.01M11 12h1v4h1',
@@ -49,7 +67,7 @@ const iconPath: Record<string, string> = {
         type="button"
         aria-label="关闭"
         class="cumquat-alert__close"
-        @click="visible = false"
+        @click="close"
       >
         <svg
           class="cumquat-alert__close-icon"

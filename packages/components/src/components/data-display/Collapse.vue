@@ -1,30 +1,56 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { useControllableModel } from '@cumquat/composables';
 
 export interface CollapseItem {
   key: string;
   title: string;
   content: string;
+  disabled?: boolean;
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     items: CollapseItem[];
+    /** 当前展开的 key（受控，手风琴模式同样用单元素数组） */
+    activeKeys?: string[];
+    defaultActiveKeys?: string[];
+    /** 手风琴：同时至多展开一个面板 */
+    accordion?: boolean;
   }>(),
-  { items: () => [] },
+  {
+    items: () => [],
+    activeKeys: undefined,
+    defaultActiveKeys: () => [],
+    accordion: false,
+  },
 );
 
-/** 当前展开的 key 集合（允许多个面板同时展开） */
-const expanded = ref<Set<string>>(new Set());
+const emit = defineEmits<{
+  'update:activeKeys': [keys: string[]];
+  change: [keys: string[]];
+}>();
 
-function toggle(key: string) {
-  const next = new Set(expanded.value);
-  if (next.has(key)) {
-    next.delete(key);
+const { value: activeSet } = useControllableModel<string[]>({
+  modelValue: props.activeKeys !== undefined ? () => props.activeKeys : undefined,
+  defaultValue: props.defaultActiveKeys,
+  fallback: [],
+  onChange: (keys) => {
+    emit('update:activeKeys', keys);
+    emit('change', keys);
+  },
+});
+
+const isActive = (key: string) => activeSet.value.includes(key);
+
+function toggle(item: CollapseItem) {
+  if (item.disabled) return;
+  if (isActive(item.key)) {
+    activeSet.value = activeSet.value.filter((key) => key !== item.key);
+  } else if (props.accordion) {
+    activeSet.value = [item.key];
   } else {
-    next.add(key);
+    activeSet.value = [...activeSet.value, item.key];
   }
-  expanded.value = next;
 }
 </script>
 
@@ -34,13 +60,15 @@ function toggle(key: string) {
       <button
         type="button"
         class="cumquat-collapse__header"
-        :aria-expanded="expanded.has(item.key)"
-        @click="toggle(item.key)"
+        :class="item.disabled ? 'cumquat-collapse__header--disabled' : ''"
+        :aria-expanded="isActive(item.key)"
+        :disabled="item.disabled"
+        @click="toggle(item)"
       >
         {{ item.title }}
         <svg
           class="cumquat-collapse__chevron"
-          :class="expanded.has(item.key) ? 'cumquat-collapse__chevron--expanded' : ''"
+          :class="isActive(item.key) ? 'cumquat-collapse__chevron--expanded' : ''"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -51,8 +79,14 @@ function toggle(key: string) {
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
-      <div v-if="expanded.has(item.key)" class="cumquat-collapse__content">
-        {{ item.content }}
+      <!-- 高度自适应过渡：进场使用 grid-rows 动画，离场即时移除 -->
+      <div
+        v-if="isActive(item.key)"
+        class="cumquat-collapse__content-wrap cumquat-collapse__content-wrap--in"
+      >
+        <div class="cumquat-collapse__content">
+          {{ item.content }}
+        </div>
       </div>
     </div>
   </div>

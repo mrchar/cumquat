@@ -1,19 +1,46 @@
 <script setup lang="ts">
-withDefaults(
+import { useControllableModel } from '@cumquat/composables';
+
+const props = withDefaults(
   defineProps<{
-    type?: 'info' | 'success' | 'warning' | 'danger';
+    type?: 'info' | 'success' | 'warning' | 'danger' | 'error' | 'loading';
     closable?: boolean;
+    /** 声明式使用时的可见性（v-model） */
+    visible?: boolean;
   }>(),
-  { type: 'info', closable: false },
+  { type: 'info', closable: false, visible: undefined },
 );
 
-const visible = defineModel<boolean>({ default: true });
+const emit = defineEmits<{
+  'update:visible': [value: boolean];
+  close: [];
+}>();
+
+const { value: visibleState } = useControllableModel<boolean>({
+  modelValue: props.visible !== undefined ? () => props.visible : undefined,
+  defaultValue: true,
+  fallback: true,
+  onChange: (next) => emit('update:visible', next),
+});
+
+function closeMessage() {
+  visibleState.value = false;
+  emit('close');
+}
 </script>
 
 <template>
   <Transition name="cumquat-fade">
-    <div v-if="visible" role="status" class="cumquat-message" :class="`cumquat-message--${type}`">
-      <span class="cumquat-message__dot" :class="`cumquat-message__dot--${type}`" />
+    <div
+      v-if="visibleState"
+      role="status"
+      class="cumquat-message"
+      :class="`cumquat-message--${type === 'danger' ? 'error' : type}`"
+    >
+      <span
+        class="cumquat-message__dot"
+        :class="`cumquat-message__dot--${type === 'danger' ? 'error' : type}`"
+      />
       <span class="cumquat-message__body">
         <slot />
       </span>
@@ -22,7 +49,7 @@ const visible = defineModel<boolean>({ default: true });
         type="button"
         aria-label="关闭"
         class="cumquat-message__close"
-        @click="visible = false"
+        @click="closeMessage"
       >
         <svg
           class="cumquat-message__close-icon"

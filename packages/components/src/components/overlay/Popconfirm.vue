@@ -1,48 +1,104 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { useActionState, useFloating, usePopoverModel } from '@cumquat/composables';
+import type { ActionLike, Placement } from '@cumquat/composables';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     /** 确认气泡文案 */
     text?: string;
     confirmText?: string;
     cancelText?: string;
+    placement?: Placement;
+    open?: boolean;
+    /** 点击确认时执行的异步动作，执行期间按钮进入 loading/禁用态 */
+    action?: ActionLike;
+    disabled?: boolean;
   }>(),
-  { text: '确定执行该操作吗？', confirmText: '确定', cancelText: '取消' },
+  {
+    text: '确定执行该操作吗？',
+    confirmText: '确定',
+    cancelText: '取消',
+    placement: 'top',
+    open: undefined,
+    action: undefined,
+    disabled: false,
+  },
 );
 
 const emit = defineEmits<{
+  'update:open': [value: boolean];
   confirm: [];
   cancel: [];
 }>();
 
-const open = ref(false);
+const {
+  isOpen,
+  open: setOpen,
+  close,
+  toggle,
+  triggerProps,
+} = usePopoverModel({
+  trigger: 'click',
+  modelValue: props.open !== undefined ? () => props.open : undefined,
+  onChange: (next) => emit('update:open', next),
+});
 
-function confirm() {
-  open.value = false;
+const { referenceRef, floatingRef, floatingStyles } = useFloating({
+  placement: () => props.placement,
+  gap: 10,
+  open: isOpen,
+});
+
+const { pending, run } = useActionState(async () => props.action?.(), {
+  disableOnPending: true,
+});
+
+async function confirm() {
+  await run();
+  close();
   emit('confirm');
 }
 
 function cancel() {
-  open.value = false;
+  close();
   emit('cancel');
 }
+
+defineExpose({ open: setOpen, close, toggle });
 </script>
 
 <template>
   <span class="cumquat-popconfirm">
-    <span class="cumquat-popconfirm__trigger" @click="open = !open">
+    <span ref="referenceRef" class="cumquat-popconfirm__trigger" @click="triggerProps.onClick?.()">
       <slot />
     </span>
     <Transition name="cumquat-fade">
-      <div v-if="open" role="alertdialog" class="cumquat-popconfirm__content">
+      <div
+        v-if="isOpen"
+        ref="floatingRef"
+        role="alertdialog"
+        class="cumquat-popconfirm__content"
+        :class="`cumquat-popconfirm__content--${placement.split('-')[0]}`"
+        :style="floatingStyles"
+      >
         <span class="cumquat-popconfirm__arrow" />
         <p class="cumquat-popconfirm__text">{{ text }}</p>
         <div class="cumquat-popconfirm__actions">
-          <button type="button" class="cumquat-popconfirm__cancel" @click="cancel">
+          <button
+            type="button"
+            class="cumquat-popconfirm__cancel"
+            :disabled="pending.value"
+            @click="cancel"
+          >
             {{ cancelText }}
           </button>
-          <button type="button" class="cumquat-popconfirm__ok" @click="confirm">
+          <button
+            type="button"
+            class="cumquat-popconfirm__ok"
+            :disabled="pending.value"
+            @click="confirm"
+          >
+            <span v-if="pending.value" class="cumquat-popconfirm__loading" />
             {{ confirmText }}
           </button>
         </div>

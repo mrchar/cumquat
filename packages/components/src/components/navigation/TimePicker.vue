@@ -1,47 +1,121 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useFloating, useListboxNavigation, useOpen, useTimeModel } from '@cumquat/composables';
 
-const open = ref(false);
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string | null;
+    placeholder?: string;
+    disabled?: boolean;
+    /** 小时列步进，默认 1 */
+    hourStep?: number;
+    /** 分钟列步进，默认 5 */
+    minuteStep?: number;
+    /** 是否展示秒列 */
+    useSeconds?: boolean;
+    minTime?: string;
+    maxTime?: string;
+  }>(),
+  {
+    modelValue: undefined,
+    placeholder: '选择时间',
+    disabled: false,
+    hourStep: 1,
+    minuteStep: 5,
+    useSeconds: false,
+    minTime: undefined,
+    maxTime: undefined,
+  },
+);
 
-const selectedHour = ref<number | null>(null);
-const selectedMinute = ref<number | null>(null);
+const emit = defineEmits<{
+  'update:modelValue': [value: string | null];
+  change: [value: string | null];
+}>();
 
-const hours = Array.from({ length: 24 }, (_, i) => i);
-const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
+const { isOpen, toggle, close } = useOpen();
 
-function pickHour(h: number) {
-  selectedHour.value = h;
-}
+const time = useTimeModel({
+  modelValue: props.modelValue !== undefined ? props.modelValue : undefined,
+  hourStep: props.hourStep,
+  minuteStep: props.minuteStep,
+  useSeconds: props.useSeconds,
+  minTime: props.minTime,
+  maxTime: props.maxTime,
+  onChange: (value) => {
+    emit('update:modelValue', value);
+    emit('change', value);
+  },
+});
 
-function pickMinute(m: number) {
-  selectedMinute.value = m;
+const { referenceRef, floatingRef, floatingStyles } = useFloating({
+  placement: 'bottom-start',
+  gap: 6,
+  open: isOpen,
+});
+
+/** 当前键盘聚焦的列：hour / minute / second */
+type Unit = 'hour' | 'minute' | 'second';
+const activeUnit = ref<Unit>('hour');
+
+const nav = useListboxNavigation({
+  count: computed(() =>
+    activeUnit.value === 'hour'
+      ? time.hourColumn.value.length
+      : activeUnit.value === 'minute'
+        ? time.minuteColumn.value.length
+        : time.secondColumn.value.length,
+  ),
+  isItemDisabled: (index) =>
+    activeUnit.value === 'hour'
+      ? !!time.hourColumn.value[index]?.disabled
+      : activeUnit.value === 'minute'
+        ? !!time.minuteColumn.value[index]?.disabled
+        : !!time.secondColumn.value[index]?.disabled,
+  onSelect: (index) => {
+    if (activeUnit.value === 'hour') time.setHour(time.hourColumn.value[index].value);
+    else if (activeUnit.value === 'minute') time.setMinute(time.minuteColumn.value[index].value);
+    else time.setSecond(time.secondColumn.value[index].value);
+  },
+});
+
+function focusUnit(unit: Unit, event: KeyboardEvent) {
+  activeUnit.value = unit;
+  nav.onKeydown(event);
 }
 
 function confirm() {
-  open.value = false;
+  const value = time.confirm();
+  emit('update:modelValue', value);
+  emit('change', value);
+  close();
 }
+
+function cancel() {
+  close();
+}
+
+const displayText = computed(() => time.displayText.value);
 </script>
 
 <template>
   <div class="cumquat-time-picker">
     <button
+      ref="referenceRef"
       type="button"
       class="cumquat-time-picker__trigger"
-      :class="open ? 'cumquat-time-picker__trigger--open' : ''"
-      @click="open = !open"
+      :class="isOpen ? 'cumquat-time-picker__trigger--open' : ''"
+      :disabled="disabled"
+      @click="toggle()"
     >
       <span
         :class="
-          selectedHour != null
+          displayText
             ? 'cumquat-time-picker__value--selected'
             : 'cumquat-time-picker__value--placeholder'
         "
       >
-        {{
-          selectedHour != null
-            ? `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute ?? 0).padStart(2, '0')}`
-            : '选择时间'
-        }}
+        {{ displayText || placeholder }}
       </span>
       <svg
         class="cumquat-time-picker__icon"
@@ -58,37 +132,69 @@ function confirm() {
     </button>
 
     <Transition name="cumquat-fade">
-      <div v-if="open" class="cumquat-time-picker__panel">
-        <ul class="cumquat-time-picker__hours">
-          <li
-            v-for="h in hours"
-            :key="h"
-            class="cumquat-time-picker__hour"
-            :class="
-              h === selectedHour
-                ? 'cumquat-time-picker__hour--selected'
-                : 'cumquat-time-picker__hour--default'
-            "
-            @click="pickHour(h)"
+      <div
+        v-if="isOpen"
+        ref="floatingRef"
+        class="cumquat-time-picker__panel"
+        :style="floatingStyles"
+      >
+        <div class="cumquat-time-picker__columns">
+          <ul class="cumquat-time-picker__hours" @keydown="focusUnit('hour', $event)">
+            <li
+              v-for="item in time.hourColumn.value"
+              :key="`h-${item.value}`"
+              class="cumquat-time-picker__hour"
+              :class="[
+                item.value === time.hour.value
+                  ? 'cumquat-time-picker__hour--selected'
+                  : 'cumquat-time-picker__hour--default',
+                item.disabled ? 'cumquat-time-picker__hour--disabled' : '',
+              ]"
+              @click="!item.disabled && time.setHour(item.value)"
+            >
+              {{ item.label }} 时
+            </li>
+          </ul>
+          <ul class="cumquat-time-picker__minutes" @keydown="focusUnit('minute', $event)">
+            <li
+              v-for="item in time.minuteColumn.value"
+              :key="`m-${item.value}`"
+              class="cumquat-time-picker__minute"
+              :class="[
+                item.value === time.minute.value
+                  ? 'cumquat-time-picker__minute--selected'
+                  : 'cumquat-time-picker__minute--default',
+                item.disabled ? 'cumquat-time-picker__minute--disabled' : '',
+              ]"
+              @click="!item.disabled && time.setMinute(item.value)"
+            >
+              {{ item.label }} 分
+            </li>
+          </ul>
+          <ul
+            v-if="useSeconds"
+            class="cumquat-time-picker__seconds"
+            @keydown="focusUnit('second', $event)"
           >
-            {{ String(h).padStart(2, '0') }} 时
-          </li>
-        </ul>
-        <ul class="cumquat-time-picker__minutes">
-          <li
-            v-for="m in minutes"
-            :key="m"
-            class="cumquat-time-picker__minute"
-            :class="
-              m === selectedMinute
-                ? 'cumquat-time-picker__minute--selected'
-                : 'cumquat-time-picker__minute--default'
-            "
-            @click="pickMinute(m)"
-          >
-            {{ String(m).padStart(2, '0') }} 分
-          </li>
-        </ul>
+            <li
+              v-for="item in time.secondColumn.value"
+              :key="`s-${item.value}`"
+              class="cumquat-time-picker__second"
+              :class="
+                item.value === time.second.value
+                  ? 'cumquat-time-picker__second--selected'
+                  : 'cumquat-time-picker__second--default'
+              "
+              @click="!item.disabled && time.setSecond(item.value)"
+            >
+              {{ item.label }} 秒
+            </li>
+          </ul>
+        </div>
+        <div class="cumquat-time-picker__actions">
+          <button type="button" class="cumquat-time-picker__cancel" @click="cancel">取消</button>
+          <button type="button" class="cumquat-time-picker__confirm" @click="confirm">确定</button>
+        </div>
       </div>
     </Transition>
   </div>

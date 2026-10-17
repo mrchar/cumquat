@@ -1,61 +1,180 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
+import { useAsyncSuggest, useFloating, useListboxNavigation } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
-    /** @ 候选成员 */
+    /** 本地候选成员；与 fetch 二选一 */
     members?: string[];
+    /** 异步候选源（输入触发符后的片段作为关键词） */
+    fetch?: (keyword: string) => Promise<string[]>;
+    /** 触发符，默认 @ */
+    trigger?: string;
     placeholder?: string;
+    modelValue?: string;
+    debounce?: number;
   }>(),
-  { members: () => ['Amber', 'Bolt', 'Cedar', 'Dawn'], placeholder: '输入 @ 唤起提及' },
+  {
+    members: () => ['Amber', 'Bolt', 'Cedar', 'Dawn'],
+    fetch: undefined,
+    trigger: '@',
+    placeholder: '输入 @ 唤起提及',
+    modelValue: undefined,
+    debounce: 300,
+  },
 );
 
-const model = defineModel<string>({ default: '' });
+const emit = defineEmits<{
+  'update:modelValue': [value: string];
+  select: [member: string];
+}>();
 
-const open = ref(false);
-const query = ref('');
+/** 文本值：受控 prop 不回写时内部保留 */
+const text = ref(props.modelValue ?? '');
 
-/** 正在输入 @ 之后的片段 */
-const suggestions = computed(() =>
-  props.members.filter((m) => m.toLowerCase().includes(query.value.toLowerCase())),
-);
-
-function onInput(event: Event) {
-  const value = (event.target as HTMLInputElement).value;
-  const at = value.lastIndexOf('@');
-  if (at >= 0) {
-    query.value = value.slice(at + 1);
-    open.value = true;
-  } else {
-    open.value = false;
-    query.value = '';
-  }
+function syncText(value: string) {
+  text.value = value;
+  emit('update:modelValue', value);
 }
 
-function pick(member: string) {
-  const at = model.value.lastIndexOf('@');
-  model.value = at >= 0 ? `${model.value.slice(0, at + 1)}${member} ` : `${member} `;
+/* ---------- 激活区间 ---------- */
+const inputRef = ref<HTMLInputElement | null>(null);
+/** 触发符位置与片段 */
+const activeStart = ref(-1);
+const activeQuery = ref('');
+const open = ref(false);
+
+/** 找到光标前最近的触发符，且其后没有空白 */
+function detectTrigger() {
+  const input = inputRef.value;
+  const value = text.value;
+  const caret = input?.selectionStart ?? value.length;
+  const before = value.slice(0, caret);
+  const at = before.lastIndexOf(props.trigger);
+  if (at < 0) return null;
+  const segment = before.slice(at + props.trigger.length);
+  if (/\s/.test(segment)) return null;
+  return { at, segment };
+}
+
+const asyncSuggest = useAsyncSuggest<string>({
+  fetch: (keyword) =>
+    props.fetch ? props.fetch(keyword) : Promise.resolve(localSuggestions.value),
+  debounce: props.debounce,
+});
+
+const localSuggestions = computed(() => {
+  const word = activeQuery.value.toLowerCase();
+  return props.members.filter((m) => m.toLowerCase().includes(word.toLowerCase()));
+});
+
+const suggestions = computed(() =>
+  props.fetch ? asyncSuggest.suggestions.value : localSuggestions.value,
+);
+const loading = computed(() => (props.fetch ? asyncSuggest.loading.value : false));
+
+function refresh() {
+  const hit = detectTrigger();
+  if (!hit) {
+    open.value = false;
+    activeStart.value = -1;
+    activeQuery.value = '';
+    return;
+  }
+  activeStart.value = hit.at;
+  activeQuery.value = hit.segment;
+  open.value = true;
+  if (props.fetch) asyncSuggest.setKeyword(hit.segment);
+}
+
+function onInput(event: Event) {
+  syncText((event.target as HTMLInputElement).value);
+  refresh();
+}
+
+/* ---------- 浮层定位 ---------- */
+const { referenceRef, floatingRef, floatingStyles } = useFloating({
+  placement: 'bottom-start',
+  open,
+});
+
+function bindReference(el: Element | { $el?: unknown }) {
+  referenceRef.value = (el as HTMLElement) ?? null;
+}
+
+/* ---------- 键盘选择 ---------- */
+const nav = useListboxNavigation({
+  count: computed(() => (open.value ? suggestions.value.length : 0)),
+  onSelect: (index) => pick(suggestions.value[index]),
+});
+
+function pick(member: string | undefined) {
+  if (!member) return;
+  const input = inputRef.value;
+  const caret = input?.selectionStart ?? text.value.length;
+  const before = text.value.slice(0, activeStart.value);
+  const after = text.value.slice(caret);
+  const inserted = `${before}${props.trigger}${member} ${after}`;
+  syncText(inserted);
+  emit('select', member);
   open.value = false;
-  query.value = '';
+  activeStart.value = -1;
+  activeQuery.value = '';
+  nav.reset();
+  const nextCaret = (before + props.trigger + member + ' ').length;
+  void nextTick(() => input?.setSelectionRange(nextCaret, nextCaret));
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (!open.value) return;
+  if (event.key === 'Escape') {
+    open.value = false;
+    return;
+  }
+  if (
+    event.key === 'ArrowDown' ||
+    event.key === 'ArrowUp' ||
+    event.key === 'Enter' ||
+    event.key === 'Tab'
+  ) {
+    if (suggestions.value.length > 0) {
+      event.preventDefault();
+      nav.onKeydown(event);
+    }
+  }
 }
 </script>
 
 <template>
-  <div class="cumquat-mention">
+  <div :ref="bindReference" class="cumquat-mention">
     <input
-      v-model="model"
+      ref="inputRef"
+      :value="text"
       type="text"
       :placeholder="placeholder"
       class="cumquat-mention__input"
+      role="combobox"
+      :aria-expanded="open"
+      aria-autocomplete="list"
       @input="onInput"
+      @keydown="onKeydown"
+      @blur="open = false"
     />
     <Transition name="cumquat-fade">
-      <ul v-if="open && suggestions.length > 0" class="cumquat-mention__dropdown">
+      <ul
+        v-if="open && (suggestions.length > 0 || loading)"
+        ref="floatingRef"
+        class="cumquat-mention__dropdown"
+        :style="floatingStyles"
+      >
+        <li v-if="loading" class="cumquat-mention__loading">加载中…</li>
         <li
-          v-for="member in suggestions"
+          v-for="(member, index) in suggestions"
           :key="member"
           class="cumquat-mention__option"
+          :class="index === nav.activeIndex.value ? 'cumquat-mention__option--active' : ''"
           @mousedown.prevent="pick(member)"
+          @mouseenter="nav.setActiveIndex(index)"
         >
           <span class="cumquat-mention__at">@</span>{{ member }}
         </li>

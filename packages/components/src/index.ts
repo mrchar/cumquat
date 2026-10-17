@@ -49,8 +49,10 @@ import Progress from './components/data-display/Progress.vue';
 import Image from './components/data-display/Image.vue';
 // 反馈
 import Message from './components/feedback/Message.vue';
+import MessageContainer from './components/feedback/MessageContainer.vue';
 import Alert from './components/feedback/Alert.vue';
 import Notification from './components/feedback/Notification.vue';
+import NotificationContainer from './components/feedback/NotificationContainer.vue';
 import Loading from './components/feedback/Loading.vue';
 import Skeleton from './components/feedback/Skeleton.vue';
 import Result from './components/feedback/Result.vue';
@@ -86,6 +88,7 @@ export {
   Form,
   FormItem,
   Message,
+  MessageContainer,
   Table,
   Dialog,
   Pagination,
@@ -102,6 +105,7 @@ export {
   Tag,
   Alert,
   Notification,
+  NotificationContainer,
   Loading,
   Menu,
   DatePicker,
@@ -158,6 +162,7 @@ const registry: Record<string, unknown> = {
   CForm: Form,
   CFormItem: FormItem,
   CMessage: Message,
+  CMessageContainer: MessageContainer,
   CTable: Table,
   CDialog: Dialog,
   CPagination: Pagination,
@@ -174,6 +179,7 @@ const registry: Record<string, unknown> = {
   CTag: Tag,
   CAlert: Alert,
   CNotification: Notification,
+  CNotificationContainer: NotificationContainer,
   CLoading: Loading,
   CMenu: Menu,
   CDatePicker: DatePicker,

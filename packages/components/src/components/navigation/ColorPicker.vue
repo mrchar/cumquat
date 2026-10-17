@@ -1,12 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useDraggable, useFloating, useOpen } from '@cumquat/composables';
 
-withDefaults(
+interface Hsva {
+  h: number;
+  s: number;
+  v: number;
+  a: number;
+}
+
+const props = withDefaults(
   defineProps<{
+    modelValue?: string;
     /** 预设色板 */
     presets?: string[];
+    disabled?: boolean;
+    showAlpha?: boolean;
   }>(),
   {
+    modelValue: '#4f46e5',
     presets: () => [
       '#4f46e5',
       '#0284c7',
@@ -19,42 +31,261 @@ withDefaults(
       '#525252',
       '#171717',
     ],
+    disabled: false,
+    showAlpha: false,
   },
 );
 
-const open = ref(false);
-const model = defineModel<string>({ default: '#4f46e5' });
+const emit = defineEmits<{
+  'update:modelValue': [color: string];
+  change: [color: string];
+}>();
 
-function pick(color: string) {
-  model.value = color;
+/* ---------- 颜色转换纯函数 ---------- */
+function clampByte(n: number) {
+  return Math.min(255, Math.max(0, Math.round(n)));
+}
+
+function hsvToRgb({ h, s, v }: Pick<Hsva, 'h' | 's' | 'v'>) {
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  return {
+    r: clampByte((r + m) * 255),
+    g: clampByte((g + m) * 255),
+    b: clampByte((b + m) * 255),
+  };
+}
+
+function rgbToHsv(r: number, g: number, b: number): Pick<Hsva, 'h' | 's' | 'v'> {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === rn) h = 60 * (((gn - bn) / d) % 6);
+    else if (max === gn) h = 60 * ((bn - rn) / d + 2);
+    else h = 60 * ((rn - gn) / d + 4);
+  }
+  if (h < 0) h += 360;
+  return { h, s: max === 0 ? 0 : d / max, v: max };
+}
+
+function toHex2(n: number) {
+  return clampByte(n).toString(16).padStart(2, '0');
+}
+
+function hsvaToHex({ h, s, v, a }: Hsva) {
+  const { r, g, b } = hsvToRgb({ h, s, v });
+  const base = `#${toHex2(r)}${toHex2(g)}${toHex2(b)}`;
+  return a < 1 ? `${base}${toHex2(a * 255)}` : base;
+}
+
+function parseColor(input: string): Hsva {
+  const fallback: Hsva = { h: 239, s: 0.84, v: 0.9, a: 1 };
+  const value = input.trim().toLowerCase();
+  const hexMatch = /^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/.exec(value);
+  if (hexMatch) {
+    let hex = hexMatch[1];
+    if (hex.length === 3)
+      hex = hex
+        .split('')
+        .map((c) => c + c)
+        .join('');
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
+    return { ...rgbToHsv(r, g, b), a };
+  }
+  const rgbMatch = /rgba?\(([^)]+)\)/.exec(value);
+  if (rgbMatch) {
+    const parts = rgbMatch[1].split(',').map((part) => Number(part.trim()));
+    if (parts.length >= 3 && parts.slice(0, 3).every((n) => !Number.isNaN(n))) {
+      return {
+        ...rgbToHsv(parts[0], parts[1], parts[2]),
+        a: parts[3] === undefined ? 1 : Math.min(1, Math.max(0, parts[3])),
+      };
+    }
+  }
+  return fallback;
+}
+
+/** 十六进制合法性 */
+function isValidHex(input: string) {
+  return /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(input.trim());
+}
+
+/* ---------- 状态 ---------- */
+const color = ref<Hsva>(parseColor(props.modelValue));
+
+watch(
+  () => props.modelValue,
+  (next) => {
+    if (next && next !== hsvaToHex(color.value)) color.value = parseColor(next);
+  },
+);
+
+function commit() {
+  const hex = hsvaToHex(color.value);
+  emit('update:modelValue', hex);
+  emit('change', hex);
+  hexInput.value = hex;
+}
+
+const hexInput = ref(hsvaToHex(color.value));
+
+const hueColor = computed(() => hsvaToHex({ ...color.value, s: 1, v: 1, a: 1 }));
+
+/* ---------- 开合与浮层 ---------- */
+const { isOpen, toggle, close } = useOpen({
+  onChange: (next) => {
+    if (!next) commit();
+  },
+});
+const { referenceRef, floatingRef, floatingStyles } = useFloating({
+  placement: 'bottom-start',
+  open: isOpen,
+});
+
+/* ---------- 面板取色拖拽 ---------- */
+const areaRef = ref<HTMLElement | null>(null);
+const hueRef = ref<HTMLElement | null>(null);
+const alphaRef = ref<HTMLElement | null>(null);
+
+useDraggable(areaRef, {
+  onStart: (pos) => {
+    color.value = { ...color.value, s: pos.ratioX, v: 1 - pos.ratioY };
+    commit();
+  },
+  onMove: (pos) => {
+    color.value = { ...color.value, s: pos.ratioX, v: 1 - pos.ratioY };
+    commit();
+  },
+});
+
+useDraggable(hueRef, {
+  axis: 'x',
+  onStart: (pos) => {
+    color.value = { ...color.value, h: pos.ratioX * 360 };
+    commit();
+  },
+  onMove: (pos) => {
+    color.value = { ...color.value, h: pos.ratioX * 360 };
+    commit();
+  },
+});
+
+useDraggable(alphaRef, {
+  axis: 'x',
+  onStart: (pos) => {
+    color.value = { ...color.value, a: pos.ratioX };
+    commit();
+  },
+  onMove: (pos) => {
+    color.value = { ...color.value, a: pos.ratioX };
+    commit();
+  },
+});
+
+function pickPreset(preset: string) {
+  color.value = parseColor(preset);
+  commit();
+  close();
+}
+
+function onHexInput() {
+  const value = hexInput.value.startsWith('#') ? hexInput.value : `#${hexInput.value}`;
+  if (isValidHex(value)) {
+    color.value = parseColor(value);
+    commit();
+  }
+}
+
+function onTriggerKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    toggle();
+  } else if (event.key === 'Escape') {
+    close();
+  }
 }
 </script>
 
 <template>
-  <div class="cumquat-color-picker">
+  <div ref="referenceRef" class="cumquat-color-picker">
     <button
       type="button"
       class="cumquat-color-picker__trigger"
-      :class="open ? 'cumquat-color-picker__trigger--open' : ''"
-      @click="open = !open"
+      :class="isOpen ? 'cumquat-color-picker__trigger--open' : ''"
+      :disabled="disabled"
+      @click="toggle()"
+      @keydown="onTriggerKeydown"
     >
-      <span class="cumquat-color-picker__swatch" :style="{ backgroundColor: model }" />
-      <span class="cumquat-color-picker__value">{{ model }}</span>
+      <span class="cumquat-color-picker__swatch" :style="{ backgroundColor: hsvaToHex(color) }" />
+      <span class="cumquat-color-picker__value">{{ hsvaToHex(color) }}</span>
     </button>
 
     <Transition name="cumquat-fade">
-      <div v-if="open" class="cumquat-color-picker__panel">
-        <!-- 饱和度/明度区块（渐变演示） -->
-        <div class="cumquat-color-picker__area" :style="{ backgroundColor: model }">
+      <div
+        v-if="isOpen"
+        ref="floatingRef"
+        class="cumquat-color-picker__panel"
+        :style="floatingStyles"
+      >
+        <!-- 饱和度 / 明度面板 -->
+        <div
+          ref="areaRef"
+          class="cumquat-color-picker__area"
+          :style="{ backgroundColor: hueColor }"
+        >
           <span class="cumquat-color-picker__gradient-dark" />
           <span class="cumquat-color-picker__gradient-light" />
-          <span class="cumquat-color-picker__thumb" />
+          <span
+            class="cumquat-color-picker__thumb"
+            :style="{ left: `${color.s * 100}%`, top: `${(1 - color.v) * 100}%` }"
+          />
         </div>
 
         <!-- 色相条 -->
-        <div class="cumquat-color-picker__hue">
-          <span class="cumquat-color-picker__hue-thumb" />
+        <div ref="hueRef" class="cumquat-color-picker__hue">
+          <span
+            class="cumquat-color-picker__hue-thumb"
+            :style="{ left: `${(color.h / 360) * 100}%` }"
+          />
         </div>
+
+        <!-- 透明度条 -->
+        <div
+          v-if="showAlpha"
+          ref="alphaRef"
+          class="cumquat-color-picker__alpha"
+          :style="{
+            backgroundImage: `linear-gradient(90deg, ${hueColor}00, ${hueColor})`,
+          }"
+        >
+          <span class="cumquat-color-picker__alpha-thumb" :style="{ left: `${color.a * 100}%` }" />
+        </div>
+
+        <input
+          v-model="hexInput"
+          class="cumquat-color-picker__hex"
+          aria-label="十六进制颜色"
+          @change="onHexInput"
+          @keydown.enter="onHexInput"
+        />
 
         <!-- 预设色板 -->
         <div class="cumquat-color-picker__presets">
@@ -65,12 +296,12 @@ function pick(color: string) {
             :aria-label="`选择颜色 ${preset}`"
             class="cumquat-color-picker__preset"
             :class="
-              preset === model
+              preset.toLowerCase() === hsvaToHex(color)
                 ? 'cumquat-color-picker__preset--selected'
                 : 'cumquat-color-picker__preset--default'
             "
             :style="{ backgroundColor: preset }"
-            @click="pick(preset)"
+            @click="pickPreset(preset)"
           />
         </div>
       </div>

@@ -19,6 +19,18 @@
   --color-cumquat-accent-active: #3730a3;
   --color-cumquat-accent-soft: #eef2ff;
 
+  /* 品牌主色色阶（与 accent 同族的 indigo 阶） */
+  --color-cumquat-primary-50: #eef2ff;
+  --color-cumquat-primary-100: #e0e7ff;
+  --color-cumquat-primary-200: #c7d2fe;
+  --color-cumquat-primary-300: #a5b4fc;
+  --color-cumquat-primary-400: #818cf8;
+  --color-cumquat-primary-500: #6366f1;
+  --color-cumquat-primary-600: #4f46e5;
+  --color-cumquat-primary-700: #4338ca;
+  --color-cumquat-primary-800: #3730a3;
+  --color-cumquat-primary-900: #312e81;
+
   /* 表面 / 背景 */
   --color-cumquat-surface: #ffffff;
   --color-cumquat-surface-2: #f8fafc;
@@ -28,9 +40,13 @@
   --color-cumquat-border: #e2e8f0;
   --color-cumquat-border-strong: #cbd5e1;
 
+  /* 遮罩 */
+  --color-cumquat-overlay: #0f172a;
+
   /* 文本 */
   --color-cumquat-text: #0f172a;
   --color-cumquat-text-muted: #64748b;
+  --color-cumquat-text-disabled: #94a3b8;
   --color-cumquat-text-inverse: #ffffff;
 
   /* 语义状态色 */
@@ -627,8 +643,21 @@
   .cumquat-tree-select__expander-spacer {
     @apply size-4 shrink-0;
   }
+  .cumquat-tree-select__indent {
+    @apply size-4 shrink-0;
+  }
+  .cumquat-tree-select__tree {
+    @apply py-0.5;
+  }
+  .cumquat-tree-select__search {
+    @apply sticky top-0 border-b border-cumquat-border bg-cumquat-surface p-2;
+  }
+  .cumquat-tree-select__search-input {
+    @apply h-8 w-full rounded-cumquat border border-cumquat-border bg-cumquat-surface px-2.5 text-sm text-cumquat-text outline-none;
+    @apply focus:border-cumquat-accent;
+  }
   .cumquat-tree-select__leaf {
-    @apply cursor-pointer py-2 pl-10 pr-3 text-sm text-cumquat-text-muted transition-colors;
+    @apply flex cursor-pointer items-center py-2 pl-3 pr-3 text-sm text-cumquat-text-muted transition-colors;
   }
   .cumquat-tree-select__leaf:not(.cumquat-tree-select__leaf--active):hover {
     @apply bg-cumquat-surface-2 text-cumquat-text;
@@ -929,6 +958,24 @@
   .cumquat-collapse__content {
     @apply px-4 pb-4 text-sm text-cumquat-text-muted;
   }
+  .cumquat-collapse__content-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+  }
+  .cumquat-collapse__content-wrap--in {
+    animation: cumquat-collapse-expand 0.2s ease forwards;
+  }
+  .cumquat-collapse__content-wrap .cumquat-collapse__content {
+    overflow: hidden;
+  }
+  @keyframes cumquat-collapse-expand {
+    from {
+      grid-template-rows: 0fr;
+    }
+    to {
+      grid-template-rows: 1fr;
+    }
+  }
 
   /* ---------- Tree ---------- */
   .cumquat-tree {
@@ -950,6 +997,9 @@
     @apply size-3.5;
   }
   .cumquat-tree__expander-placeholder {
+    @apply size-4 shrink-0;
+  }
+  .cumquat-tree__indent {
     @apply size-4 shrink-0;
   }
   .cumquat-tree__checkbox {
@@ -1176,6 +1226,33 @@
   }
   .cumquat-progress__text {
     @apply w-10 text-right text-xs text-cumquat-text-muted;
+  }
+  .cumquat-progress--circle {
+    @apply inline-flex w-auto justify-center;
+  }
+  .cumquat-progress__circle-wrap {
+    @apply relative inline-flex items-center justify-center;
+  }
+  .cumquat-progress__circle-wrap .cumquat-progress__text {
+    @apply absolute inset-0 flex w-auto items-center justify-center text-center;
+  }
+  .cumquat-progress__circle-track {
+    stroke: var(--cumquat-surface-3, #e5e7eb);
+  }
+  .cumquat-progress__circle {
+    transition: stroke-dashoffset 0.3s ease;
+  }
+  .cumquat-progress__circle--normal {
+    stroke: var(--cumquat-accent, #2563eb);
+  }
+  .cumquat-progress__circle--success {
+    stroke: var(--cumquat-success, #16a34a);
+  }
+  .cumquat-progress__circle--warning {
+    stroke: var(--cumquat-warning, #d97706);
+  }
+  .cumquat-progress__circle--danger {
+    stroke: var(--cumquat-danger, #dc2626);
   }
 
   /* ---------- Image ---------- */
@@ -1531,7 +1608,7 @@
 
   /* ---------- BackTop ---------- */
   .cumquat-back-top {
-    @apply flex size-11 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-cumquat-text shadow-cumquat-overlay transition-colors;
+    @apply fixed z-40 flex size-11 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-cumquat-text shadow-cumquat-overlay transition-colors;
   }
   .cumquat-back-top:hover {
     @apply bg-cumquat-surface-2;
@@ -1831,6 +1908,22 @@
   .cumquat-layout--horizontal {
     @apply flex flex-row;
   }
+  .cumquat-layout__middle {
+    @apply flex flex-1 flex-row;
+  }
+  .cumquat-layout__header,
+  .cumquat-layout__footer {
+    @apply shrink-0;
+  }
+  .cumquat-layout__sider {
+    @apply w-56 shrink-0 overflow-hidden transition-[width] duration-200;
+  }
+  .cumquat-layout__sider--collapsed {
+    @apply w-14;
+  }
+  .cumquat-layout__body {
+    @apply min-w-0 flex-1;
+  }
 
   /* ---------- Grid ---------- */
   .cumquat-grid {
@@ -1859,6 +1952,9 @@
   }
   .cumquat-grid--gap-lg {
     @apply gap-6;
+  }
+  .cumquat-grid--centered {
+    @apply mx-auto max-w-6xl;
   }
 
   /* ---------- Space ---------- */
@@ -2052,5 +2148,229 @@
       background-color 0.2s ease,
       color 0.2s ease,
       padding-left 0.2s ease;
+  }
+}
+
+/*
+ * 基础主题 · P3 组件增强
+ * （Slider 刻度 / Rate 半星 / Transfer 勾选搜索 / Affix / Statistic /
+ *   Typography 编辑截断 / Image 预览 / Carousel 播放指示）
+ */
+@layer components {
+  /* ---------- Slider ---------- */
+  .cumquat-slider--range {
+    @apply w-full;
+  }
+  .cumquat-slider__tick {
+    @apply absolute top-1/2 size-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cumquat-border;
+  }
+  .cumquat-slider__marks {
+    @apply relative mt-2 block h-4;
+  }
+  .cumquat-slider__mark {
+    @apply absolute -translate-x-1/2 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-slider__thumb--high {
+    @apply bg-cumquat-primary-600;
+  }
+
+  /* ---------- Rate 半星 ---------- */
+  .cumquat-rate__star--half {
+    position: relative;
+  }
+  .cumquat-rate__icon--bg {
+    @apply absolute inset-0 text-cumquat-border;
+  }
+  .cumquat-rate__icon--half {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 50%;
+    overflow: hidden;
+  }
+
+  /* ---------- Transfer 增强 ---------- */
+  .cumquat-transfer__check-all {
+    @apply flex cursor-pointer items-center gap-2 text-xs font-medium text-cumquat-text;
+  }
+  .cumquat-transfer__search {
+    @apply mx-2 mb-1 w-[calc(100%-1rem)] rounded border border-cumquat-border bg-cumquat-surface px-2 py-1 text-xs text-cumquat-text outline-none focus:border-cumquat-primary-500;
+  }
+  .cumquat-transfer__checkbox {
+    @apply mr-2;
+  }
+  .cumquat-transfer__item {
+    @apply flex cursor-pointer items-center;
+  }
+  .cumquat-transfer__item--disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  .cumquat-transfer__action:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  /* ---------- Affix ---------- */
+  .cumquat-affix--fixed {
+    @apply shadow-cumquat-overlay;
+  }
+
+  /* ---------- Statistic ---------- */
+  .cumquat-statistic--countdown .cumquat-statistic__number {
+    @apply font-mono tabular-nums;
+  }
+
+  /* ---------- Typography 增强 ---------- */
+  .cumquat-typography--clamp {
+    @apply overflow-hidden;
+  }
+  .cumquat-typography--start {
+    direction: rtl;
+    text-overflow: ellipsis;
+  }
+  .cumquat-typography--middle {
+    @apply flex items-center;
+  }
+  .cumquat-typography__head {
+    @apply min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .cumquat-typography__tail {
+    @apply shrink-0 whitespace-nowrap;
+  }
+  .cumquat-typography__actions {
+    @apply ml-1 inline-flex items-center gap-0.5 align-middle;
+  }
+  .cumquat-typography__edit {
+    @apply flex cursor-pointer items-center justify-center rounded p-0.5 text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-primary-600;
+  }
+  .cumquat-typography__editor {
+    @apply w-full rounded border border-cumquat-primary-500 bg-cumquat-surface p-1 text-sm text-cumquat-text outline-none;
+  }
+
+  /* ---------- Image 预览 ---------- */
+  .cumquat-image {
+    @apply relative inline-flex;
+  }
+  .cumquat-image--previewable .cumquat-image__img {
+    @apply cursor-zoom-in;
+  }
+  .cumquat-image__placeholder {
+    @apply inline-block size-full animate-pulse rounded bg-cumquat-surface-2;
+  }
+  .cumquat-image__fallback--button {
+    @apply cursor-pointer border-0 bg-transparent p-0;
+  }
+  .cumquat-image-preview {
+    @apply fixed inset-0 z-[1000] flex items-center justify-center bg-cumquat-overlay/80;
+  }
+  .cumquat-image-preview__img {
+    @apply max-h-[80vh] max-w-[80vw] select-none transition-transform duration-150;
+  }
+  .cumquat-image-preview__img--dragging {
+    @apply cursor-grabbing transition-none;
+  }
+  .cumquat-image-preview__toolbar {
+    @apply absolute bottom-6 flex items-center gap-1 rounded-full bg-cumquat-surface px-2 py-1 text-sm shadow-cumquat-overlay;
+  }
+  .cumquat-image-preview__toolbar button {
+    @apply flex size-8 cursor-pointer items-center justify-center rounded-full text-cumquat-text transition-colors hover:bg-cumquat-surface-2;
+  }
+
+  /* ---------- Carousel 播放指示 ---------- */
+  .cumquat-carousel__playing {
+    @apply absolute right-3 top-3 size-1.5 rounded-full bg-cumquat-primary-500;
+  }
+
+  /* ---------- P4：Calendar 面板/范围/日程 ---------- */
+  .cumquat-calendar__day:not(:disabled):hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-calendar__day:disabled {
+    @apply cursor-not-allowed text-cumquat-text-disabled;
+  }
+  .cumquat-calendar__day--today {
+    @apply ring-1 ring-cumquat-primary-500;
+  }
+  .cumquat-calendar__day--in-range {
+    @apply rounded-none bg-cumquat-primary-50;
+  }
+  .cumquat-calendar__day--range-start,
+  .cumquat-calendar__day--range-end {
+    @apply rounded-none bg-cumquat-primary-100;
+  }
+  .cumquat-calendar__day--selected:hover {
+    @apply bg-cumquat-accent;
+  }
+  .cumquat-calendar__dot {
+    @apply absolute bottom-0.5 size-1 rounded-full bg-cumquat-primary-500;
+  }
+  .cumquat-calendar__day {
+    position: relative;
+  }
+  .cumquat-calendar__panel-grid {
+    @apply grid grid-cols-4 gap-1 text-center text-sm;
+  }
+  .cumquat-calendar__panel-grid--years {
+    @apply grid-cols-3;
+  }
+  .cumquat-calendar__panel-cell {
+    @apply cursor-pointer rounded-cumquat px-2 py-2.5 text-cumquat-text transition-colors hover:bg-cumquat-surface-2 disabled:cursor-not-allowed disabled:text-cumquat-text-disabled;
+  }
+  .cumquat-calendar__panel-cell--muted {
+    @apply text-cumquat-text-muted;
+  }
+
+  /* ---------- P4：ColorPicker 透明度/输入 ---------- */
+  .cumquat-color-picker__alpha {
+    @apply relative mt-3 h-2.5 cursor-pointer rounded-full;
+  }
+  .cumquat-color-picker__alpha-thumb {
+    @apply absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2 border-white bg-cumquat-surface shadow;
+  }
+  .cumquat-color-picker__hex {
+    @apply mt-3 w-full rounded border border-cumquat-border bg-cumquat-surface px-2 py-1 font-mono text-xs uppercase text-cumquat-text outline-none focus:border-cumquat-primary-500;
+  }
+
+  /* ---------- P4：VirtualList 绝对定位窗口 ---------- */
+  .cumquat-virtual-list__inner {
+    @apply relative m-0 list-none p-0;
+  }
+  .cumquat-virtual-list__item {
+    @apply absolute inset-x-0 list-none;
+  }
+
+  /* ---------- P4：Watermark 覆层 ---------- */
+  .cumquat-watermark {
+    @apply static inset-auto z-auto overflow-visible;
+    position: relative;
+    pointer-events: auto;
+  }
+  .cumquat-watermark__layer {
+    @apply pointer-events-none absolute inset-0 overflow-hidden;
+  }
+  .cumquat-watermark__canvas {
+    @apply absolute inset-0;
+  }
+  .cumquat-watermark__item {
+    @apply pointer-events-none absolute select-none whitespace-nowrap;
+  }
+
+  /* ---------- P4：Tour 挖空/关闭/跳过 ---------- */
+  .cumquat-tour__mask {
+    position: absolute;
+    background: rgb(23 23 23 / 50%);
+  }
+  .cumquat-tour__mask--full {
+    @apply inset-0;
+  }
+  .cumquat-tour__card--anchored {
+    @apply w-72;
+  }
+  .cumquat-tour__close {
+    @apply absolute right-2 top-2 flex size-6 cursor-pointer items-center justify-center rounded-full text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-text;
+  }
+  .cumquat-tour__close svg {
+    @apply size-3.5;
+  }
+  .cumquat-tour__skip {
+    @apply mr-auto cursor-pointer text-xs text-cumquat-text-muted transition-colors hover:text-cumquat-text;
   }
 }

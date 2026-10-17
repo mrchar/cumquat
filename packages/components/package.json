@@ -13,7 +13,11 @@
     }
   },
   "scripts": {
-    "build": "vp pack"
+    "build": "vp pack",
+    "test": "vp test run"
+  },
+  "dependencies": {
+    "@cumquat/composables": "workspace:*"
   },
   "devDependencies": {
     "@vue/test-utils": "catalog:",

@@ -1,29 +1,79 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { useFloating, usePopoverModel } from '@cumquat/composables';
+import type { Placement, PopoverTrigger } from '@cumquat/composables';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     title?: string;
+    trigger?: PopoverTrigger;
+    placement?: Placement;
+    open?: boolean;
+    openDelay?: number;
+    closeDelay?: number;
+    disabled?: boolean;
   }>(),
-  { title: '' },
+  {
+    title: '',
+    trigger: 'click',
+    placement: 'top',
+    open: undefined,
+    openDelay: 100,
+    closeDelay: 100,
+    disabled: false,
+  },
 );
 
-const open = ref(false);
+const emit = defineEmits<{
+  'update:open': [value: boolean];
+}>();
 
-function close() {
-  open.value = false;
-}
+const {
+  isOpen,
+  open: setOpen,
+  close,
+  toggle,
+  triggerProps,
+  floatingHoverProps,
+} = usePopoverModel({
+  trigger: props.trigger,
+  openDelay: props.openDelay,
+  closeDelay: props.closeDelay,
+  modelValue: props.open !== undefined ? () => props.open : undefined,
+  onChange: (next) => emit('update:open', next),
+});
 
-defineExpose({ close });
+const { referenceRef, floatingRef, floatingStyles } = useFloating({
+  placement: () => props.placement,
+  gap: 10,
+  open: isOpen,
+});
+
+defineExpose({ open: setOpen, close, toggle });
 </script>
 
 <template>
   <span class="cumquat-popover">
-    <span class="cumquat-popover__trigger" @click="open = !open">
+    <span
+      ref="referenceRef"
+      class="cumquat-popover__trigger"
+      @click="triggerProps.onClick?.()"
+      @mouseenter="triggerProps.onMouseenter?.()"
+      @mouseleave="triggerProps.onMouseleave?.()"
+      @focus="triggerProps.onFocus?.()"
+      @blur="triggerProps.onBlur?.()"
+    >
       <slot name="trigger" />
     </span>
     <Transition name="cumquat-fade">
-      <div v-if="open" class="cumquat-popover__content">
+      <div
+        v-if="isOpen"
+        ref="floatingRef"
+        class="cumquat-popover__content"
+        :class="`cumquat-popover__content--${placement.split('-')[0]}`"
+        :style="floatingStyles"
+        @mouseenter="floatingHoverProps.onMouseenter?.()"
+        @mouseleave="floatingHoverProps.onMouseleave?.()"
+      >
         <span class="cumquat-popover__arrow" />
         <h4 v-if="title" class="cumquat-popover__title">{{ title }}</h4>
         <div class="cumquat-popover__body">

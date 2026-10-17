@@ -1,19 +1,38 @@
 <script setup lang="ts">
-withDefaults(
+import { useControllableModel } from '@cumquat/composables';
+
+const props = withDefaults(
   defineProps<{
     title?: string;
     type?: 'info' | 'success' | 'warning' | 'danger';
     closable?: boolean;
+    /** v-model:visible 控制显隐 */
+    visible?: boolean;
   }>(),
-  { title: '', type: 'info', closable: true },
+  { title: '', type: 'info', closable: true, visible: undefined },
 );
 
-const visible = defineModel<boolean>('visible', { default: true });
+const emit = defineEmits<{
+  'update:visible': [value: boolean];
+  close: [];
+}>();
+
+const { value: visibleState } = useControllableModel<boolean>({
+  modelValue: props.visible !== undefined ? () => props.visible : undefined,
+  defaultValue: true,
+  fallback: true,
+  onChange: (next) => emit('update:visible', next),
+});
+
+function close() {
+  visibleState.value = false;
+  emit('close');
+}
 </script>
 
 <template>
   <Transition name="cumquat-fade">
-    <div v-if="visible" role="status" class="cumquat-notification">
+    <div v-if="visibleState" role="status" class="cumquat-notification">
       <div class="cumquat-notification__inner">
         <span class="cumquat-notification__dot" :class="`cumquat-notification__dot--${type}`" />
         <div class="cumquat-notification__body">
@@ -23,13 +42,14 @@ const visible = defineModel<boolean>('visible', { default: true });
           <div class="cumquat-notification__content">
             <slot />
           </div>
+          <slot name="action" />
         </div>
         <button
           v-if="closable"
           type="button"
           aria-label="关闭"
           class="cumquat-notification__close"
-          @click="visible = false"
+          @click="close"
         >
           <svg
             class="cumquat-notification__close-icon"
