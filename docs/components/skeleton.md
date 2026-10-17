@@ -34,4 +34,3 @@ const skeletonCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { skeletonCode };
 </script>
-

@@ -9,7 +9,7 @@
   - 实现**全部 63 个组件的外观**（不做业务功能）
   - **有状态转换的组件实现基本状态切换**（ref/响应式驱动的开/关、选中、展开等）
   - 使用 **Vitest**（`vp test`，与 Vite 共享配置）验证每个组件能正常渲染
-  - 附带 playground 演示站，用于目检组件外观
+  - 附带 playground 调试沙盒，用于目检组件外观
 
 ## 2. 设计约定
 
@@ -48,7 +48,7 @@ cumquat/
 │           ├── theme.css       # @theme 定义 cumquat-* 语义 token
 │           └── components/     # 63 个 Button.vue / Input.vue …
 └── apps/
-    └── playground/             # 演示站：Vite + Vue + Tailwind v4
+    └── playground/             # 调试沙盒：Vite + Vue + Tailwind v4
         ├── vite.config.ts      # @vitejs/plugin-vue + @tailwindcss/vite
         ├── index.html
         └── src/
@@ -105,17 +105,17 @@ cumquat/
 - 测试文件就近放置：`packages/components/src/components/__tests__/Button.spec.ts` 模式
 - 测试中不做样式断言（Tailwind 类由 playground 目检），只断言结构与状态
 
-### 4.5 apps/playground 演示站
+### 4.5 apps/playground 调试沙盒
 
 - Tailwind v4 接入：`@tailwindcss/vite` 插件 + `@import "tailwindcss"` + `@import "@cumquat/components/theme.css"` + `@source "../../packages/components/src"`
-- 布局：左侧按 P0~P4 分组导航，右侧每个组件一个演示区块（标题 + 示例 + 说明），深色模式切换按钮
-- Message / Notification 等命令式组件以直接渲染形式演示外观
+- 定位：开发期调试沙盒（非演示站）。左侧为预置代码片段列表与主题切换，右侧 CodeCard（可编辑）+ LiveDemo 渲染，编辑代码即时预览；调试新组件时把模板贴入编辑区
+- 组件的对外演示与文档统一由 docs 站点承担，playground 不再维护组件演示内容
 
 ### 4.6 验证
 
 - `vp install` 成功
 - `vp test`：63 个组件渲染测试全部通过
-- `vp -C apps/playground dev` 启动演示站，逐组目检外观与状态切换
+- `vp -C apps/playground dev` 启动调试沙盒，逐片段目检外观与状态切换
 - `vp check`（lint + fmt + 类型）通过
 - `vp -C packages/components pack` 构建产物成功
 
@@ -124,4 +124,4 @@ cumquat/
 - 可运行的 Vite+ monorepo（pnpm workspace）
 - `@cumquat/components`：63 个组件 + theme.css，双层命名导出/注册
 - 全组件 Vitest 渲染测试（冒烟 + 状态切换断言）
-- playground 演示站：全组件可视化预览
+- playground 调试沙盒：预置片段 + 实时编辑预览，供开发期验证

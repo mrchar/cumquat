@@ -97,6 +97,7 @@ title: 组件清单与优先级
 | Calendar 日历          | 日期面板与日程展示 |
 | ColorPicker 颜色选择器 | 色板与透明度选择   |
 | CodeCard 代码卡片      | 演示与源码高亮展示 |
+| LiveDemo 实时演示      | 模板运行时编译渲染 |
 | QRCode 二维码          | 二维码生成渲染     |
 | Watermark 水印         | 页面/容器水印      |
 | Tour 漫游引导          | 分步新手引导       |
@@ -296,6 +297,9 @@ title: 组件清单与优先级
 - **CodeCard 代码卡片**
   - 内联逻辑：示例源码公共缩进清理、代码高亮 HTML 异步生成（未就绪时纯文本降级）
   - 复用组合函数：`useToggle`、`useClipboard`
+- **LiveDemo 实时演示**
+  - 内联逻辑：模板片段运行时编译、组件注册表解析标签、scope 注入、编译/运行时错误提示条
+  - 复用组合函数：无（直接使用 Vue `compile` 与 `defineComponent`）
 - **QRCode 二维码**
   - 内联逻辑：文本 → 点阵矩阵生成（容错等级，组件内纯函数）与矩阵渲染
 - **Watermark 水印**

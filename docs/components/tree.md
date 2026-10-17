@@ -8,13 +8,13 @@ title: Tree 树形控件
 
 `TreeNode` 结构：`{ key: string; label: string; disabled?: boolean; leaf?: boolean; children?: TreeNode[] }`（远程模式用 `leaf: true` 标记叶子，避免空节点显示展开箭头）。
 
-| Prop             | 类型         | 默认值  | 说明                                   |
-| ---------------- | ------------ | ------- | -------------------------------------- |
-| nodes            | `TreeNode[]` | -       | 树数据（绑定 fetch 时可省略）          |
-| fetch            | `Fetch<TreeNode>` | -   | 远程树：展开时以 `query.filters.parentKey` 请求子级并挂回，内置加载/失败重试 |
-| checkable        | `boolean`    | `false` | 显示勾选框                             |
-| defaultExpandAll | `boolean`    | `false` | 默认展开全部父节点                     |
-| checked          | `string[]`   | -       | 受控勾选集合（保存被点选节点自身 key） |
+| Prop             | 类型              | 默认值  | 说明                                                                         |
+| ---------------- | ----------------- | ------- | ---------------------------------------------------------------------------- |
+| nodes            | `TreeNode[]`      | -       | 树数据（绑定 fetch 时可省略）                                                |
+| fetch            | `Fetch<TreeNode>` | -       | 远程树：展开时以 `query.filters.parentKey` 请求子级并挂回，内置加载/失败重试 |
+| checkable        | `boolean`         | `false` | 显示勾选框                                                                   |
+| defaultExpandAll | `boolean`         | `false` | 默认展开全部父节点                                                           |
+| checked          | `string[]`        | -       | 受控勾选集合（保存被点选节点自身 key）                                       |
 
 | 事件           | 参数                                    | 说明          |
 | -------------- | --------------------------------------- | ------------- |
@@ -108,4 +108,3 @@ const treeCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { treeChecked, treeNodes, delay, fetchOrg, remoteTreeCode, treeCode };
 </script>
-

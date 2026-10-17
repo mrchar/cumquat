@@ -110,25 +110,25 @@ const fetchUsers: Fetch<UserRow> = async (query) => {
 
 ## 四、支持 fetch 的组件
 
-| 组件         | fetch 返回                   | 自动注入的查询片段          | 状态             |
-| ------------ | ---------------------------- | --------------------------- | ---------------- |
-| Table        | `Row[]` / `PagedResult<Row>` | pagination、sorter、filters | 已实现           |
-| Select       | `SelectOption[]`             | keyword（远程搜索）         | 已实现           |
+| 组件         | fetch 返回                   | 自动注入的查询片段          | 状态                 |
+| ------------ | ---------------------------- | --------------------------- | -------------------- |
+| Table        | `Row[]` / `PagedResult<Row>` | pagination、sorter、filters | 已实现               |
+| Select       | `SelectOption[]`             | keyword（远程搜索）         | 已实现               |
 | AutoComplete | `string[]`                   | keyword（防抖）             | 已实现（兼容旧签名） |
 | Mention      | `string[]`                   | keyword（防抖）             | 已实现（兼容旧签名） |
-| Cascader     | 层级节点 `[]`                | filters.parentKey（懒加载） | 已实现           |
-| Tree         | 树节点 `[]`                  | filters.parentKey（懒加载） | 已实现           |
-| TreeSelect   | 树节点 `[]`                  | filters.parentKey（懒加载） | 已实现           |
-| Transfer     | 选项 `[]`                    | keyword                     | 已实现           |
-| VirtualList  | `T[]`                        | pagination（触底增量累积）  | 已实现           |
-| Statistic    | 数值 / 聚合值                | filters                     | 已实现           |
-| Descriptions | 键值对项 `[]`                | filters                     | 已实现           |
-| Tabs         | 页签项 `[]`                  | —                           | 已实现           |
-| Collapse     | 面板项 `[]`                  | —                           | 已实现           |
-| Timeline     | 时间轴项 `[]`                | filters                     | 已实现           |
-| Carousel     | 轮播项 `[]`                  | —                           | 已实现           |
-| Menu         | 菜单项 `[]`                  | —                           | 已实现           |
-| Calendar     | 日程标记 `[]`                | filters.range（面板区间）   | 已实现           |
+| Cascader     | 层级节点 `[]`                | filters.parentKey（懒加载） | 已实现               |
+| Tree         | 树节点 `[]`                  | filters.parentKey（懒加载） | 已实现               |
+| TreeSelect   | 树节点 `[]`                  | filters.parentKey（懒加载） | 已实现               |
+| Transfer     | 选项 `[]`                    | keyword                     | 已实现               |
+| VirtualList  | `T[]`                        | pagination（触底增量累积）  | 已实现               |
+| Statistic    | 数值 / 聚合值                | filters                     | 已实现               |
+| Descriptions | 键值对项 `[]`                | filters                     | 已实现               |
+| Tabs         | 页签项 `[]`                  | —                           | 已实现               |
+| Collapse     | 面板项 `[]`                  | —                           | 已实现               |
+| Timeline     | 时间轴项 `[]`                | filters                     | 已实现               |
+| Carousel     | 轮播项 `[]`                  | —                           | 已实现               |
+| Menu         | 菜单项 `[]`                  | —                           | 已实现               |
+| Calendar     | 日程标记 `[]`                | filters.range（面板区间）   | 已实现               |
 
 不纳入：Image / Avatar（浏览器原生媒体加载，四态已内建）；Upload 与动作型组件
 （Button / Form / Popconfirm）走 `ActionLike` 异步动作，不属于资源获取；

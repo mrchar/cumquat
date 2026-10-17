@@ -6,16 +6,16 @@ title: AutoComplete 自动完成
 
 输入联想补全，支持本地候选与异步候选源。
 
-| Prop             | 类型                                     | 默认值         | 说明                             |
-| ---------------- | ---------------------------------------- | -------------- | -------------------------------- |
-| modelValue       | `string`                                 | -              | 绑定值（v-model）                |
-| options          | `string[]`                               | `[]`           | 静态候选（本地包含匹配）         |
+| Prop             | 类型                                                        | 默认值         | 说明                                                                          |
+| ---------------- | ----------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------- |
+| modelValue       | `string`                                                    | -              | 绑定值（v-model）                                                             |
+| options          | `string[]`                                                  | `[]`           | 静态候选（本地包含匹配）                                                      |
 | fetch            | `Fetch<string> \| ((keyword: string) => Promise<string[]>)` | -              | 异步候选源（提供时替代本地过滤；新签名经 query.keyword 收参，旧签名继续兼容） |
-| placeholder      | `string`                                 | `'输入以搜索'` | 占位文本                         |
-| disabled         | `boolean`                                | `false`        | 禁用                             |
-| triggerOnFocus   | `boolean`                                | `true`         | 聚焦即触发建议                   |
-| debounce         | `number`                                 | `300`          | 防抖时长（异步源生效，ms）       |
-| minKeywordLength | `number`                                 | `0`            | 触发请求的最小关键词长度         |
+| placeholder      | `string`                                                    | `'输入以搜索'` | 占位文本                                                                      |
+| disabled         | `boolean`                                                   | `false`        | 禁用                                                                          |
+| triggerOnFocus   | `boolean`                                                   | `true`         | 聚焦即触发建议                                                                |
+| debounce         | `number`                                                    | `300`          | 防抖时长（异步源生效，ms）                                                    |
+| minKeywordLength | `number`                                                    | `0`            | 触发请求的最小关键词长度                                                      |
 
 | 事件              | 参数            | 说明         |
 | ----------------- | --------------- | ------------ |
@@ -60,4 +60,3 @@ const autoCompleteCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { autoCompleteValue, autoCompleteCode };
 </script>
-

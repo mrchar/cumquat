@@ -8,13 +8,13 @@ title: Collapse 折叠面板
 
 `CollapseItem` 结构：`{ key: string; title: string; content: string; disabled?: boolean }`。
 
-| Prop              | 类型             | 默认值  | 说明                                 |
-| ----------------- | ---------------- | ------- | ------------------------------------ |
-| items             | `CollapseItem[]` | `[]`    | 面板列表（绑定 fetch 时可省略） |
-| fetch             | `Fetch<CollapseItem>` | -  | 远程面板：挂载即请求，内置四态 |
-| activeKeys        | `string[]`       | -       | 展开 key（受控，v-model:activeKeys） |
-| defaultActiveKeys | `string[]`       | `[]`    | 非受控初始展开 key                   |
-| accordion         | `boolean`        | `false` | 手风琴：同时至多展开一个             |
+| Prop              | 类型                  | 默认值  | 说明                                 |
+| ----------------- | --------------------- | ------- | ------------------------------------ |
+| items             | `CollapseItem[]`      | `[]`    | 面板列表（绑定 fetch 时可省略）      |
+| fetch             | `Fetch<CollapseItem>` | -       | 远程面板：挂载即请求，内置四态       |
+| activeKeys        | `string[]`            | -       | 展开 key（受控，v-model:activeKeys） |
+| defaultActiveKeys | `string[]`            | `[]`    | 非受控初始展开 key                   |
+| accordion         | `boolean`             | `false` | 手风琴：同时至多展开一个             |
 
 | 事件              | 参数             | 说明         |
 | ----------------- | ---------------- | ------------ |
@@ -50,4 +50,3 @@ const collapseCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { collapseItems, collapseCode };
 </script>
-

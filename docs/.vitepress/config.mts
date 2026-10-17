@@ -111,6 +111,7 @@ const groups: Array<{ text: string; items: Array<[string, string, string]> }> = 
       ['tour', 'Tour 漫游引导'],
       ['watermark', 'Watermark 水印'],
       ['code-card', 'CodeCard 代码卡片'],
+      ['live-demo', 'LiveDemo 实时演示'],
     ],
   },
 ];

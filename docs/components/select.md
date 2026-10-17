@@ -8,17 +8,17 @@ title: Select 选择器
 
 `SelectOption` 结构：`{ label: string; value: string | number; disabled?: boolean; group?: string }`，相同 `group` 的选项在面板内聚合为分组。
 
-| Prop        | 类型                             | 默认值     | 说明                                                      |
-| ----------- | -------------------------------- | ---------- | --------------------------------------------------------- |
-| modelValue  | `V \| V[] \| null`               | -          | 绑定值（v-model，多选为数组）                             |
-| options     | `SelectOption[]`                 | `[]`       | 静态选项                                                  |
-| placeholder | `string`                         | `'请选择'` | 占位文本                                                  |
-| disabled    | `boolean`                        | `false`    | 禁用                                                      |
-| multiple    | `boolean`                        | `false`    | 多选（标签回显，可逐个移除）                              |
-| filterable  | `boolean`                        | `false`    | 可搜索                                                    |
-| clearable   | `boolean`                        | `false`    | 可清空                                                    |
-| name        | `string`                         | -          | 表单字段名                                                |
-| state       | `AsyncStateLike<SelectOption[]>` | -          | 远程数据状态：传入后优先于 options 渲染，组件自身不发请求 |
+| Prop        | 类型                             | 默认值     | 说明                                                                              |
+| ----------- | -------------------------------- | ---------- | --------------------------------------------------------------------------------- |
+| modelValue  | `V \| V[] \| null`               | -          | 绑定值（v-model，多选为数组）                                                     |
+| options     | `SelectOption[]`                 | `[]`       | 静态选项                                                                          |
+| placeholder | `string`                         | `'请选择'` | 占位文本                                                                          |
+| disabled    | `boolean`                        | `false`    | 禁用                                                                              |
+| multiple    | `boolean`                        | `false`    | 多选（标签回显，可逐个移除）                                                      |
+| filterable  | `boolean`                        | `false`    | 可搜索                                                                            |
+| clearable   | `boolean`                        | `false`    | 可清空                                                                            |
+| name        | `string`                         | -          | 表单字段名                                                                        |
+| state       | `AsyncStateLike<SelectOption[]>` | -          | 远程数据状态：传入后优先于 options 渲染，组件自身不发请求                         |
 | fetch       | `Fetch<SelectOption>`            | -          | 远程选项源：挂载即请求，输入时以 `query.keyword` 自动重取（防抖 300ms），自动四态 |
 
 | 事件              | 参数                      | 说明   |
@@ -102,4 +102,3 @@ const remoteSelectCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { selectValue, selectOptions, selectCode, remoteSelectValue, remoteUserOptions, fetchRemoteUsers, remoteSelectCode };
 </script>
-

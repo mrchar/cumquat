@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import Basic from './demos/basic.vue';
-import FormControls from './demos/form-controls.vue';
-import Overlay from './demos/overlay.vue';
-import DataDisplay from './demos/data-display.vue';
-import Feedback from './demos/feedback.vue';
-import Navigation from './demos/navigation.vue';
-import Extras from './demos/extras.vue';
+import { CodeCard, LiveDemo } from '@cumquat/components';
+import { samples } from './samples';
 
 type ThemeKey = 'light' | 'dark' | 'high-contrast' | 'glass';
 
@@ -35,173 +30,74 @@ watch(
   { immediate: true },
 );
 
-const groups = [
-  {
-    key: 'basic',
-    label: '基础 Basic',
-    items: [
-      { id: 'button', label: 'Button' },
-      { id: 'icon', label: 'Icon' },
-      { id: 'input', label: 'Input' },
-      { id: 'card', label: 'Card' },
-      { id: 'divider', label: 'Divider' },
-      { id: 'avatar', label: 'Avatar' },
-      { id: 'badge', label: 'Badge' },
-      { id: 'statistic', label: 'Statistic' },
-      { id: 'typography', label: 'Typography' },
-      { id: 'tag', label: 'Tag' },
-      { id: 'empty', label: 'Empty' },
-    ],
-  },
-  {
-    key: 'form-controls',
-    label: '表单控件 Form',
-    items: [
-      { id: 'select', label: 'Select' },
-      { id: 'checkbox', label: 'Checkbox' },
-      { id: 'radio', label: 'Radio' },
-      { id: 'switch', label: 'Switch' },
-      { id: 'input-number', label: 'InputNumber' },
-      { id: 'rate', label: 'Rate' },
-      { id: 'segmented', label: 'Segmented' },
-      { id: 'auto-complete', label: 'AutoComplete' },
-      { id: 'mention', label: 'Mention' },
-      { id: 'form', label: 'Form' },
-      { id: 'tree-select', label: 'TreeSelect' },
-      { id: 'slider', label: 'Slider' },
-    ],
-  },
-  {
-    key: 'overlay',
-    label: '浮层 Overlay',
-    items: [
-      { id: 'dialog', label: 'Dialog' },
-      { id: 'drawer', label: 'Drawer' },
-      { id: 'dropdown', label: 'Dropdown' },
-      { id: 'popover', label: 'Popover' },
-      { id: 'popconfirm', label: 'Popconfirm' },
-      { id: 'tooltip', label: 'Tooltip' },
-    ],
-  },
-  {
-    key: 'data-display',
-    label: '数据展示 Data',
-    items: [
-      { id: 'table', label: 'Table' },
-      { id: 'remote-fetch', label: 'Fetch 远程数据' },
-      { id: 'pagination', label: 'Pagination' },
-      { id: 'tabs', label: 'Tabs' },
-      { id: 'collapse', label: 'Collapse' },
-      { id: 'tree', label: 'Tree' },
-      { id: 'cascader', label: 'Cascader' },
-      { id: 'timeline', label: 'Timeline' },
-      { id: 'steps', label: 'Steps' },
-      { id: 'descriptions', label: 'Descriptions' },
-      { id: 'carousel', label: 'Carousel' },
-      { id: 'progress', label: 'Progress' },
-      { id: 'image', label: 'Image' },
-    ],
-  },
-  {
-    key: 'feedback',
-    label: '反馈 Feedback',
-    items: [
-      { id: 'message', label: 'Message' },
-      { id: 'alert', label: 'Alert' },
-      { id: 'notification', label: 'Notification' },
-      { id: 'loading', label: 'Loading' },
-      { id: 'skeleton', label: 'Skeleton' },
-      { id: 'result', label: 'Result' },
-      { id: 'upload', label: 'Upload' },
-    ],
-  },
-  {
-    key: 'navigation',
-    label: '导航布局 Navigation',
-    items: [
-      { id: 'breadcrumb', label: 'Breadcrumb' },
-      { id: 'menu', label: 'Menu' },
-      { id: 'anchor', label: 'Anchor' },
-      { id: 'back-top', label: 'BackTop' },
-      { id: 'affix', label: 'Affix' },
-      { id: 'float-button', label: 'FloatButton' },
-      { id: 'datepicker', label: 'DatePicker' },
-      { id: 'timepicker', label: 'TimePicker' },
-      { id: 'calendar', label: 'Calendar' },
-      { id: 'colorpicker', label: 'ColorPicker' },
-      { id: 'transfer', label: 'Transfer' },
-      { id: 'virtual-list', label: 'VirtualList' },
-      { id: 'layout', label: 'Layout' },
-      { id: 'grid', label: 'Grid' },
-      { id: 'space', label: 'Space' },
-    ],
-  },
-  {
-    key: 'extras',
-    label: '其他 Extras',
-    items: [
-      { id: 'watermark', label: 'Watermark' },
-      { id: 'tour', label: 'Tour' },
-      { id: 'qrcode', label: 'QRCode' },
-    ],
-  },
-];
+/** 当前片段；切换时重建演示码与作用域，内部状态回到初始 */
+const activeKey = ref(samples[0].key);
+const activeSample = () => samples.find((sample) => sample.key === activeKey.value) ?? samples[0];
+const code = ref(samples[0].code);
+const scope = ref(samples[0].scope?.() ?? {});
+
+watch(activeKey, () => {
+  const sample = activeSample();
+  code.value = sample.code;
+  scope.value = sample.scope?.() ?? {};
+});
 </script>
 
 <template>
   <div class="min-h-screen">
     <aside
-      class="fixed inset-y-0 left-0 z-30 w-60 overflow-y-auto border-r border-cumquat-border bg-cumquat-surface px-4 py-6"
+      class="fixed inset-y-0 left-0 z-30 flex w-60 flex-col overflow-y-auto border-r border-cumquat-border bg-cumquat-surface px-4 py-6"
     >
-      <p class="mb-5 px-2 text-lg font-semibold tracking-tight text-cumquat-text">Cumquat</p>
-      <nav class="flex flex-col gap-5 pb-24">
-        <div v-for="group in groups" :key="group.key">
-          <p class="mb-1.5 px-2 text-xs font-semibold tracking-wide text-cumquat-text-muted">
-            {{ group.label }}
-          </p>
-          <a
-            v-for="item in group.items"
-            :key="item.id"
-            :href="`#${item.id}`"
-            class="block rounded px-2 py-1 text-sm text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-text"
-          >
-            {{ item.label }}
-          </a>
-        </div>
+      <p class="mb-1 px-2 text-lg font-semibold tracking-tight text-cumquat-text">Cumquat</p>
+      <p class="mb-5 px-2 text-xs text-cumquat-text-muted">组件调试沙盒</p>
+
+      <nav class="flex flex-1 flex-col gap-1">
+        <button
+          v-for="sample in samples"
+          :key="sample.key"
+          type="button"
+          class="cursor-pointer rounded px-2 py-1 text-left text-sm transition-colors"
+          :class="
+            activeKey === sample.key
+              ? 'bg-cumquat-surface-2 font-medium text-cumquat-text'
+              : 'text-cumquat-text-muted hover:bg-cumquat-surface-2 hover:text-cumquat-text'
+          "
+          @click="activeKey = sample.key"
+        >
+          {{ sample.title }}
+        </button>
       </nav>
+
+      <div class="flex flex-col gap-1 border-t border-cumquat-border pt-4">
+        <p class="mb-1 px-2 text-xs font-semibold tracking-wide text-cumquat-text-muted">主题</p>
+        <button
+          v-for="item in themes"
+          :key="item.key"
+          type="button"
+          class="cursor-pointer rounded px-2 py-1 text-left text-sm transition-colors"
+          :class="
+            theme === item.key
+              ? 'bg-cumquat-surface-2 font-medium text-cumquat-text'
+              : 'text-cumquat-text-muted hover:bg-cumquat-surface-2 hover:text-cumquat-text'
+          "
+          @click="theme = item.key"
+        >
+          {{ item.label }}
+        </button>
+      </div>
     </aside>
 
-    <main class="ml-60 flex-1 px-8 py-6">
-      <header class="mb-8 flex justify-end">
-        <div
-          class="inline-flex items-center gap-1 rounded-cumquat border border-cumquat-border p-1"
-        >
-          <button
-            v-for="item in themes"
-            :key="item.key"
-            type="button"
-            class="h-7 cursor-pointer rounded-cumquat px-3 text-sm transition-colors"
-            :class="
-              theme === item.key
-                ? 'bg-cumquat-accent text-cumquat-text-inverse'
-                : 'text-cumquat-text-muted hover:bg-cumquat-surface-2 hover:text-cumquat-text'
-            "
-            @click="theme = item.key"
-          >
-            {{ item.label }}
-          </button>
-        </div>
+    <main class="ml-60 px-8 py-6">
+      <header class="mb-6">
+        <h1 class="text-xl font-semibold text-cumquat-text">组件调试沙盒</h1>
+        <p class="mt-1 text-sm text-cumquat-text-muted">
+          选择左侧片段，直接编辑代码即可实时预览；调试新组件时把模板贴入编辑区。
+        </p>
       </header>
 
-      <div class="flex flex-col gap-12">
-        <Basic />
-        <FormControls />
-        <Overlay />
-        <DataDisplay />
-        <Feedback />
-        <Navigation />
-        <Extras />
-      </div>
+      <CodeCard v-model:code="code" editable :title="activeSample().title">
+        <LiveDemo :code="code" :scope="scope" />
+      </CodeCard>
     </main>
   </div>
 </template>

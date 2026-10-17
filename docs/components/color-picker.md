@@ -46,4 +46,3 @@ const colorPickerCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { colorValue, colorPickerCode };
 </script>
-

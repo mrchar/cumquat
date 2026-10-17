@@ -6,16 +6,16 @@ title: Carousel 走马灯
 
 轮播内容，支持自动播放与悬停暂停。
 
-| Prop         | 类型       | 默认值    | 说明                           |
-| ------------ | ---------- | --------- | ------------------------------ |
-| items        | `string[]` | `[]`      | 轮播项标题（也可用插槽自定义） |
-| modelValue   | `number`   | -         | 当前索引（v-model）            |
-| height       | `string`   | `'14rem'` | 容器高度                       |
-| autoplay     | `boolean`  | `false`   | 自动播放                       |
-| interval     | `number`   | `3000`    | 播放间隔（ms）                 |
-| pauseOnHover | `boolean`  | `true`    | 悬停暂停                       |
-| loop         | `boolean`  | `true`    | 循环切换                       |
-| fetch        | `Fetch<string>` | -    | 远程轮播项：挂载即请求，内置四态 |
+| Prop         | 类型            | 默认值    | 说明                             |
+| ------------ | --------------- | --------- | -------------------------------- |
+| items        | `string[]`      | `[]`      | 轮播项标题（也可用插槽自定义）   |
+| modelValue   | `number`        | -         | 当前索引（v-model）              |
+| height       | `string`        | `'14rem'` | 容器高度                         |
+| autoplay     | `boolean`       | `false`   | 自动播放                         |
+| interval     | `number`        | `3000`    | 播放间隔（ms）                   |
+| pauseOnHover | `boolean`       | `true`    | 悬停暂停                         |
+| loop         | `boolean`       | `true`    | 循环切换                         |
+| fetch        | `Fetch<string>` | -         | 远程轮播项：挂载即请求，内置四态 |
 
 | 事件              | 参数                              | 说明     |
 | ----------------- | --------------------------------- | -------- |
@@ -53,4 +53,3 @@ const carouselCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { carouselIndex, carouselItems, carouselCode };
 </script>
-

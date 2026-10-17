@@ -51,4 +51,3 @@ const checkboxCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { checked, checkboxCode };
 </script>
-

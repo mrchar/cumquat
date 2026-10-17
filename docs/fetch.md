@@ -25,16 +25,16 @@ const fetchUsers: Fetch<UserRow> = async (query) => {
 
 各组件自动注入的查询片段：
 
-| 组件 | `query` 片段 | 返回形态 |
-| ---- | ------------ | -------- |
-| Table | `pagination` / `sorter` / `filters` | 数组或 `{ list, total }` |
-| Select / AutoComplete / Mention | `keyword`（300ms 防抖） | 数组 |
-| Transfer | `keyword`（300ms 防抖） | 数组 |
-| Tree / TreeSelect / Cascader | `filters.parentKey`（懒加载子级） | 数组 |
-| VirtualList | `pagination`（触底加载下一页并累积） | 数组或 `{ list, total }` |
-| Calendar | `filters.range: [首日, 末日]`（切月重取） | 数组 |
-| Statistic | `filters` | 单值 |
-| Descriptions / Timeline / Tabs / Collapse / Carousel / Menu | `filters` | 数组 |
+| 组件                                                        | `query` 片段                              | 返回形态                 |
+| ----------------------------------------------------------- | ----------------------------------------- | ------------------------ |
+| Table                                                       | `pagination` / `sorter` / `filters`       | 数组或 `{ list, total }` |
+| Select / AutoComplete / Mention                             | `keyword`（300ms 防抖）                   | 数组                     |
+| Transfer                                                    | `keyword`（300ms 防抖）                   | 数组                     |
+| Tree / TreeSelect / Cascader                                | `filters.parentKey`（懒加载子级）         | 数组                     |
+| VirtualList                                                 | `pagination`（触底加载下一页并累积）      | 数组或 `{ list, total }` |
+| Calendar                                                    | `filters.range: [首日, 末日]`（切月重取） | 数组                     |
+| Statistic                                                   | `filters`                                 | 单值                     |
+| Descriptions / Timeline / Tabs / Collapse / Carousel / Menu | `filters`                                 | 数组                     |
 
 分页表格：
 

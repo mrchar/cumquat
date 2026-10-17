@@ -8,15 +8,15 @@ title: TreeSelect 树选择
 
 `TreeSelectNode` 结构：`{ key: string; label: string; disabled?: boolean; children?: TreeSelectNode[] }`。
 
-| Prop             | 类型               | 默认值     | 说明                             |
-| ---------------- | ------------------ | ---------- | -------------------------------- |
-| nodes            | `TreeSelectNode[]` | `[]`       | 树数据                           |
-| modelValue       | `string \| null`   | -          | 选中叶子 key（v-model）          |
-| placeholder      | `string`           | `'请选择'` | 占位文本                         |
-| disabled         | `boolean`          | `false`    | 禁用                             |
-| filterable       | `boolean`          | `false`    | 可搜索（过滤并自动展开命中路径） |
-| defaultExpandAll | `boolean`          | `false`    | 默认展开全部父节点               |
-| fetch            | `Fetch<TreeSelectNode>` | -      | 远程树：展开节点时以 `query.filters.parentKey` 请求子级，自动懒加载与四态 |
+| Prop             | 类型                    | 默认值     | 说明                                                                      |
+| ---------------- | ----------------------- | ---------- | ------------------------------------------------------------------------- |
+| nodes            | `TreeSelectNode[]`      | `[]`       | 树数据                                                                    |
+| modelValue       | `string \| null`        | -          | 选中叶子 key（v-model）                                                   |
+| placeholder      | `string`                | `'请选择'` | 占位文本                                                                  |
+| disabled         | `boolean`               | `false`    | 禁用                                                                      |
+| filterable       | `boolean`               | `false`    | 可搜索（过滤并自动展开命中路径）                                          |
+| defaultExpandAll | `boolean`               | `false`    | 默认展开全部父节点                                                        |
+| fetch            | `Fetch<TreeSelectNode>` | -          | 远程树：展开节点时以 `query.filters.parentKey` 请求子级，自动懒加载与四态 |
 
 | 事件              | 参数                    | 说明   |
 | ----------------- | ----------------------- | ------ |
@@ -60,4 +60,3 @@ const treeSelectCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { treeSelectValue, treeNodes, treeSelectCode };
 </script>
-

@@ -8,10 +8,10 @@ title: Timeline 时间线
 
 `TimelineItem` 结构：`{ key: string; title: string; content?: string; time?: string; type?: 'primary' | 'success' | 'warning' | 'danger' }`。
 
-| Prop  | 类型             | 默认值 | 说明     |
-| ----- | ---------------- | ------ | -------- |
-| items | `TimelineItem[]` | `[]`   | 节点列表（绑定 fetch 时可省略） |
-| fetch | `Fetch<TimelineItem>` | -   | 远程节点：挂载即请求，内置四态 |
+| Prop  | 类型                  | 默认值 | 说明                            |
+| ----- | --------------------- | ------ | ------------------------------- |
+| items | `TimelineItem[]`      | `[]`   | 节点列表（绑定 fetch 时可省略） |
+| fetch | `Fetch<TimelineItem>` | -      | 远程节点：挂载即请求，内置四态  |
 
 | 插槽    | 说明                                              |
 | ------- | ------------------------------------------------- |
@@ -57,4 +57,3 @@ const timelineCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { timelineItems, timelineCode };
 </script>
-

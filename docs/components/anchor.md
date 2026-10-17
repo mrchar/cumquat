@@ -56,4 +56,3 @@ const anchorCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { anchorItems, anchorCode };
 </script>
-

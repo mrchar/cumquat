@@ -21,23 +21,23 @@ interface TableColumn {
 }
 ```
 
-| Prop        | 类型                                            | 默认值         | 说明                                       |
-| ----------- | ----------------------------------------------- | -------------- | ------------------------------------------ |
-| columns     | `TableColumn[]`                                 | -              | 列配置（必填）                             |
-| rows        | `Row[]`                                         | `[]`           | 本地数据                                   |
-| striped     | `boolean`                                       | `false`        | 斑马纹                                     |
-| loading     | `boolean`                                       | `false`        | 外部加载态                                 |
-| emptyText   | `string`                                        | `'暂无数据'`   | 空态文案                                   |
-| data        | `AsyncStateLike<Row[]>`                         | -              | 远程数据状态：传入后 rows/loading 由其派生 |
-| total       | `number`                                        | -              | 远程数据总条数（本地默认取 rows 长度）     |
-| rowKey      | `(row: Row, index: number) => string \| number` | 取行索引       | 行唯一键                                   |
-| selectable  | `boolean`                                       | `false`        | 显示行选择列                               |
-| expandable  | `boolean`                                       | `false`        | 显示展开列                                 |
-| pagination  | `boolean`                                       | `false`        | 内置分页条                                 |
-| pageSize    | `number`                                        | `10`           | 每页条数                                   |
-| pageSizes   | `number[]`                                      | `[10, 20, 50]` | 每页条数选项                               |
-| defaultSort | `{ key: string; order: 'asc' \| 'desc' }`       | -              | 初始排序                                   |
-| fetch       | `Fetch<Row>`                                     | -              | 远程数据源：自动注入 pagination/sorter/filters；返回 `{ list, total }` 自动分页，返回数组按全量渲染 |
+| Prop        | 类型                                            | 默认值         | 说明                                                                                                |
+| ----------- | ----------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| columns     | `TableColumn[]`                                 | -              | 列配置（必填）                                                                                      |
+| rows        | `Row[]`                                         | `[]`           | 本地数据                                                                                            |
+| striped     | `boolean`                                       | `false`        | 斑马纹                                                                                              |
+| loading     | `boolean`                                       | `false`        | 外部加载态                                                                                          |
+| emptyText   | `string`                                        | `'暂无数据'`   | 空态文案                                                                                            |
+| data        | `AsyncStateLike<Row[]>`                         | -              | 远程数据状态：传入后 rows/loading 由其派生                                                          |
+| total       | `number`                                        | -              | 远程数据总条数（本地默认取 rows 长度）                                                              |
+| rowKey      | `(row: Row, index: number) => string \| number` | 取行索引       | 行唯一键                                                                                            |
+| selectable  | `boolean`                                       | `false`        | 显示行选择列                                                                                        |
+| expandable  | `boolean`                                       | `false`        | 显示展开列                                                                                          |
+| pagination  | `boolean`                                       | `false`        | 内置分页条                                                                                          |
+| pageSize    | `number`                                        | `10`           | 每页条数                                                                                            |
+| pageSizes   | `number[]`                                      | `[10, 20, 50]` | 每页条数选项                                                                                        |
+| defaultSort | `{ key: string; order: 'asc' \| 'desc' }`       | -              | 初始排序                                                                                            |
+| fetch       | `Fetch<Row>`                                    | -              | 远程数据源：自动注入 pagination/sorter/filters；返回 `{ list, total }` 自动分页，返回数组按全量渲染 |
 
 | 事件                | 参数                                                                                            | 说明                                     |
 | ------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -51,13 +51,7 @@ interface TableColumn {
 | expanded          | 展开行内容，slot props：`{ row, index }`   |
 
 ```vue
-<Table
-  :columns="columns"
-  :fetch="fetchUsers"
-  selectable
-  pagination
-  :page-size="20"
->
+<Table :columns="columns" :fetch="fetchUsers" selectable pagination :page-size="20">
   <template #cell-status="{ value }"><Tag>{{ value }}</Tag></template>
 </Table>
 ```
@@ -189,4 +183,3 @@ const remoteTableCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { page, columns, rows, tableCode, delay, remoteColumns, allRemoteUsers, failNextFetch, fetchUsers, remoteTableCode };
 </script>
-

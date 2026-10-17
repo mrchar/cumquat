@@ -6,14 +6,14 @@ title: VirtualList 虚拟列表
 
 超长列表的虚拟滚动，支持动态行高；绑定 `fetch` 后自动触底分页累积。
 
-| Prop          | 类型                                      | 默认值 | 说明                       |
-| ------------- | ----------------------------------------- | ------ | -------------------------- |
-| items         | `T[]`                                     | `[]`   | 列表数据（绑定 fetch 时可省略） |
+| Prop          | 类型                                      | 默认值 | 说明                                                                               |
+| ------------- | ----------------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| items         | `T[]`                                     | `[]`   | 列表数据（绑定 fetch 时可省略）                                                    |
 | fetch         | `Fetch<T>`                                | -      | 远程列表：自动注入 `pagination`（每页 20），触底加载下一页并累积，内置哨兵态与重试 |
-| height        | `number`                                  | `240`  | 容器高度（px）             |
-| itemHeight    | `number`                                  | `40`   | 单项高度（px）             |
-| buffer        | `number`                                  | `2`    | 上下缓冲行数               |
-| dynamicHeight | `(item: string, index: number) => number` | -      | 动态行高（按索引返回高度） |
+| height        | `number`                                  | `240`  | 容器高度（px）                                                                     |
+| itemHeight    | `number`                                  | `40`   | 单项高度（px）                                                                     |
+| buffer        | `number`                                  | `2`    | 上下缓冲行数                                                                       |
+| dynamicHeight | `(item: string, index: number) => number` | -      | 动态行高（按索引返回高度）                                                         |
 
 ```vue
 <VirtualList :items="thousandRows" :height="320" :item-height="36" />
@@ -66,4 +66,3 @@ const remoteVirtualListCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { virtualItems, virtualListCode, fetchVirtualItems, remoteVirtualListCode };
 </script>
-

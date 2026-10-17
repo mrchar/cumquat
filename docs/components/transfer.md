@@ -8,13 +8,13 @@ title: Transfer 穿梭框
 
 `TransferItem` 结构：`{ key: string; label: string; disabled?: boolean }`。
 
-| Prop       | 类型               | 默认值                   | 说明                            |
-| ---------- | ------------------ | ------------------------ | ------------------------------- |
-| data       | `TransferItem[]`   | `[]`                     | 全部数据（绑定 fetch 时可省略） |
-| fetch      | `Fetch<TransferItem>` | -                     | 远程候选：挂载即请求，左侧搜索以 `query.keyword`（防抖 300ms）重取，远程模式不本地过滤 |
-| modelValue | `string[]`         | -                        | 右栏（已选）key 列表（v-model） |
-| titles     | `[string, string]` | `['源列表', '目标列表']` | 两侧标题                        |
-| searchable | `boolean`          | `false`                  | 两侧搜索过滤                    |
+| Prop       | 类型                  | 默认值                   | 说明                                                                                   |
+| ---------- | --------------------- | ------------------------ | -------------------------------------------------------------------------------------- |
+| data       | `TransferItem[]`      | `[]`                     | 全部数据（绑定 fetch 时可省略）                                                        |
+| fetch      | `Fetch<TransferItem>` | -                        | 远程候选：挂载即请求，左侧搜索以 `query.keyword`（防抖 300ms）重取，远程模式不本地过滤 |
+| modelValue | `string[]`            | -                        | 右栏（已选）key 列表（v-model）                                                        |
+| titles     | `[string, string]`    | `['源列表', '目标列表']` | 两侧标题                                                                               |
+| searchable | `boolean`             | `false`                  | 两侧搜索过滤                                                                           |
 
 | 事件              | 参数                                           | 说明     |
 | ----------------- | ---------------------------------------------- | -------- |
@@ -52,4 +52,3 @@ const transferCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { transferTarget, transferData, transferCode };
 </script>
-

@@ -8,30 +8,21 @@ import {
   watch,
   type Component,
 } from 'vue';
-import * as Library from '@cumquat/components';
+import { components } from '../../registry';
 
 const props = withDefaults(
   defineProps<{
     /** 组件模板片段（Vue 模板语法），变化后自动重新渲染 */
     code: string;
-    /** 渲染作用域：模板中可访问的变量与函数（demo 文件汇总对象） */
+    /** 渲染作用域：模板中可访问的变量与函数 */
     scope?: Record<string, unknown>;
   }>(),
   { scope: () => ({}) },
 );
 
-/**
- * 组件库具名导出作为运行时模板的局部组件映射，
- * 使代码卡片中的 <Table> 等标签无需手动注册即可解析。
- */
-const libraryComponents = Object.fromEntries(
-  Object.entries(Library).filter(([, value]) => isComponentDefinition(value)),
-) as Record<string, Component>;
-
-function isComponentDefinition(value: unknown): boolean {
-  if (typeof value !== 'object' || value === null) return false;
-  return 'render' in value || 'setup' in value;
-}
+/** 组件注册表作为运行时模板的局部组件映射，
+ * 使片段中的 <Table> 等标签无需手动注册即可解析。 */
+const libraryComponents = components as Record<string, Component>;
 
 const renderCode = ref(props.code);
 const compileError = ref<string | null>(null);
@@ -80,7 +71,7 @@ onErrorCaptured((error) => {
 
 <template>
   <div class="cumquat-live-demo">
-    <!-- code 作为 key：每次修改强制重挂载，演示内部状态回到初始 -->
+    <!-- code 作为 key：每次修改强制重挂载，片段内部状态回到初始 -->
     <component :is="dynamicComponent" v-if="dynamicComponent" :key="renderCode" />
     <p
       v-if="compileError"

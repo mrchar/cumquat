@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, h, resolveComponent } from 'vue';
-import { Cumquat, Button, Watermark, Tour, QRCode, CodeCard } from '../../index';
+import { Cumquat, Button, Watermark, Tour, QRCode, CodeCard, LiveDemo } from '../../index';
 import { getCodeHighlighter } from '../extras/codeHighlighter';
 
 describe('Cumquat 全量安装', () => {
@@ -120,6 +120,29 @@ describe('CodeCard', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('LiveDemo', () => {
+  it('运行时编译模板并解析库组件标签', () => {
+    const wrapper = mount(LiveDemo, {
+      props: { code: '<Button type="primary">确定</Button>' },
+    });
+    const button = wrapper.find('.cumquat-button');
+    expect(button.exists()).toBe(true);
+    expect(button.classes()).toContain('cumquat-button--primary');
+  });
+
+  it('注入 scope 后模板可访问响应式变量', async () => {
+    const wrapper = mount(LiveDemo, {
+      props: { code: '<span class="scope-out">{{ count }}</span>', scope: { count: 3 } },
+    });
+    expect(wrapper.find('.scope-out').text()).toBe('3');
+  });
+
+  it('模板语法错误时渲染编译失败提示', () => {
+    const wrapper = mount(LiveDemo, { props: { code: '<Button' } });
+    expect(wrapper.text()).toContain('模板编译失败');
   });
 });
 

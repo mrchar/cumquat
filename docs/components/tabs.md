@@ -8,14 +8,14 @@ title: Tabs 标签页
 
 `TabItem` 结构：`{ key: string; label: string; disabled?: boolean; closable?: boolean }`。
 
-| Prop       | 类型        | 默认值  | 说明                                            |
-| ---------- | ----------- | ------- | ----------------------------------------------- |
-| tabs       | `TabItem[]` | `[]`    | 页签列表（绑定 fetch 时可省略）                  |
-| fetch      | `Fetch<TabItem>` | -  | 远程页签：挂载即请求，数据就绪后自动激活首个可用页签 |
-| modelValue | `string`    | -       | 激活 key（v-model）                             |
-| editable   | `boolean`   | `false` | 允许增减页签（触发 add/remove，数据由外层维护） |
-| addText    | `string`    | `'+'`   | 新增按钮文案                                    |
-| lazy       | `boolean`   | `true`  | 面板懒渲染（首次激活后才挂载）                  |
+| Prop       | 类型             | 默认值  | 说明                                                 |
+| ---------- | ---------------- | ------- | ---------------------------------------------------- |
+| tabs       | `TabItem[]`      | `[]`    | 页签列表（绑定 fetch 时可省略）                      |
+| fetch      | `Fetch<TabItem>` | -       | 远程页签：挂载即请求，数据就绪后自动激活首个可用页签 |
+| modelValue | `string`         | -       | 激活 key（v-model）                                  |
+| editable   | `boolean`        | `false` | 允许增减页签（触发 add/remove，数据由外层维护）      |
+| addText    | `string`         | `'+'`   | 新增按钮文案                                         |
+| lazy       | `boolean`        | `true`  | 面板懒渲染（首次激活后才挂载）                       |
 
 | 事件              | 参数           | 说明          |
 | ----------------- | -------------- | ------------- |
@@ -65,4 +65,3 @@ const tabsCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { tab, tabs, tabsCode };
 </script>
-

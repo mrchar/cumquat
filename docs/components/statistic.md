@@ -6,18 +6,18 @@ title: Statistic 统计数值
 
 指标数值展示，支持千分位、动画与倒计时；绑定 `fetch` 时挂载即请求单值并内置四态。
 
-| Prop           | 类型                       | 默认值  | 说明                         |
-| -------------- | -------------------------- | ------- | ---------------------------- |
-| title          | `string`                   | `''`    | 标题                         |
-| value          | `string \| number \| Date` | -       | 数值；倒计时模式下为到期时刻；绑定 fetch 时可省略 |
+| Prop           | 类型                       | 默认值  | 说明                                                |
+| -------------- | -------------------------- | ------- | --------------------------------------------------- |
+| title          | `string`                   | `''`    | 标题                                                |
+| value          | `string \| number \| Date` | -       | 数值；倒计时模式下为到期时刻；绑定 fetch 时可省略   |
 | fetch          | `Fetch<StatisticValue>`    | -       | 远程单值；返回非数组即作为 value，优先于 value prop |
-| prefix         | `string`                   | `''`    | 前缀                         |
-| suffix         | `string`                   | `''`    | 后缀                         |
-| precision      | `number`                   | -       | 小数位数                     |
-| groupSeparator | `string`                   | `''`    | 千分位分隔符（空串关闭）     |
-| animation      | `boolean`                  | `false` | 数字滚动动画                 |
-| duration       | `number`                   | `1000`  | 动画时长（ms）               |
-| countdown      | `boolean`                  | `false` | 倒计时模式                   |
+| prefix         | `string`                   | `''`    | 前缀                                                |
+| suffix         | `string`                   | `''`    | 后缀                                                |
+| precision      | `number`                   | -       | 小数位数                                            |
+| groupSeparator | `string`                   | `''`    | 千分位分隔符（空串关闭）                            |
+| animation      | `boolean`                  | `false` | 数字滚动动画                                        |
+| duration       | `number`                   | `1000`  | 动画时长（ms）                                      |
+| countdown      | `boolean`                  | `false` | 倒计时模式                                          |
 
 | 事件   | 参数 | 说明       |
 | ------ | ---- | ---------- |
@@ -55,4 +55,3 @@ const statisticCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { statisticCode };
 </script>
-

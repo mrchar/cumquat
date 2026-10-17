@@ -8,13 +8,13 @@ title: Menu 导航菜单
 
 `MenuItem` 结构：`{ key: string; label: string; disabled?: boolean; icon?: string; children?: MenuItem[] }`。
 
-| Prop                | 类型         | 默认值  | 说明                           |
-| ------------------- | ------------ | ------- | ------------------------------ |
-| items               | `MenuItem[]` | `[]`    | 菜单数据（绑定 fetch 时可省略） |
-| fetch               | `Fetch<MenuItem>` | -  | 远程菜单：挂载即请求，内置四态 |
-| modelValue          | `string`     | -       | 选中项 key（v-model）          |
-| collapsed           | `boolean`    | `false` | 折叠模式（仅图标，子菜单弹出） |
-| defaultExpandedKeys | `string[]`   | `[]`    | 默认展开的分组 key             |
+| Prop                | 类型              | 默认值  | 说明                            |
+| ------------------- | ----------------- | ------- | ------------------------------- |
+| items               | `MenuItem[]`      | `[]`    | 菜单数据（绑定 fetch 时可省略） |
+| fetch               | `Fetch<MenuItem>` | -       | 远程菜单：挂载即请求，内置四态  |
+| modelValue          | `string`          | -       | 选中项 key（v-model）           |
+| collapsed           | `boolean`         | `false` | 折叠模式（仅图标，子菜单弹出）  |
+| defaultExpandedKeys | `string[]`        | `[]`    | 默认展开的分组 key              |
 
 | 事件              | 参数             | 说明       |
 | ----------------- | ---------------- | ---------- |
@@ -58,4 +58,3 @@ const menuCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { menuActive, menuItems, menuCode };
 </script>
-

@@ -8,15 +8,15 @@ title: Cascader 级联选择
 
 `CascaderOption` 结构：`{ label: string; value: string | number; disabled?: boolean; children?: CascaderOption[] }`。
 
-| Prop           | 类型                                                  | 默认值     | 说明                               |
-| -------------- | ----------------------------------------------------- | ---------- | ---------------------------------- |
-| options        | `CascaderOption[]`                                    | -          | 级联数据（绑定 fetch 时可省略） |
+| Prop           | 类型                                                  | 默认值     | 说明                                                        |
+| -------------- | ----------------------------------------------------- | ---------- | ----------------------------------------------------------- |
+| options        | `CascaderOption[]`                                    | -          | 级联数据（绑定 fetch 时可省略）                             |
 | fetch          | `Fetch<CascaderOption>`                               | -          | 远程级联：展开列时以 `query.filters.parentKey` 懒加载下一列 |
-| modelValue     | `string \| number \| Array<string \| number> \| null` | -          | 叶子 value；emitPath 时为路径数组  |
-| placeholder    | `string`                                              | `'请选择'` | 占位文本                           |
-| disabled       | `boolean`                                             | `false`    | 禁用                               |
-| changeOnSelect | `boolean`                                             | `false`    | 允许选择任意一级                   |
-| emitPath       | `boolean`                                             | `false`    | v-model 携带完整路径而非叶子 value |
+| modelValue     | `string \| number \| Array<string \| number> \| null` | -          | 叶子 value；emitPath 时为路径数组                           |
+| placeholder    | `string`                                              | `'请选择'` | 占位文本                                                    |
+| disabled       | `boolean`                                             | `false`    | 禁用                                                        |
+| changeOnSelect | `boolean`                                             | `false`    | 允许选择任意一级                                            |
+| emitPath       | `boolean`                                             | `false`    | v-model 携带完整路径而非叶子 value                          |
 
 | 事件              | 参数               | 说明   |
 | ----------------- | ------------------ | ------ |
@@ -70,4 +70,3 @@ const cascaderCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { cascaderValue, cascadeOptions, cascaderCode };
 </script>
-

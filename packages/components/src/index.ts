@@ -1,5 +1,7 @@
 import type { App } from 'vue';
 
+import LiveDemo from './components/extras/LiveDemo.vue';
+
 // 基础
 import Button from './components/basic/Button.vue';
 import Icon from './components/basic/Icon.vue';
@@ -153,6 +155,7 @@ export {
   VirtualList,
   FloatButton,
 };
+export { LiveDemo };
 
 /** 全量注册映射：组件 → C 前缀 PascalCase 注册名（模板中使用 <c-button> 等） */
 const registry: Record<string, unknown> = {

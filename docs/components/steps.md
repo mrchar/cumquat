@@ -66,4 +66,3 @@ const stepsCode = ref(`
 /** LiveDemo 渲染作用域 */
 const demoScope = { currentStep, stepItems, stepsCode };
 </script>
-
