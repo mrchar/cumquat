@@ -1,11 +1,50 @@
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue';
+import { subscribeErrorText, useSubscribe } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
+
+interface ResultSubscribeData {
+  title?: string;
+  subTitle?: string;
+}
+
+const props = withDefaults(
   defineProps<{
     status?: 'success' | 'error' | 'warning' | 'info';
     title?: string;
     subTitle?: string;
+    /** 订阅结果数据：挂载时调用，resolve 出的 title/subTitle 用于渲染，优先级高于 props */
+    subscribe?: SubscribeHandler<ResultSubscribeData>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
-  { status: 'success', title: '', subTitle: '' },
+  {
+    status: 'success',
+    title: '',
+    subTitle: '',
+    subscribe: undefined,
+    errorText: undefined,
+  },
+);
+
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<ResultSubscribeData>(() => props.subscribe);
+
+const effectiveTitle = computed<string>(() =>
+  subState.value.status === 'success'
+    ? (subState.value.data?.title ?? props.title ?? '')
+    : (props.title ?? ''),
+);
+const effectiveSubTitle = computed<string>(() =>
+  subState.value.status === 'success'
+    ? (subState.value.data?.subTitle ?? props.subTitle ?? '')
+    : (props.subTitle ?? ''),
+);
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
 );
 
 const iconPath: Record<string, string> = {
@@ -32,13 +71,17 @@ const iconPath: Record<string, string> = {
       </svg>
     </span>
     <h3 class="cumquat-result__title">
-      <slot name="title">{{ title }}</slot>
+      <slot name="title">{{ effectiveTitle }}</slot>
     </h3>
-    <p v-if="subTitle || $slots.subTitle" class="cumquat-result__subtitle">
-      <slot name="subTitle">{{ subTitle }}</slot>
+    <p v-if="effectiveSubTitle || $slots.subTitle" class="cumquat-result__subtitle">
+      <slot name="subTitle">{{ effectiveSubTitle }}</slot>
     </p>
     <div v-if="$slots.default" class="cumquat-result__extra">
       <slot />
     </div>
+
+    <p v-if="errorText" class="cumquat-result__error cq-state--error" role="alert">
+      {{ errorText }}
+    </p>
   </div>
 </template>

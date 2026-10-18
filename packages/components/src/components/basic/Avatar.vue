@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useImageState } from '@cumquat/composables';
+import { subscribeErrorText, useImageState, useSubscribe } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
+
+interface AvatarSubscribeData {
+  src?: string;
+  text?: string;
+}
 
 const props = withDefaults(
   defineProps<{
@@ -14,6 +20,10 @@ const props = withDefaults(
     lazy?: boolean;
     /** 图片加载失败时的兜底地址 */
     fallbackSrc?: string;
+    /** 订阅头像数据：挂载时调用，resolve 出的 src/text 用于渲染，优先级高于 props */
+    subscribe?: SubscribeHandler<AvatarSubscribeData>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
   {
     src: '',
@@ -23,12 +33,34 @@ const props = withDefaults(
     text: '',
     lazy: false,
     fallbackSrc: '',
+    subscribe: undefined,
+    errorText: undefined,
   },
+);
+
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<AvatarSubscribeData>(() => props.subscribe);
+
+const effectiveSrc = computed<string>(() =>
+  subState.value.status === 'success'
+    ? (subState.value.data?.src ?? props.src ?? '')
+    : (props.src ?? ''),
+);
+const effectiveText = computed<string>(() =>
+  subState.value.status === 'success'
+    ? (subState.value.data?.text ?? props.text ?? '')
+    : (props.text ?? ''),
+);
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
 );
 
 const hostRef = ref<HTMLElement | null>(null);
 
-const image = useImageState(() => props.src, {
+const image = useImageState(() => effectiveSrc.value, {
   lazy: props.lazy,
   target: hostRef,
 });
@@ -37,11 +69,13 @@ const image = useImageState(() => props.src, {
 const fallbackFailed = ref(false);
 
 const fallbackText = computed(() => {
-  const source = props.text || props.alt;
+  const source = effectiveText.value || props.alt;
   return source ? (Array.from(source.trim())[0] ?? '') : '';
 });
 
-const showImage = computed(() => !!props.src && image.shouldLoad.value && !image.isError.value);
+const showImage = computed(
+  () => !!effectiveSrc.value && image.shouldLoad.value && !image.isError.value,
+);
 const showFallback = computed(
   () => !!props.fallbackSrc && image.isError.value && !fallbackFailed.value,
 );
@@ -63,7 +97,7 @@ function onFallbackError() {
   >
     <img
       v-if="showImage"
-      :src="src"
+      :src="effectiveSrc"
       :alt="alt"
       class="cumquat-avatar__img"
       @load="image.onLoad"
@@ -77,5 +111,9 @@ function onFallbackError() {
       @error="onFallbackError"
     />
     <slot v-else>{{ fallbackText }}</slot>
+
+    <p v-if="errorText" class="cumquat-avatar__error cq-state--error" role="alert">
+      {{ errorText }}
+    </p>
   </span>
 </template>

@@ -5,8 +5,9 @@ import {
   useAsyncSuggest,
   useFloating,
   useListboxNavigation,
+  useSubscribe,
 } from '@cumquat/composables';
-import type { Fetch, FetchResult } from '@cumquat/composables';
+import type { Fetch, FetchResult, SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -18,6 +19,11 @@ const props = withDefaults(
      * 返回数组 / { list, total } 作为候选；兼容旧的 (keyword: string) => Promise<string[]>。
      */
     fetch?: Fetch<string> | ((keyword: string) => Promise<string[]>);
+    /**
+     * 订阅数据：挂载时调用，resolve 出的候选列表用于本地包含匹配。
+     * 优先级：subscribe > fetch > options
+     */
+    subscribe?: SubscribeHandler<string[]>;
     placeholder?: string;
     disabled?: boolean;
     /** 聚焦时是否即触发建议 */
@@ -31,6 +37,7 @@ const props = withDefaults(
     modelValue: undefined,
     options: () => [],
     fetch: undefined,
+    subscribe: undefined,
     placeholder: '输入以搜索',
     disabled: false,
     triggerOnFocus: true,
@@ -87,16 +94,42 @@ const localSuggestions = computed(() => {
   return props.options.filter((option) => option.toLowerCase().includes(word));
 });
 
-const suggestions = computed(() =>
-  props.fetch ? asyncSuggest.suggestions.value : localSuggestions.value,
-);
+/* ---------------- subscribe：订阅型候选（本地包含匹配） ---------------- */
+const { state: subState } = useSubscribe<string[]>(() => props.subscribe);
+
+const subscribeSuggestions = computed(() => {
+  const list = subState.value.data ?? [];
+  const word = keyword.value.trim().toLowerCase();
+  if (!word) return list;
+  return list.filter((option) => option.toLowerCase().includes(word));
+});
+
+const suggestions = computed(() => {
+  if (props.subscribe) return subscribeSuggestions.value;
+  return props.fetch ? asyncSuggest.suggestions.value : localSuggestions.value;
+});
+const loading = computed(() => {
+  if (props.subscribe) return subState.value.status === 'pending';
+  return props.fetch ? asyncSuggest.loading.value : false;
+});
+const loadError = computed(() => {
+  if (props.subscribe) return subState.value.status === 'error' ? subState.value.error : undefined;
+  return props.fetch ? asyncSuggest.error.value : undefined;
+});
 const showDropdown = computed(() => {
   if (!open.value) return false;
+  // 订阅候选：有匹配项 / 加载中 / 失败时展示
+  if (props.subscribe) return suggestions.value.length > 0 || loading.value || !!loadError.value;
   // 静态候选：仅有匹配项时展示
   if (!props.fetch) return suggestions.value.length > 0;
   // 异步候选：发起过请求即展示四态（加载/错误/空态/候选）
   return asyncSuggest.status.value !== 'idle';
 });
+
+function retryRemote() {
+  if (props.subscribe) subState.value.retry?.();
+  else asyncSuggest.run();
+}
 
 const nav = useListboxNavigation({
   count: () => suggestions.value.length,
@@ -191,21 +224,13 @@ defineExpose({ focus: () => referenceRef.value?.focus() });
             </slot>
           </li>
         </template>
-        <li
-          v-else-if="asyncSuggest.loading.value"
-          class="cumquat-autocomplete__state cq-state--pending"
-        >
-          加载中…
-        </li>
-        <li
-          v-else-if="asyncSuggest.error.value"
-          class="cumquat-autocomplete__state cq-state--error"
-        >
+        <li v-else-if="loading" class="cumquat-autocomplete__state cq-state--pending">加载中…</li>
+        <li v-else-if="loadError" class="cumquat-autocomplete__state cq-state--error">
           加载失败
           <button
             type="button"
             class="cumquat-autocomplete__retry"
-            @mousedown.prevent="asyncSuggest.run()"
+            @mousedown.prevent="retryRemote"
           >
             重试
           </button>

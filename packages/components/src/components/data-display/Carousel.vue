@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useFetchResource, useIntervalFn } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import { useFetchResource, useIntervalFn, useSubscribe } from '@cumquat/composables';
+import type { Fetch, SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -19,6 +19,11 @@ const props = withDefaults(
     loop?: boolean;
     /** 统一远程请求：挂载即拉取轮播项，返回数组或 { list, total } */
     fetch?: Fetch<string>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的轮播项用于渲染。
+     * 优先级：subscribe > fetch > items
+     */
+    subscribe?: SubscribeHandler<string[]>;
   }>(),
   {
     items: () => [],
@@ -29,6 +34,7 @@ const props = withDefaults(
     pauseOnHover: true,
     loop: true,
     fetch: undefined,
+    subscribe: undefined,
   },
 );
 
@@ -43,13 +49,27 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<string[]>(
   initialData: [] as string[],
 });
 
-const sourceItems = computed<string[]>(() =>
-  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items,
+/* ---------------- subscribe：订阅型数据 ---------------- */
+const { state: subState } = useSubscribe<string[]>(() => props.subscribe);
+
+const sourceItems = computed<string[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items;
+});
+const remoteLoading = computed(
+  () =>
+    fetchState.value?.status === 'pending' ||
+    (!!props.subscribe && subState.value.status === 'pending'),
 );
-const remoteLoading = computed(() => fetchState.value?.status === 'pending');
-const remoteError = computed(() =>
-  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
-);
+const remoteError = computed(() => {
+  if (props.subscribe && subState.value.status === 'error') return subState.value.error;
+  return fetchState.value?.status === 'error' ? fetchState.value.error : undefined;
+});
+
+function retryRemote() {
+  if (props.subscribe && subState.value.status === 'error') subState.value.retry?.();
+  else fetchState.value?.retry?.();
+}
 
 const count = computed(() => sourceItems.value.length || (fetchEnabled.value ? 0 : 3));
 
@@ -136,9 +156,7 @@ function onMouseLeave() {
         class="cumquat-carousel__state cq-state--error"
       >
         加载失败
-        <button type="button" class="cumquat-carousel__retry" @click="fetchState?.retry?.()">
-          重试
-        </button>
+        <button type="button" class="cumquat-carousel__retry" @click="retryRemote">重试</button>
       </div>
       <div
         v-else-if="fetchEnabled && sourceItems.length === 0"

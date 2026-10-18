@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { subscribeErrorText, useSubscribe } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -17,6 +19,10 @@ const props = withDefaults(
     text?: string | number;
     /** 有角标时是否在内容上描出白底（点状样式） */
     hidden?: boolean;
+    /** 订阅角标值：挂载时调用，resolve 出的数值/文本用于渲染，优先级高于 text/count */
+    subscribe?: SubscribeHandler<number | string>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
   {
     count: 0,
@@ -26,7 +32,19 @@ const props = withDefaults(
     showZero: false,
     text: undefined,
     hidden: false,
+    subscribe: undefined,
+    errorText: undefined,
   },
+);
+
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<number | string>(() => props.subscribe);
+
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
 );
 
 function formatCount(count: number, max: number): string {
@@ -35,6 +53,7 @@ function formatCount(count: number, max: number): string {
 }
 
 const content = computed(() => {
+  if (subState.value.status === 'success') return String(subState.value.data);
   if (props.text !== undefined) return String(props.text);
   return formatCount(props.count, props.max);
 });
@@ -59,5 +78,9 @@ const visible = computed(() => {
         <slot name="count">{{ dot ? '' : content }}</slot>
       </span>
     </Transition>
+
+    <p v-if="errorText" class="cumquat-badge__error cq-state--error" role="alert">
+      {{ errorText }}
+    </p>
   </span>
 </template>

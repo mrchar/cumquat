@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { useDateGrid, useDateModel, useFetchResource } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import { useDateGrid, useDateModel, useFetchResource, useSubscribe } from '@cumquat/composables';
+import type { Fetch, SubscribeHandler } from '@cumquat/composables';
 import type { DatePanelType } from '@cumquat/composables';
 
 export interface CalendarEvent {
@@ -29,6 +29,11 @@ const props = withDefaults(
      * { filters: { range: [起始日, 结束日] } } 拉取当前区间日程
      */
     fetch?: Fetch<CalendarEvent>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的日程标记用于渲染（静态全量）。
+     * 优先级：subscribe > fetch > events
+     */
+    subscribe?: SubscribeHandler<CalendarEvent[]>;
   }>(),
   {
     modelValue: undefined,
@@ -40,6 +45,7 @@ const props = withDefaults(
     maxDate: undefined,
     events: () => [],
     fetch: undefined,
+    subscribe: undefined,
   },
 );
 
@@ -106,13 +112,27 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<CalendarEv
   },
 );
 
-const sourceEvents = computed<CalendarEvent[]>(() =>
-  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.events,
+/* ---------------- subscribe：订阅型数据（静态全量日程） ---------------- */
+const { state: subState } = useSubscribe<CalendarEvent[]>(() => props.subscribe);
+
+const sourceEvents = computed<CalendarEvent[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? (fetchState.value?.data ?? []) : props.events;
+});
+const remoteLoading = computed(
+  () =>
+    fetchState.value?.status === 'pending' ||
+    (!!props.subscribe && subState.value.status === 'pending'),
 );
-const remoteLoading = computed(() => fetchState.value?.status === 'pending');
-const remoteError = computed(() =>
-  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
-);
+const remoteError = computed(() => {
+  if (props.subscribe && subState.value.status === 'error') return subState.value.error;
+  return fetchState.value?.status === 'error' ? fetchState.value.error : undefined;
+});
+
+function retryRemote() {
+  if (props.subscribe && subState.value.status === 'error') subState.value.retry?.();
+  else fetchState.value?.retry?.();
+}
 
 const eventMap = computed(() => {
   const map = new Map<string, CalendarEvent[]>();
@@ -205,19 +225,17 @@ function onLabeledCell(date: Date, disabled: boolean) {
     </header>
 
     <p
-      v-if="fetchEnabled && remoteLoading && sourceEvents.length === 0"
+      v-if="(fetchEnabled || subscribe) && remoteLoading && sourceEvents.length === 0"
       class="cumquat-calendar__state cq-state--pending"
     >
       日程加载中…
     </p>
     <p
-      v-else-if="fetchEnabled && remoteError && sourceEvents.length === 0"
+      v-else-if="(fetchEnabled || subscribe) && remoteError && sourceEvents.length === 0"
       class="cumquat-calendar__state cq-state--error"
     >
       日程加载失败
-      <button type="button" class="cumquat-calendar__retry" @click="fetchState?.retry?.()">
-        重试
-      </button>
+      <button type="button" class="cumquat-calendar__retry" @click="retryRemote">重试</button>
     </p>
 
     <!-- 日期面板 -->

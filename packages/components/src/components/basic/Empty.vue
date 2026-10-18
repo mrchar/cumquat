@@ -1,9 +1,36 @@
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue';
+import { subscribeErrorText, useSubscribe } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
+
+const props = withDefaults(
   defineProps<{
     description?: string;
+    /** 订阅空状态描述：挂载时调用，resolve 出的字符串用于渲染，优先级高于 description */
+    subscribe?: SubscribeHandler<string>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
-  { description: '暂无数据' },
+  {
+    description: '暂无数据',
+    subscribe: undefined,
+    errorText: undefined,
+  },
+);
+
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<string>(() => props.subscribe);
+
+const effectiveDescription = computed<string>(() =>
+  subState.value.status === 'success'
+    ? (subState.value.data as string)
+    : (props.description ?? '暂无数据'),
+);
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
 );
 </script>
 
@@ -23,10 +50,14 @@ withDefaults(
       <circle cx="24" cy="20" r="1.5" fill="currentColor" stroke="none" />
     </svg>
     <p class="cumquat-empty__description">
-      <slot>{{ description }}</slot>
+      <slot>{{ effectiveDescription }}</slot>
     </p>
     <div v-if="$slots.default" class="cumquat-empty__extra">
       <slot />
     </div>
+
+    <p v-if="errorText" class="cumquat-empty__error cq-state--error" role="alert">
+      {{ errorText }}
+    </p>
   </div>
 </template>

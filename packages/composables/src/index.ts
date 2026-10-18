@@ -9,6 +9,8 @@ export type {
   AsyncStateLike,
   ActionLike,
   ActionResult,
+  SubscribeResult,
+  SubscribeHandler,
   ControlledProps,
   AsyncFn,
   Placement,
@@ -201,6 +203,10 @@ export type {
   UseFetchResourceOptions,
   FetchResource,
 } from './data/fetch';
+
+export { useSubscribe, extractSubscribeFailure } from './data/useSubscribe';
+export type { UseSubscribeReturn } from './data/useSubscribe';
+export { subscribeErrorText } from './data/useSubscribe';
 
 // L2 媒体
 export { useImageState } from './media/useImageState';

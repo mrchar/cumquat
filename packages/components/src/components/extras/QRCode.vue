@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { subscribeErrorText, useSubscribe } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
 
 type ErrorLevel = 'L' | 'M' | 'Q' | 'H';
 
 const props = withDefaults(
   defineProps<{
-    value: string;
+    value?: string;
     /** 格子规模（奇数，保证定位角对齐） */
     size?: number;
     /** 容错等级（演示矩阵中影响数据区填充密度） */
@@ -14,8 +16,36 @@ const props = withDefaults(
     color?: string;
     /** 背景色 */
     background?: string;
+    /** 订阅二维码内容：挂载时调用，resolve 出的字符串用于渲染，优先级高于 value */
+    subscribe?: SubscribeHandler<string>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
-  { size: 21, level: 'M', color: '#171717', background: 'transparent' },
+  {
+    value: '',
+    size: 21,
+    level: 'M',
+    color: '#171717',
+    background: 'transparent',
+    subscribe: undefined,
+    errorText: undefined,
+  },
+);
+
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<string>(() => props.subscribe);
+
+const effectiveValue = computed<string>(() => {
+  if (subState.value.status === 'success' && subState.value.data != null) {
+    return subState.value.data as string;
+  }
+  return props.value ?? '';
+});
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
 );
 
 /** 容错等级 → 数据区填充密度 */
@@ -80,7 +110,7 @@ function buildMatrix(value: string, size: number, level: ErrorLevel): boolean[] 
   return matrix;
 }
 
-const matrix = computed(() => buildMatrix(props.value, props.size, props.level));
+const matrix = computed(() => buildMatrix(effectiveValue.value, props.size, props.level));
 const darkCount = computed(() => matrix.value.filter(Boolean).length);
 </script>
 
@@ -94,7 +124,7 @@ const darkCount = computed(() => matrix.value.filter(Boolean).length);
       backgroundColor: background,
     }"
     role="img"
-    :aria-label="`二维码：${value}`"
+    :aria-label="`二维码：${effectiveValue}`"
     :data-dark-count="darkCount"
   >
     <span
@@ -104,5 +134,9 @@ const darkCount = computed(() => matrix.value.filter(Boolean).length);
       :class="filled ? 'cumquat-qrcode__cell--dark' : 'cumquat-qrcode__cell--light'"
       :style="filled ? { backgroundColor: color } : undefined"
     />
+
+    <p v-if="errorText" class="cumquat-qrcode__error cq-state--error" role="alert">
+      {{ errorText }}
+    </p>
   </div>
 </template>

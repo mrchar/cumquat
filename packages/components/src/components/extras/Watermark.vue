@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { useResizeObserver } from '@cumquat/composables';
+import { subscribeErrorText, useResizeObserver, useSubscribe } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
     /** 水印文字 */
-    content: string;
+    content?: string | string[];
     /** 旋转角度（deg） */
     rotate?: number;
     /** 平铺间隔（px） */
@@ -18,15 +19,42 @@ const props = withDefaults(
     image?: string;
     /** 水印层级 */
     zIndex?: number;
+    /** 订阅水印内容：挂载时调用，resolve 出的内容用于渲染，优先级高于 content */
+    subscribe?: SubscribeHandler<string | string[]>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
   {
+    content: '',
     rotate: -22,
     gap: 96,
     color: 'rgba(23,23,23,0.16)',
     fontSize: 14,
     image: undefined,
     zIndex: 9,
+    subscribe: undefined,
+    errorText: undefined,
   },
+);
+
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<string | string[]>(() => props.subscribe);
+
+const effectiveContent = computed<string | string[]>(() =>
+  subState.value.status === 'success'
+    ? (subState.value.data as string | string[])
+    : (props.content ?? ''),
+);
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
+);
+
+/** 归一为字符串，供 canvas 绘制 */
+const contentText = computed(() =>
+  Array.isArray(effectiveContent.value) ? effectiveContent.value.join(' ') : effectiveContent.value,
 );
 
 const rootRef = ref<HTMLElement | null>(null);
@@ -78,7 +106,7 @@ function drawWatermark() {
   ctx.font = `${props.fontSize}px system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(props.content, 0, 0);
+  ctx.fillText(contentText.value, 0, 0);
   dataUrl.value = canvas.toDataURL();
 }
 
@@ -98,7 +126,7 @@ const items = computed(() => {
 
 watch(
   () => [
-    props.content,
+    effectiveContent.value,
     props.rotate,
     props.gap,
     props.color,
@@ -174,9 +202,13 @@ onBeforeUnmount(() => observer?.disconnect());
             transform: `rotate(${rotate}deg)`,
           }"
         >
-          {{ content }}
+          {{ contentText }}
         </span>
       </template>
     </div>
+
+    <p v-if="errorText" class="cumquat-watermark__error cq-state--error" role="alert">
+      {{ errorText }}
+    </p>
   </div>
 </template>

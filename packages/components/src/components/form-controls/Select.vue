@@ -9,8 +9,9 @@ import {
   useListboxNavigation,
   useOpen,
   useSelectModel,
+  useSubscribe,
 } from '@cumquat/composables';
-import type { ActionLike, AsyncStateLike, Fetch } from '@cumquat/composables';
+import type { ActionLike, AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composables';
 
 export interface SelectOption {
   label: string;
@@ -39,6 +40,11 @@ const props = withDefaults(
      * 返回选项数组或 { list, total }
      */
     fetch?: Fetch<SelectOption>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的选项用于渲染。
+     * 优先级：subscribe > fetch > state > options
+     */
+    subscribe?: SubscribeHandler<SelectOption[]>;
     /** 选择动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用选择 */
     action?: ActionLike;
   }>(),
@@ -52,6 +58,7 @@ const props = withDefaults(
     name: undefined,
     state: undefined,
     fetch: undefined,
+    subscribe: undefined,
     action: undefined,
   },
 );
@@ -64,20 +71,24 @@ const emit = defineEmits<{
 }>();
 
 /* ---------------- fetch 统一请求机制（keyword 防抖 300ms） ---------------- */
+// 用独立 keyword ref 避免在 getQuery 中引用下方才初始化的 select（TDZ）
+const fetchKeyword = ref('');
 const { enabled: fetchEnabled, state: fetchState } = useFetchResource<SelectOption[]>(
   () => props.fetch,
   {
-    // select 在下方初始化；getQuery 仅在 post watcher 中求值，届时已就绪
-    getQuery: () => ({ keyword: select.keyword.value }),
+    getQuery: () => ({ keyword: fetchKeyword.value }),
     initialData: [] as SelectOption[],
     debounce: 300,
   },
 );
 
-/** 远程四态归一：fetch 优先，其次外部 state，最后本地 options */
-const activeState = computed<AsyncStateLike<SelectOption[]> | undefined>(() =>
-  fetchEnabled.value ? fetchState.value : props.state,
-);
+/** 远程四态归一：subscribe 优先，其次 fetch，再次外部 state，最后本地 options */
+const { state: subState } = useSubscribe<SelectOption[]>(() => props.subscribe);
+
+const activeState = computed<AsyncStateLike<SelectOption[]> | undefined>(() => {
+  if (props.subscribe) return subState.value as AsyncStateLike<SelectOption[]>;
+  return fetchEnabled.value ? fetchState.value : props.state;
+});
 const remoteLoading = computed(() => activeState.value?.status === 'pending');
 const remoteError = computed(() =>
   activeState.value?.status === 'error' ? activeState.value.error : undefined,
@@ -112,13 +123,22 @@ const field = useFormField<V | V[] | null>({
 const select = useSelectModel<V, string>({
   options: allOptions,
   multiple: props.multiple,
-  // fetch 模式下同样启用关键词输入，但过滤在服务端，本地谓词直通
-  filterable: props.filterable || !!props.fetch,
-  filterMethod: props.fetch ? () => true : undefined,
+  // fetch 模式下同样启用关键词输入，但过滤在服务端，本地谓词直通；
+  // subscribe 模式为静态列表，走本地过滤
+  filterable: props.filterable || !!props.fetch || !!props.subscribe,
+  filterMethod: props.fetch && !props.subscribe ? () => true : undefined,
   modelValue: field.value,
   // select 自身不持有写回调，写入统一回灌 field（由其决定受控 emit / 内部落值）
   onChange: (next) => field.handleChange(next as V | V[] | null),
 });
+
+// 将搜索关键词同步给 fetch 查询
+watch(
+  () => select.keyword.value,
+  (value) => {
+    fetchKeyword.value = value;
+  },
+);
 
 watch(select.model, (value) => emit('change', value));
 
@@ -260,7 +280,7 @@ function clearSelection(event: MouseEvent) {
         </span>
       </template>
       <input
-        v-else-if="filterable || fetch"
+        v-else-if="filterable || fetch || subscribe"
         v-model="select.keyword.value"
         class="cumquat-select__search"
         :placeholder="String(select.selectedLabel.value ?? placeholder)"

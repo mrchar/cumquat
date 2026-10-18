@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useFetchResource, useResizeObserver } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import { useFetchResource, useResizeObserver, useSubscribe } from '@cumquat/composables';
+import type { Fetch, SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -19,6 +19,11 @@ const props = withDefaults(
      * 需返回 { list, total } 才能识别是否还有更多；返回数组视为一次性全量。
      */
     fetch?: Fetch<string>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的列表项用于渲染。
+     * 优先级：subscribe > fetch > items
+     */
+    subscribe?: SubscribeHandler<string[]>;
   }>(),
   {
     items: () => [],
@@ -27,6 +32,7 @@ const props = withDefaults(
     buffer: 2,
     dynamicHeight: undefined,
     fetch: undefined,
+    subscribe: undefined,
   },
 );
 
@@ -40,7 +46,6 @@ const {
   enabled: fetchEnabled,
   state: fetchState,
   total,
-  loading: remoteLoading,
 } = useFetchResource<string[]>(() => props.fetch, {
   initialData: [] as string[],
   getQuery: () => ({ pagination: { currentPage: currentPage.value, pageSize: 20 } }),
@@ -49,12 +54,27 @@ const {
     (query.pagination?.currentPage ?? 1) <= 1 ? next : [...previous, ...next],
 });
 
-const sourceItems = computed<string[]>(() =>
-  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items,
+/* ---------------- subscribe：订阅型数据 ---------------- */
+const { state: subState } = useSubscribe<string[]>(() => props.subscribe);
+
+const sourceItems = computed<string[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items;
+});
+const remoteLoading = computed(
+  () =>
+    (fetchEnabled.value && fetchState.value?.status === 'pending') ||
+    (!!props.subscribe && subState.value.status === 'pending'),
 );
-const remoteError = computed(() =>
-  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
-);
+const remoteError = computed(() => {
+  if (props.subscribe && subState.value.status === 'error') return subState.value.error;
+  return fetchState.value?.status === 'error' ? fetchState.value.error : undefined;
+});
+
+function retryRemote() {
+  if (props.subscribe && subState.value.status === 'error') subState.value.retry?.();
+  else fetchState.value?.retry?.();
+}
 const hasMore = computed(() => total.value > 0 && sourceItems.value.length < total.value);
 
 // 感知容器尺寸变化（视口高度以 props.height 为准，SSR/jsdom 下仍可计算窗口）
@@ -131,27 +151,30 @@ defineExpose({ scrollToIndex });
     ref="scrollerRef"
     class="cumquat-virtual-list"
     :class="
-      fetchEnabled && remoteLoading && sourceItems.length > 0 ? 'cumquat-virtual-list--stale' : ''
+      (fetchEnabled || subscribe) && remoteLoading && sourceItems.length > 0
+        ? 'cumquat-virtual-list--stale'
+        : ''
     "
     :style="{ height: `${height}px` }"
     @scroll="onScroll"
   >
     <p
-      v-if="fetchEnabled && remoteLoading && sourceItems.length === 0"
+      v-if="(fetchEnabled || subscribe) && remoteLoading && sourceItems.length === 0"
       class="cumquat-virtual-list__state cq-state--pending"
     >
       加载中…
     </p>
     <p
-      v-else-if="fetchEnabled && remoteError && sourceItems.length === 0"
+      v-else-if="(fetchEnabled || subscribe) && remoteError && sourceItems.length === 0"
       class="cumquat-virtual-list__state cq-state--error"
     >
       加载失败
-      <button type="button" class="cumquat-virtual-list__retry" @click="fetchState?.retry?.()">
-        重试
-      </button>
+      <button type="button" class="cumquat-virtual-list__retry" @click="retryRemote">重试</button>
     </p>
-    <p v-else-if="fetchEnabled && sourceItems.length === 0" class="cumquat-virtual-list__state">
+    <p
+      v-else-if="(fetchEnabled || subscribe) && sourceItems.length === 0"
+      class="cumquat-virtual-list__state"
+    >
       暂无数据
     </p>
     <ul v-else class="cumquat-virtual-list__inner" :style="{ height: `${totalHeight}px` }">
@@ -167,19 +190,17 @@ defineExpose({ scrollToIndex });
     </ul>
     <!-- 触底加载哨兵 -->
     <p
-      v-if="fetchEnabled && sourceItems.length > 0 && remoteLoading"
+      v-if="(fetchEnabled || subscribe) && sourceItems.length > 0 && remoteLoading"
       class="cumquat-virtual-list__state cq-state--pending cumquat-virtual-list__state--sentinel"
     >
       加载更多…
     </p>
     <p
-      v-else-if="fetchEnabled && sourceItems.length > 0 && remoteError"
+      v-else-if="(fetchEnabled || subscribe) && sourceItems.length > 0 && remoteError"
       class="cumquat-virtual-list__state cq-state--error cumquat-virtual-list__state--sentinel"
     >
       加载失败
-      <button type="button" class="cumquat-virtual-list__retry" @click="fetchState?.retry?.()">
-        重试
-      </button>
+      <button type="button" class="cumquat-virtual-list__retry" @click="retryRemote">重试</button>
     </p>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useFetchResource } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import { useFetchResource, useSubscribe } from '@cumquat/composables';
+import type { Fetch, SubscribeHandler } from '@cumquat/composables';
 
 export interface DescriptionItem {
   label: string;
@@ -21,8 +21,20 @@ const props = withDefaults(
      * 返回数组或 { list, total }
      */
     fetch?: Fetch<DescriptionItem>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的描述项用于渲染。
+     * 优先级：subscribe > fetch > items
+     */
+    subscribe?: SubscribeHandler<DescriptionItem[]>;
   }>(),
-  { title: '', items: () => [], bordered: false, column: 2, fetch: undefined },
+  {
+    title: '',
+    items: () => [],
+    bordered: false,
+    column: 2,
+    fetch: undefined,
+    subscribe: undefined,
+  },
 );
 
 const { enabled: fetchEnabled, state: fetchState } = useFetchResource<DescriptionItem[]>(
@@ -30,13 +42,27 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<Descriptio
   { getQuery: () => ({}), initialData: [] as DescriptionItem[] },
 );
 
-const sourceItems = computed<DescriptionItem[]>(() =>
-  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items,
+/* ---------------- subscribe：订阅型数据 ---------------- */
+const { state: subState } = useSubscribe<DescriptionItem[]>(() => props.subscribe);
+
+const sourceItems = computed<DescriptionItem[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items;
+});
+const remoteLoading = computed(
+  () =>
+    fetchState.value?.status === 'pending' ||
+    (!!props.subscribe && subState.value.status === 'pending'),
 );
-const remoteLoading = computed(() => fetchState.value?.status === 'pending');
-const remoteError = computed(() =>
-  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
-);
+const remoteError = computed(() => {
+  if (props.subscribe && subState.value.status === 'error') return subState.value.error;
+  return fetchState.value?.status === 'error' ? fetchState.value.error : undefined;
+});
+
+function retryRemote() {
+  if (props.subscribe && subState.value.status === 'error') subState.value.retry?.();
+  else fetchState.value?.retry?.();
+}
 </script>
 
 <template>
@@ -55,9 +81,7 @@ const remoteError = computed(() =>
       class="cumquat-descriptions__state cq-state--error"
     >
       加载失败
-      <button type="button" class="cumquat-descriptions__retry" @click="fetchState?.retry?.()">
-        重试
-      </button>
+      <button type="button" class="cumquat-descriptions__retry" @click="retryRemote">重试</button>
     </p>
     <p v-else-if="sourceItems.length === 0" class="cumquat-descriptions__state">暂无数据</p>
     <dl

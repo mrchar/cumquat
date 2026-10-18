@@ -7,8 +7,9 @@ import {
   useFormField,
   useListboxNavigation,
   useOpen,
+  useSubscribe,
 } from '@cumquat/composables';
-import type { ActionLike, Fetch } from '@cumquat/composables';
+import type { ActionLike, Fetch, SubscribeHandler } from '@cumquat/composables';
 
 export interface CascaderOption {
   label: string;
@@ -35,6 +36,11 @@ const props = withDefaults(
      * { filters: { parentKey } } 拉取子级，返回选项数组或 { list, total }
      */
     fetch?: Fetch<CascaderOption>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的级联选项用于渲染（完整树，非懒加载）。
+     * 优先级：subscribe > fetch > options
+     */
+    subscribe?: SubscribeHandler<CascaderOption[]>;
     /** 选择动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用选择 */
     action?: ActionLike;
   }>(),
@@ -46,6 +52,7 @@ const props = withDefaults(
     changeOnSelect: false,
     emitPath: false,
     fetch: undefined,
+    subscribe: undefined,
     action: undefined,
   },
 );
@@ -111,9 +118,13 @@ const {
   },
 });
 
-const sourceOptions = computed<CascaderOption[]>(() =>
-  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.options,
-);
+/* ---------------- subscribe：订阅型数据（完整树） ---------------- */
+const { state: subState } = useSubscribe<CascaderOption[]>(() => props.subscribe);
+
+const sourceOptions = computed<CascaderOption[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? (fetchState.value?.data ?? []) : props.options;
+});
 
 const loadingKey = ref<string | number | null>(null);
 const errorKey = ref<string | number | null>(null);
@@ -175,8 +186,8 @@ const columns = computed<Column[]>(() => {
   const list: Column[] = [];
 
   /* 根级四态 */
-  if (fetchEnabled.value && sourceOptions.value.length === 0) {
-    const status = fetchState.value?.status;
+  if ((fetchEnabled.value || props.subscribe) && sourceOptions.value.length === 0) {
+    const status = props.subscribe ? subState.value.status : fetchState.value?.status;
     if (status === 'pending') return [{ options: [], selected: null, loading: true }];
     if (status === 'error') return [{ options: [], selected: null, error: true }];
     return [{ options: [], selected: null, empty: true }];
@@ -273,7 +284,8 @@ function pick(option: CascaderOption, colIndex: number) {
 function retryColumn(col: Column) {
   const parentValue = col.selected ?? path.value.at(-1);
   if (parentValue === undefined || parentValue === null) {
-    fetchState.value?.retry?.();
+    if (props.subscribe) subState.value.retry?.();
+    else fetchState.value?.retry?.();
     return;
   }
   void loadChildren(parentValue);
@@ -329,7 +341,7 @@ function retryColumn(col: Column) {
           >
             {{ option.label }}
             <svg
-              v-if="option.children?.length || (fetch && option.leaf !== true)"
+              v-if="option.children?.length || ((fetch || subscribe) && option.leaf !== true)"
               class="cumquat-cascader__option-icon"
               viewBox="0 0 24 24"
               fill="none"

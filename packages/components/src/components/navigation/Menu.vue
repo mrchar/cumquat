@@ -4,9 +4,10 @@ import {
   useControllableModel,
   useFetchResource,
   useRovingFocus,
+  useSubscribe,
   useTypeahead,
 } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import type { Fetch, SubscribeHandler } from '@cumquat/composables';
 
 export interface MenuItem {
   key: string;
@@ -26,6 +27,11 @@ const props = withDefaults(
     defaultExpandedKeys?: string[];
     /** 统一远程请求：挂载即拉取菜单项，返回数组或 { list, total } */
     fetch?: Fetch<MenuItem>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的菜单项用于渲染。
+     * 优先级：subscribe > fetch > items
+     */
+    subscribe?: SubscribeHandler<MenuItem[]>;
   }>(),
   {
     items: () => [],
@@ -33,6 +39,7 @@ const props = withDefaults(
     collapsed: false,
     defaultExpandedKeys: () => [],
     fetch: undefined,
+    subscribe: undefined,
   },
 );
 
@@ -74,13 +81,27 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<MenuItem[]
   { getQuery: () => ({}), initialData: [] as MenuItem[] },
 );
 
-const sourceItems = computed<MenuItem[]>(() =>
-  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items,
+/* ---------------- subscribe：订阅型数据 ---------------- */
+const { state: subState } = useSubscribe<MenuItem[]>(() => props.subscribe);
+
+const sourceItems = computed<MenuItem[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? (fetchState.value?.data ?? []) : props.items;
+});
+const remoteLoading = computed(
+  () =>
+    fetchState.value?.status === 'pending' ||
+    (!!props.subscribe && subState.value.status === 'pending'),
 );
-const remoteLoading = computed(() => fetchState.value?.status === 'pending');
-const remoteError = computed(() =>
-  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
-);
+const remoteError = computed(() => {
+  if (props.subscribe && subState.value.status === 'error') return subState.value.error;
+  return fetchState.value?.status === 'error' ? fetchState.value.error : undefined;
+});
+
+function retryRemote() {
+  if (props.subscribe && subState.value.status === 'error') subState.value.retry?.();
+  else fetchState.value?.retry?.();
+}
 
 /** 扁平化可见叶子项：roving 焦点与 typeahead 共用一份索引 */
 interface FlatEntry {
@@ -142,7 +163,7 @@ function onNavKeydown(event: KeyboardEvent) {
       class="cumquat-menu__state cq-state--error"
     >
       加载失败
-      <button type="button" class="cumquat-menu__retry" @click="fetchState?.retry?.()">重试</button>
+      <button type="button" class="cumquat-menu__retry" @click="retryRemote">重试</button>
     </p>
     <p v-else-if="fetchEnabled && sourceItems.length === 0" class="cumquat-menu__state">暂无菜单</p>
     <template v-for="item in sourceItems" :key="item.key">

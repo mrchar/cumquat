@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { subscribeErrorText, useSubscribe } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
 
 type ProgressStatus = 'normal' | 'success' | 'warning' | 'danger';
 
@@ -18,6 +20,10 @@ const props = withDefaults(
     strokeWidth?: number;
     /** 条形高度（px） */
     lineHeight?: number;
+    /** 订阅进度数据：挂载时调用，resolve 出的进度值用于渲染，优先级高于 value */
+    subscribe?: SubscribeHandler<number>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
   {
     value: 0,
@@ -27,10 +33,25 @@ const props = withDefaults(
     size: 80,
     strokeWidth: 6,
     lineHeight: 8,
+    subscribe: undefined,
+    errorText: undefined,
   },
 );
 
-const clamped = computed(() => Math.min(100, Math.max(0, props.value)));
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<number>(() => props.subscribe);
+
+const effectiveValue = computed<number>(() =>
+  subState.value.status === 'success' ? (subState.value.data as number) : props.value,
+);
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
+);
+
+const clamped = computed(() => Math.min(100, Math.max(0, effectiveValue.value)));
 
 /** 状态推导：normal 且满格自动转 success */
 const resolvedStatus = computed<ProgressStatus>(() => {
@@ -95,5 +116,9 @@ const center = computed(() => props.size / 2);
         <span v-if="showText" class="cumquat-progress__text">{{ clamped }}%</span>
       </span>
     </template>
+
+    <p v-if="errorText" class="cumquat-progress__error cq-state--error" role="alert">
+      {{ errorText }}
+    </p>
   </div>
 </template>

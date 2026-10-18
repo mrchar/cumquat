@@ -6,10 +6,11 @@ import {
   useListboxNavigation,
   useOpen,
   useSelectModel,
+  useSubscribe,
   useTreeModel,
   type TreeFlatNode,
 } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import type { Fetch, SubscribeHandler } from '@cumquat/composables';
 
 export interface TreeSelectNode {
   key: string;
@@ -34,6 +35,11 @@ const props = withDefaults(
      * { filters: { parentKey } } 拉取子级，返回节点数组或 { list, total }
      */
     fetch?: Fetch<TreeSelectNode>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的节点用于渲染（完整树，非懒加载）。
+     * 优先级：subscribe > fetch > nodes
+     */
+    subscribe?: SubscribeHandler<TreeSelectNode[]>;
   }>(),
   {
     nodes: () => [],
@@ -43,6 +49,7 @@ const props = withDefaults(
     filterable: false,
     defaultExpandAll: false,
     fetch: undefined,
+    subscribe: undefined,
   },
 );
 
@@ -99,9 +106,13 @@ const {
   },
 });
 
-const sourceNodes = computed<TreeSelectNode[]>(() =>
-  fetchEnabled.value ? applyRemoteLeaf(fetchState.value?.data ?? []) : props.nodes,
-);
+/* ---------------- subscribe：订阅型数据（完整树） ---------------- */
+const { state: subState } = useSubscribe<TreeSelectNode[]>(() => props.subscribe);
+
+const sourceNodes = computed<TreeSelectNode[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? applyRemoteLeaf(fetchState.value?.data ?? []) : props.nodes;
+});
 
 /** 远程懒加载模式下 leaf 缺省视为「未知、可展开」，叶子由服务端显式标记 */
 function applyRemoteLeaf(nodes: TreeSelectNode[]): TreeSelectNode[] {
@@ -138,9 +149,10 @@ function expandNode(node: TreeFlatNode<string>) {
   }
 }
 
-const rootState = computed(() =>
-  fetchEnabled.value && sourceNodes.value.length === 0 ? fetchState.value : undefined,
-);
+const rootState = computed(() => {
+  if (props.subscribe) return sourceNodes.value.length === 0 ? subState.value : undefined;
+  return fetchEnabled.value && sourceNodes.value.length === 0 ? fetchState.value : undefined;
+});
 
 const tree = useTreeModel<string>({
   data: () => sourceNodes.value as unknown as Array<Record<string, unknown>>,
@@ -309,7 +321,7 @@ function onSearchInput(event: Event) {
             </button>
           </li>
           <li
-            v-else-if="fetchEnabled && tree.flatNodes.value.length === 0"
+            v-else-if="(fetchEnabled || subscribe) && tree.flatNodes.value.length === 0"
             class="cumquat-tree-select__state"
           >
             暂无数据

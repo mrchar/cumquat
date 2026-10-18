@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useDraggable, useImageState } from '@cumquat/composables';
+import {
+  subscribeErrorText,
+  useDraggable,
+  useImageState,
+  useSubscribe,
+} from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
-    src: string;
+    src?: string;
     alt?: string;
     /** 圆角 */
     rounded?: boolean;
@@ -14,8 +20,34 @@ const props = withDefaults(
     previewable?: boolean;
     /** 预览图地址（缺省用 src） */
     previewSrc?: string;
+    /** 订阅图片地址：挂载时调用，resolve 出的地址用于渲染，优先级高于 src */
+    subscribe?: SubscribeHandler<string>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
-  { alt: '', rounded: false, lazy: false, previewable: false, previewSrc: '' },
+  {
+    src: '',
+    alt: '',
+    rounded: false,
+    lazy: false,
+    previewable: false,
+    previewSrc: '',
+    subscribe: undefined,
+    errorText: undefined,
+  },
+);
+
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<string>(() => props.subscribe);
+
+const effectiveSrc = computed<string>(() =>
+  subState.value.status === 'success' ? (subState.value.data as string) : (props.src ?? ''),
+);
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
 );
 
 const emit = defineEmits<{
@@ -26,12 +58,15 @@ const emit = defineEmits<{
 
 const hostRef = ref<HTMLElement | null>(null);
 
-const { isLoading, isError, shouldLoad, onLoad, onError, reload } = useImageState(() => props.src, {
-  lazy: props.lazy,
-  target: hostRef,
-  onLoad: (event) => emit('load', event),
-  onError: (event) => emit('error', event),
-});
+const { isLoading, isError, shouldLoad, onLoad, onError, reload } = useImageState(
+  () => effectiveSrc.value,
+  {
+    lazy: props.lazy,
+    target: hostRef,
+    onLoad: (event) => emit('load', event),
+    onError: (event) => emit('error', event),
+  },
+);
 
 /* ---------- 预览变换 ---------- */
 const previewOpen = ref(false);
@@ -133,8 +168,8 @@ function onPreviewKeydown(event: KeyboardEvent) {
   >
     <span v-if="isLoading && shouldLoad" class="cumquat-image__placeholder" aria-hidden="true" />
     <img
-      v-if="shouldLoad && !isError"
-      :src="src"
+      v-if="shouldLoad && !isError && effectiveSrc"
+      :src="effectiveSrc"
       :alt="alt"
       class="cumquat-image__img"
       loading="lazy"
@@ -177,7 +212,7 @@ function onPreviewKeydown(event: KeyboardEvent) {
       >
         <img
           ref="previewImageRef"
-          :src="previewSrc || src"
+          :src="previewSrc || effectiveSrc"
           :alt="alt"
           class="cumquat-image-preview__img"
           :class="dragging ? 'cumquat-image-preview__img--dragging' : ''"
@@ -196,5 +231,9 @@ function onPreviewKeydown(event: KeyboardEvent) {
         </div>
       </div>
     </Transition>
+
+    <p v-if="errorText" class="cumquat-image__error cq-state--error" role="alert">
+      {{ errorText }}
+    </p>
   </span>
 </template>

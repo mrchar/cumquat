@@ -1,22 +1,52 @@
 <script setup lang="ts">
-import { useControllableModel } from '@cumquat/composables';
+import { computed } from 'vue';
+import { subscribeErrorText, useControllableModel, useSubscribe } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
     type?: 'info' | 'success' | 'warning' | 'danger';
     title?: string;
+    /** 提示内容（插槽未提供时使用） */
+    message?: string;
     closable?: boolean;
     /** 是否显示类型图标 */
     showIcon?: boolean;
     modelValue?: boolean;
+    /** 订阅提示内容：挂载时调用，resolve 出的字符串用于渲染，优先级高于 message */
+    subscribe?: SubscribeHandler<string>;
+    /** 订阅失败时的回退文案 */
+    errorText?: string;
   }>(),
-  { type: 'info', title: '', closable: false, showIcon: true, modelValue: undefined },
+  {
+    type: 'info',
+    title: '',
+    message: undefined,
+    closable: false,
+    showIcon: true,
+    modelValue: undefined,
+    subscribe: undefined,
+    errorText: undefined,
+  },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
   close: [];
 }>();
+
+const {
+  state: subState,
+  loading: subLoading,
+  error: subError,
+} = useSubscribe<string>(() => props.subscribe);
+
+const effectiveMessage = computed<string>(() =>
+  subState.value.status === 'success' ? (subState.value.data as string) : (props.message ?? ''),
+);
+const errorText = computed(() =>
+  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
+);
 
 const { value: visible } = useControllableModel<boolean>({
   modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
@@ -59,7 +89,7 @@ const iconPath: Record<string, string> = {
           <slot name="title">{{ title }}</slot>
         </p>
         <div class="cumquat-alert__content">
-          <slot />
+          <slot>{{ effectiveMessage }}</slot>
         </div>
       </div>
       <button
@@ -80,6 +110,10 @@ const iconPath: Record<string, string> = {
           <path d="M18 6 6 18M6 6l12 12" />
         </svg>
       </button>
+
+      <p v-if="errorText" class="cumquat-alert__error cq-state--error" role="alert">
+        {{ errorText }}
+      </p>
     </div>
   </Transition>
 </template>

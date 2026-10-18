@@ -5,8 +5,9 @@ import {
   useAsyncSuggest,
   useFloating,
   useListboxNavigation,
+  useSubscribe,
 } from '@cumquat/composables';
-import type { Fetch, FetchResult } from '@cumquat/composables';
+import type { Fetch, FetchResult, SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -17,6 +18,11 @@ const props = withDefaults(
      * 统一签名 (query: { keyword, signal })，兼容旧的 (keyword: string)。
      */
     fetch?: Fetch<string> | ((keyword: string) => Promise<string[]>);
+    /**
+     * 订阅数据：挂载时调用，resolve 出的成员列表用于本地包含匹配。
+     * 优先级：subscribe > fetch > members
+     */
+    subscribe?: SubscribeHandler<string[]>;
     /** 触发符，默认 @ */
     trigger?: string;
     placeholder?: string;
@@ -26,6 +32,7 @@ const props = withDefaults(
   {
     members: () => ['Amber', 'Bolt', 'Cedar', 'Dawn'],
     fetch: undefined,
+    subscribe: undefined,
     trigger: '@',
     placeholder: '输入 @ 唤起提及',
     modelValue: undefined,
@@ -93,11 +100,32 @@ const localSuggestions = computed(() => {
   return props.members.filter((m) => m.toLowerCase().includes(word.toLowerCase()));
 });
 
-const suggestions = computed(() =>
-  props.fetch ? asyncSuggest.suggestions.value : localSuggestions.value,
-);
-const loading = computed(() => (props.fetch ? asyncSuggest.loading.value : false));
-const loadError = computed(() => (props.fetch ? asyncSuggest.error.value : undefined));
+/* ---------------- subscribe：订阅型候选（本地包含匹配） ---------------- */
+const { state: subState } = useSubscribe<string[]>(() => props.subscribe);
+
+const subscribeSuggestions = computed(() => {
+  const list = subState.value.data ?? [];
+  const word = activeQuery.value.toLowerCase();
+  return list.filter((m) => m.toLowerCase().includes(word));
+});
+
+const suggestions = computed(() => {
+  if (props.subscribe) return subscribeSuggestions.value;
+  return props.fetch ? asyncSuggest.suggestions.value : localSuggestions.value;
+});
+const loading = computed(() => {
+  if (props.subscribe) return subState.value.status === 'pending';
+  return props.fetch ? asyncSuggest.loading.value : false;
+});
+const loadError = computed(() => {
+  if (props.subscribe) return subState.value.status === 'error' ? subState.value.error : undefined;
+  return props.fetch ? asyncSuggest.error.value : undefined;
+});
+
+function retryRemote() {
+  if (props.subscribe) subState.value.retry?.();
+  else asyncSuggest.run();
+}
 
 function refresh() {
   const hit = detectTrigger();
@@ -196,11 +224,7 @@ function onKeydown(event: KeyboardEvent) {
         <li v-if="loading" class="cumquat-mention__loading cq-state--pending">加载中…</li>
         <li v-else-if="loadError" class="cumquat-mention__error cq-state--error">
           加载失败
-          <button
-            type="button"
-            class="cumquat-mention__retry"
-            @mousedown.prevent="asyncSuggest.run()"
-          >
+          <button type="button" class="cumquat-mention__retry" @mousedown.prevent="retryRemote">
             重试
           </button>
         </li>

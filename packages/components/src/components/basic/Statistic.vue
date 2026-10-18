@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { useFetchResource, useIntervalFn } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import { useFetchResource, useIntervalFn, useSubscribe } from '@cumquat/composables';
+import type { Fetch, SubscribeHandler } from '@cumquat/composables';
 
 /** 统计值：数字 / 可解析数字的字符串 / 时间（倒计时） */
 export type StatisticValue = string | number | Date;
@@ -25,9 +25,14 @@ const props = withDefaults(
     countdown?: boolean;
     /**
      * 统一远程请求：挂载即拉取聚合值（数字或 { value } 单值），
-     * value prop 与 fetch 同时存在时 fetch 优先
+     * value prop 与 fetch 同时存在时 fetch 优先，三者同时存在时 subscribe 优先
      */
     fetch?: Fetch<StatisticValue>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的数据用于渲染。
+     * 优先级：subscribe > fetch > value
+     */
+    subscribe?: SubscribeHandler<StatisticValue>;
   }>(),
   {
     title: '',
@@ -40,6 +45,7 @@ const props = withDefaults(
     duration: 1000,
     countdown: false,
     fetch: undefined,
+    subscribe: undefined,
   },
 );
 
@@ -53,15 +59,22 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<StatisticV
   { getQuery: () => ({}) },
 );
 
-const remoteLoading = computed(() => fetchState.value?.status === 'pending');
-const remoteError = computed(() =>
-  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
-);
+/* ---------------- subscribe：订阅型数据 ---------------- */
+const { state: subState } = useSubscribe<StatisticValue>(() => props.subscribe);
 
-/** 当前生效值：fetch 优先，其次 value prop */
-const effectiveValue = computed<StatisticValue | undefined>(() =>
-  fetchEnabled.value ? fetchState.value?.data : props.value,
+const remoteLoading = computed(
+  () => fetchState.value?.status === 'pending' || subState.value.status === 'pending',
 );
+const remoteError = computed(() => {
+  if (subState.value.status === 'error') return subState.value.error;
+  return fetchState.value?.status === 'error' ? fetchState.value.error : undefined;
+});
+
+/** 当前生效值：subscribe 优先，其次 fetch，最后 value prop */
+const effectiveValue = computed<StatisticValue | undefined>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data;
+  return fetchEnabled.value ? fetchState.value?.data : props.value;
+});
 
 const targetTime = computed(() => {
   const value = effectiveValue.value;

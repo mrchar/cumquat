@@ -24,6 +24,21 @@ export interface ActionResult {
 /** 动作：交互组件传入的异步操作，执行期间自动派生 loading/disabled */
 export type ActionLike = (...args: any[]) => Promise<ActionResult | void> | ActionResult | void;
 
+/** 订阅结果：subscribe 处理方法返回值，导出状态、数据与错误 */
+export interface SubscribeResult<T> {
+  /** 订阅状态，缺省视为 success */
+  status?: 'loading' | 'success' | 'error';
+  /** 订阅到的数据；status 为 success 时由组件渲染 */
+  data?: T;
+  /** 失败信息；status 为 error 或携带 error 时组件进入失败分支 */
+  error?: unknown;
+  /** 提示文案，覆盖组件默认错误文案 */
+  message?: string;
+}
+
+/** 订阅处理：数据展示组件传入的订阅函数，挂载时调用，resolve 后渲染数据 */
+export type SubscribeHandler<T> = () => Promise<SubscribeResult<T>> | SubscribeResult<T>;
+
 /** 受控值的标准入参形态 */
 export interface ControlledProps<T> {
   modelValue?: T;

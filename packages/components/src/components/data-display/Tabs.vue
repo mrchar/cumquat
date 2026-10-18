@@ -5,8 +5,9 @@ import {
   useControllableModel,
   useFetchResource,
   useRovingFocus,
+  useSubscribe,
 } from '@cumquat/composables';
-import type { ActionLike, Fetch } from '@cumquat/composables';
+import type { ActionLike, Fetch, SubscribeHandler } from '@cumquat/composables';
 
 export interface TabItem {
   key: string;
@@ -26,6 +27,11 @@ const props = withDefaults(
     lazy?: boolean;
     /** 统一远程请求：挂载即拉取页签项，返回数组或 { list, total } */
     fetch?: Fetch<TabItem>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的页签项用于渲染。
+     * 优先级：subscribe > fetch > tabs
+     */
+    subscribe?: SubscribeHandler<TabItem[]>;
     /** 切换动作：配置后先确认再切换（成功才激活新页签，失败停留原面板） */
     action?: ActionLike;
   }>(),
@@ -36,6 +42,7 @@ const props = withDefaults(
     addText: '+',
     lazy: true,
     fetch: undefined,
+    subscribe: undefined,
     action: undefined,
   },
 );
@@ -93,13 +100,27 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<TabItem[]>
   { getQuery: () => ({}), initialData: [] as TabItem[] },
 );
 
-const sourceTabs = computed<TabItem[]>(() =>
-  fetchEnabled.value ? (fetchState.value?.data ?? []) : props.tabs,
+/* ---------------- subscribe：订阅型数据 ---------------- */
+const { state: subState } = useSubscribe<TabItem[]>(() => props.subscribe);
+
+const sourceTabs = computed<TabItem[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? (fetchState.value?.data ?? []) : props.tabs;
+});
+const remoteLoading = computed(
+  () =>
+    fetchState.value?.status === 'pending' ||
+    (!!props.subscribe && subState.value.status === 'pending'),
 );
-const remoteLoading = computed(() => fetchState.value?.status === 'pending');
-const remoteError = computed(() =>
-  fetchState.value?.status === 'error' ? fetchState.value.error : undefined,
-);
+const remoteError = computed(() => {
+  if (props.subscribe && subState.value.status === 'error') return subState.value.error;
+  return fetchState.value?.status === 'error' ? fetchState.value.error : undefined;
+});
+
+function retryRemote() {
+  if (props.subscribe && subState.value.status === 'error') subState.value.retry?.();
+  else fetchState.value?.retry?.();
+}
 
 const enabledIndex = (index: number) =>
   !!sourceTabs.value[index] && !sourceTabs.value[index].disabled;
@@ -114,7 +135,7 @@ const nav = useRovingFocus({
 watch(sourceTabs, (tabs) => {
   // 远程数据就绪后，未指定激活项时自动选中第一个可用页签
   if (
-    fetchEnabled.value &&
+    (fetchEnabled.value || props.subscribe) &&
     tabs.length > 0 &&
     (!active.value || !tabs.some((tab) => tab.key === active.value))
   ) {
@@ -197,11 +218,12 @@ const panelMounted = computed(() => !props.lazy || visitedKeys.value.size > 0 ||
         class="cumquat-tabs__state cq-state--error"
       >
         加载失败
-        <button type="button" class="cumquat-tabs__retry" @click="fetchState?.retry?.()">
-          重试
-        </button>
+        <button type="button" class="cumquat-tabs__retry" @click="retryRemote">重试</button>
       </span>
-      <span v-else-if="fetchEnabled && sourceTabs.length === 0" class="cumquat-tabs__state">
+      <span
+        v-else-if="(fetchEnabled || subscribe) && sourceTabs.length === 0"
+        class="cumquat-tabs__state"
+      >
         暂无页签
       </span>
       <button

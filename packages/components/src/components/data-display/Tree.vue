@@ -4,11 +4,12 @@ import {
   useActionValue,
   useFetchResource,
   useRovingFocus,
+  useSubscribe,
   useTreeModel,
   useTypeahead,
   type TreeFlatNode,
 } from '@cumquat/composables';
-import type { ActionLike, Fetch } from '@cumquat/composables';
+import type { ActionLike, Fetch, SubscribeHandler } from '@cumquat/composables';
 
 export interface TreeNode {
   key: string;
@@ -32,6 +33,11 @@ const props = withDefaults(
      * { filters: { parentKey } } 拉取子级，返回节点数组或 { list, total }
      */
     fetch?: Fetch<TreeNode>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的节点用于渲染（完整树，非懒加载）。
+     * 优先级：subscribe > fetch > nodes
+     */
+    subscribe?: SubscribeHandler<TreeNode[]>;
     /** 勾选动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用勾选 */
     action?: ActionLike;
   }>(),
@@ -41,6 +47,7 @@ const props = withDefaults(
     defaultExpandAll: false,
     checked: undefined,
     fetch: undefined,
+    subscribe: undefined,
     action: undefined,
   },
 );
@@ -99,9 +106,13 @@ const {
   },
 });
 
-const sourceNodes = computed<TreeNode[]>(() =>
-  fetchEnabled.value ? applyRemoteLeaf(fetchState.value?.data ?? []) : props.nodes,
-);
+/* ---------------- subscribe：订阅型数据（完整树） ---------------- */
+const { state: subState } = useSubscribe<TreeNode[]>(() => props.subscribe);
+
+const sourceNodes = computed<TreeNode[]>(() => {
+  if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];
+  return fetchEnabled.value ? applyRemoteLeaf(fetchState.value?.data ?? []) : props.nodes;
+});
 
 /**
  * 远程懒加载模式下 leaf 缺省视为「未知、可展开」（本地模式仍由 children 推导）；
@@ -128,9 +139,10 @@ async function loadChildren(key: string) {
   if (fetchState.value?.status === 'error') failedKey.value = key;
 }
 
-const rootState = computed(() =>
-  fetchEnabled.value && sourceNodes.value.length === 0 ? fetchState.value : undefined,
-);
+const rootState = computed(() => {
+  if (props.subscribe) return sourceNodes.value.length === 0 ? subState.value : undefined;
+  return fetchEnabled.value && sourceNodes.value.length === 0 ? fetchState.value : undefined;
+});
 
 const tree = useTreeModel<string>({
   data: () => sourceNodes.value as unknown as Array<Record<string, unknown>>,
@@ -268,7 +280,10 @@ function onTreeKeydown(event: KeyboardEvent) {
         重试
       </button>
     </li>
-    <li v-else-if="fetchEnabled && tree.flatNodes.value.length === 0" class="cumquat-tree__state">
+    <li
+      v-else-if="(fetchEnabled || subscribe) && tree.flatNodes.value.length === 0"
+      class="cumquat-tree__state"
+    >
       暂无数据
     </li>
     <template v-else>

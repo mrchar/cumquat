@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useFetchResource, usePagination } from '@cumquat/composables';
-import type { AsyncStateLike, Fetch } from '@cumquat/composables';
+import { useFetchResource, usePagination, useSubscribe } from '@cumquat/composables';
+import type { AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composables';
 import Pagination from './Pagination.vue';
 
 export interface TableColumn {
@@ -35,6 +35,11 @@ const props = withDefaults(
      * 翻页、排序、筛选变化自动以最新参数重取，返回数组或 { list, total }
      */
     fetch?: Fetch<Row>;
+    /**
+     * 订阅数据：挂载时调用，resolve 出的行数据用于渲染。
+     * 优先级：subscribe > fetch > data > rows
+     */
+    subscribe?: SubscribeHandler<Row[]>;
     /** 远程数据总条数（本地数据默认取 rows 长度） */
     total?: number;
     rowKey?: (row: Row, index: number) => string | number;
@@ -54,6 +59,7 @@ const props = withDefaults(
     emptyText: '暂无数据',
     data: undefined,
     fetch: undefined,
+    subscribe: undefined,
     total: undefined,
     rowKey: (_row: Row, index: number) => index,
     selectable: false,
@@ -180,10 +186,13 @@ const {
   initialData: [] as Row[],
 });
 
-/* ---------------- 远程四态归一（fetch 优先，兼容 data） ---------------- */
-const remoteState = computed<AsyncStateLike<Row[]> | undefined>(() =>
-  fetchEnabled.value ? fetchState.value : props.data,
-);
+/* ---------------- 远程四态归一（subscribe 优先，其次 fetch，兼容 data） ---------------- */
+const { state: subState } = useSubscribe<Row[]>(() => props.subscribe);
+
+const remoteState = computed<AsyncStateLike<Row[]> | undefined>(() => {
+  if (props.subscribe) return subState.value as AsyncStateLike<Row[]>;
+  return fetchEnabled.value ? fetchState.value : props.data;
+});
 const remoteLoading = computed(() => props.loading || remoteState.value?.status === 'pending');
 const remoteError = computed(() =>
   remoteState.value?.status === 'error' ? remoteState.value.error : undefined,
