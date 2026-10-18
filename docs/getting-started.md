@@ -38,6 +38,7 @@ import '@cumquat/components/dist/style.css';
 
 ## 下一步
 
+- 阅读[机制总览](/mechanisms)，全面了解架构、数据契约、远程数据、动作、订阅、主题等核心机制。
 - 浏览[组件总览](/components/button)，每个组件页都带有可编辑的实时演示。
 - 了解[远程数据 Fetch](/fetch) 的统一请求机制。
 - 在组件外使用 [组合函数](/composables) 导出异步状态、数据与刷新方法。

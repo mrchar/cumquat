@@ -134,8 +134,8 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: '指南', link: '/getting-started', activeMatch: '/getting-started' },
+      { text: '机制', link: '/mechanisms', activeMatch: '/mechanisms' },
       { text: '组件', link: '/components/button', activeMatch: '/components/' },
-      { text: '远程数据', link: '/fetch' },
       { text: '组合函数', link: '/composables' },
       {
         text: '设计文档',
@@ -149,6 +149,7 @@ export default defineConfig({
       '/components/': componentSidebar,
       '/': [
         { text: '快速上手', link: '/getting-started' },
+        { text: '机制总览', link: '/mechanisms' },
         { text: '远程数据 Fetch', link: '/fetch' },
         { text: '交互动作 Action', link: '/action' },
         { text: '数据订阅 Subscribe', link: '/subscribe' },

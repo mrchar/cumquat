@@ -10,11 +10,11 @@ hero:
       text: 快速上手
       link: /getting-started
     - theme: alt
+      text: 机制总览
+      link: /mechanisms
+    - theme: alt
       text: 组件总览
       link: /components/button
-    - theme: alt
-      text: 远程数据
-      link: /fetch
 
 features:
   - icon: 🧩
