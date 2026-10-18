@@ -105,9 +105,9 @@ cumquat/
 - 测试文件就近放置：`packages/components/src/components/__tests__/Button.spec.ts` 模式
 - 测试中不做样式断言（Tailwind 类由 playground 目检），只断言结构与状态
 
-### 4.5 apps/playground 调试沙盒
+### 4.5 playground 调试沙盒
 
-- Tailwind v4 接入：`@tailwindcss/vite` 插件 + `@import "tailwindcss"` + `@import "@cumquat/components/theme.css"` + `@source "../../packages/components/src"`
+- Tailwind v4 接入：`@tailwindcss/vite` 插件 + `@import "tailwindcss"` + `@import "@cumquat/components/theme.css"` + `@source "../packages/components/src"`
 - 定位：开发期调试沙盒（非演示站）。左侧为预置代码片段列表与主题切换，右侧 CodeCard（可编辑）+ LiveDemo 渲染，编辑代码即时预览；调试新组件时把模板贴入编辑区
 - 组件的对外演示与文档统一由 docs 站点承担，playground 不再维护组件演示内容
 
@@ -115,7 +115,7 @@ cumquat/
 
 - `vp install` 成功
 - `vp test`：63 个组件渲染测试全部通过
-- `vp -C apps/playground dev` 启动调试沙盒，逐片段目检外观与状态切换
+- `vp -C playground dev` 启动调试沙盒，逐片段目检外观与状态切换
 - `vp check`（lint + fmt + 类型）通过
 - `vp -C packages/components pack` 构建产物成功
 
