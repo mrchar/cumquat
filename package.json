@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./themes/*.css": "./packages/themes/src/*.css",
+    "./style.css": "./packages/components/dist/style.css"
+  },
   "scripts": {
     "ready": "vp check && vp run -r test && vp run -r build",
     "dev": "vp -C playground dev",

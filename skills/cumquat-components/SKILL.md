@@ -9,23 +9,36 @@ Cumquat 是一个 Vue 3 组件库，核心理念是**逻辑与渲染解耦**：H
 
 ## 1. 包结构与引入
 
-三个入口按需引入，默认渲染代码仅存在于 components 入口：
+### 1.1 统一入口（命名空间导出）
+
+根包 `cumquat` 按子包路径名聚合导出，各子包命名空间独立，避免平铺合并的命名冲突：
+
+```ts
+import { composables, components } from 'cumquat';
+
+// composables 空间：组合函数与协议类型
+const { useFetch, useActionState, useSubscribe } = composables;
+
+// components 空间：默认渲染组件、Cumquat 安装器与命令式服务
+const { Button, Table, Cumquat } = components;
+```
+
+### 1.2 子包入口（按需引入）
+
+两个入口按需引入，默认渲染代码仅存在于 components 入口：
 
 ```ts
 // 组合函数（无渲染）
-import { useFetch, useActionState, useSubscribe } from '@cumquat/vue';
-
-// 无渲染组件（仅消费 AsyncStateLike 契约）
-import { AsyncState } from '@cumquat/vue/headless';
+import { useFetch, useActionState, useSubscribe } from '@cumquat/composables';
 
 // 默认渲染组件（开箱即用）
-import { Button, Table, Select, Dialog } from '@cumquat/vue/components';
+import { Button, Table, Select, Dialog } from '@cumquat/components';
 ```
 
 全量注册（模板中以 `Cq` 前缀标签使用，如 `<cq-button>`）：
 
 ```ts
-import { Cumquat } from '@cumquat/vue/components';
+import { Cumquat } from '@cumquat/components';
 app.use(Cumquat);
 ```
 
@@ -54,9 +67,12 @@ app.use(Cumquat);
 ### 3.1 基本用法
 
 ```ts
-import type { Fetch } from '@cumquat/vue/components';
+import type { Fetch } from '@cumquat/components';
 
-interface UserRow { id: number; name: string }
+interface UserRow {
+  id: number;
+  name: string;
+}
 
 const fetchUsers: Fetch<UserRow> = async (query) => {
   const res = await fetch(
@@ -77,22 +93,22 @@ const fetchUsers: Fetch<UserRow> = async (query) => {
 
 ### 3.2 各组件注入的查询片段
 
-| 组件 | query 片段 | 返回形态 |
-|------|-----------|---------|
-| Table | `pagination` / `sorter` / `filters` | 数组或 `{ list, total }` |
-| Select / AutoComplete / Mention | `keyword`（300ms 防抖） | 数组 |
-| Tree / TreeSelect / Cascader | `filters.parentKey`（懒加载） | 数组 |
-| VirtualList | `pagination`（触底累积） | 数组或 `{ list, total }` |
-| Calendar | `filters.range: [首日, 末日]` | 数组 |
-| Statistic / Descriptions / Timeline / Tabs / Collapse / Carousel / Menu | `filters` | 单值或数组 |
+| 组件                                                                    | query 片段                          | 返回形态                 |
+| ----------------------------------------------------------------------- | ----------------------------------- | ------------------------ |
+| Table                                                                   | `pagination` / `sorter` / `filters` | 数组或 `{ list, total }` |
+| Select / AutoComplete / Mention                                         | `keyword`（300ms 防抖）             | 数组                     |
+| Tree / TreeSelect / Cascader                                            | `filters.parentKey`（懒加载）       | 数组                     |
+| VirtualList                                                             | `pagination`（触底累积）            | 数组或 `{ list, total }` |
+| Calendar                                                                | `filters.range: [首日, 末日]`       | 数组                     |
+| Statistic / Descriptions / Timeline / Tabs / Collapse / Carousel / Menu | `filters`                           | 单值或数组               |
 
 ### 3.3 组件外消费状态
 
 ```ts
-import { useFetch } from '@cumquat/vue';
+import { useFetch } from '@cumquat/composables';
 
-const { state, data, total, status, loading, error, refresh, fetch } = useFetch<UserRow>(
-  (query) => fetchUsersApi(query),
+const { state, data, total, status, loading, error, refresh, fetch } = useFetch<UserRow>((query) =>
+  fetchUsersApi(query),
 );
 // fetch 可直接绑给组件：<Table :fetch="fetch" />
 ```
@@ -103,18 +119,18 @@ const { state, data, total, status, loading, error, refresh, fetch } = useFetch<
 
 ### 4.1 两类语义
 
-| 语义 | 组件 | 失败行为 |
-|------|------|---------|
-| **确认型** | Button、Form、Popconfirm、Upload、Dialog、Drawer、Tour、TimePicker | 容器内错误条，保持打开 |
+| 语义       | 组件                                                                                                                  | 失败行为                          |
+| ---------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **确认型** | Button、Form、Popconfirm、Upload、Dialog、Drawer、Tour、TimePicker                                                    | 容器内错误条，保持打开            |
 | **切换型** | Select、DatePicker、ColorPicker、Transfer、Rate、Segmented、Tabs、Checkbox、Radio、RadioGroup、Slider、Cascader、Tree | 乐观回退旧值，emit `action-error` |
 
 ### 4.2 协议
 
 ```ts
 interface ActionResult {
-  status?: 'success' | 'error';  // 缺省 success
+  status?: 'success' | 'error'; // 缺省 success
   error?: unknown;
-  message?: string;              // 覆盖默认错误文案
+  message?: string; // 覆盖默认错误文案
 }
 ```
 
@@ -132,7 +148,7 @@ interface ActionResult {
 
 ```ts
 const confirmAction = async () => {
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise((r) => setTimeout(r, 600));
   if (Math.random() < 0.5) {
     return { status: 'error', error: '存在关联数据，无法删除' };
   }
@@ -147,7 +163,7 @@ const confirmAction = async () => {
 
 ```ts
 const persist = async (value) => {
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise((r) => setTimeout(r, 600));
   if (value === 'forbidden') return { status: 'error', error: '不可选' };
 };
 ```
@@ -178,7 +194,7 @@ interface SubscribeResult<T> {
 
 ```ts
 const loadOnline = async () => {
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise((r) => setTimeout(r, 600));
   if (Math.random() < 0.3) return { status: 'error', error: '连接失败' };
   return { status: 'success', data: 1280 };
 };
@@ -220,7 +236,7 @@ interface AsyncStateLike<T> {
 ## 8. 命令式服务
 
 ```ts
-import { message, notification, loading } from '@cumquat/vue/components';
+import { message, notification, loading } from '@cumquat/components';
 
 message.success('保存成功');
 message.error('操作失败');
@@ -238,15 +254,15 @@ const hide = loading.show({ text: '加载中...' });
 ```css
 /* 宿主有 Tailwind v4 */
 @import 'tailwindcss';
-@source '../node_modules/@cumquat/components/dist';
-@import '@cumquat/themes/basic.css';
-@import '@cumquat/themes/light.css';   /* 或 dark / high-contrast / glass */
+@source '../node_modules/cumquat/packages/components/dist';
+@import 'cumquat/themes/basic.css';
+@import 'cumquat/themes/light.css'; /* 或 dark / high-contrast / glass */
 
-/* 无 Tailwind */
-@import '@cumquat/components/dist/style.css';
+/* 无 Tailwind：直接引入预编译样式 */
+@import 'cumquat/style.css';
 ```
 
-组件 JS 入口不隐式引入 CSS，需宿主显式引入。
+组件 JS 入口不隐式引入 CSS，需宿主显式引入；主题 CSS 经主包 `cumquat/themes/*.css` 子路径导出，无 Tailwind 时用预编译的 `cumquat/style.css`。
 
 ## 10. 常见模式速查
 
@@ -283,7 +299,12 @@ const submitForm = async () => {
 ### 乐观更新的选择器
 
 ```vue
-<Select v-model="val" :options="opts" :action="save" @action-error="(e) => message.error(String(e))" />
+<Select
+  v-model="val"
+  :options="opts"
+  :action="save"
+  @action-error="(e) => message.error(String(e))"
+/>
 ```
 
 ## 11. 注意事项

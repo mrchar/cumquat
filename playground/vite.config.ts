@@ -15,9 +15,7 @@ export default defineConfig({
       {
         // 开发态直接指向组件源码，无需先构建 dist
         find: /^@cumquat\/components$/,
-        replacement: fileURLToPath(
-          new URL('../packages/components/src/index.ts', import.meta.url),
-        ),
+        replacement: fileURLToPath(new URL('../packages/components/src/index.ts', import.meta.url)),
       },
     ],
   },

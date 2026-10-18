@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useFetchResource, usePagination, useSubscribe } from '@cumquat/composables';
+import { computed, getCurrentInstance, ref, watch } from 'vue';
+import {
+  useControllableModel,
+  useFetchResource,
+  usePagination,
+  useSubscribe,
+} from '@cumquat/composables';
 import type { AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composables';
 import Pagination from './Pagination.vue';
 
@@ -45,11 +50,16 @@ const props = withDefaults(
     rowKey?: (row: Row, index: number) => string | number;
     selectable?: boolean;
     expandable?: boolean;
-    /** 是否内置分页条 */
+    /** 是否内置分页条；绑定 v-model:current-page 时自动开启 */
     pagination?: boolean;
+    /** 当前页（受控，v-model:current-page）；不传为组件内部状态 */
+    currentPage?: number;
+    /** 每页条数；配合 @update:page-size 即 v-model:page-size 受控 */
     pageSize?: number;
     pageSizes?: number[];
-    /** 初始排序字段 */
+    /** 排序状态（受控，v-model:sorter）；不传为组件内部状态 */
+    sorter?: { key: string; order: 'asc' | 'desc' | null };
+    /** 初始排序字段（非受控） */
     defaultSort?: { key: string; order: 'asc' | 'desc' };
   }>(),
   {
@@ -73,6 +83,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:selectedKeys': [keys: Array<string | number>];
+  'update:currentPage': [page: number];
+  'update:pageSize': [size: number];
+  'update:sorter': [sorter: { key: string; order: 'asc' | 'desc' | null }];
   /** 五类状态的统一变化事件（外层据此发请求） */
   change: [
     payload: {
@@ -86,11 +99,21 @@ const emit = defineEmits<{
 
 /* 远程四态与 fetch 资源钩子在分页初始化后统一建立（fetch 优先于 data） */
 
-/* ---------------- 排序 ---------------- */
-const sorterState = ref<{ key: string; order: 'asc' | 'desc' | null }>({
-  key: props.defaultSort?.key ?? '',
-  order: props.defaultSort?.order ?? null,
+/* ---------------- 排序（受控/非受控统一） ---------------- */
+interface SorterState {
+  key: string;
+  order: 'asc' | 'desc' | null;
+}
+
+const sorterModel = useControllableModel<SorterState>({
+  modelValue: props.sorter !== undefined ? () => props.sorter as SorterState : undefined,
+  defaultValue: {
+    key: props.defaultSort?.key ?? '',
+    order: props.defaultSort?.order ?? null,
+  },
+  onChange: (next) => emit('update:sorter', next),
 });
+const sorterState = sorterModel.value;
 
 function toggleSort(column: TableColumn) {
   if (!column.sortable) return;
@@ -155,7 +178,14 @@ const processedRows = computed<Row[]>(() => {
   return list;
 });
 
-/* ---------------- 分页 ---------------- */
+/* ---------------- 分页（受控/非受控统一） ---------------- */
+// pageSize 有默认值 10，无法以 undefined 判定受控；
+// 以 vnode 上是否挂 @update:page-size 监听器作为 v-model 绑定信号，
+// 兼容历史上 :page-size="20" 单向初始值用法（仍可内部切换）
+const vnodeProps = getCurrentInstance()?.vnode.props ?? {};
+const currentPageControlled = props.currentPage !== undefined;
+const pageSizeControlled = 'onUpdate:pageSize' in vnodeProps;
+
 const {
   currentPage,
   pageSize,
@@ -164,10 +194,17 @@ const {
   total: pTotal,
 } = usePagination({
   total: props.total ?? props.data?.data?.length ?? props.rows.length,
+  currentPage: currentPageControlled ? () => props.currentPage as number : undefined,
+  onPageChange: (page) => emit('update:currentPage', page),
+  pageSize: pageSizeControlled ? () => props.pageSize : undefined,
   // 初始每页条数走非受控槽位；受控槽位会把快照锁死导致切换失效
   defaultPageSize: props.pageSize,
+  onPageSizeChange: (size) => emit('update:pageSize', size),
   pageSizes: props.pageSizes,
 });
+
+/** 绑定 v-model:current-page 即视为需要分页器 */
+const showPager = computed(() => props.pagination || currentPageControlled);
 
 /* ---------------- fetch 统一请求机制 ---------------- */
 const {
@@ -211,7 +248,7 @@ watch(remoteTotal, (value) => {
 });
 
 const pageRows = computed<Row[]>(() => {
-  if (!props.pagination) return processedRows.value;
+  if (!showPager.value) return processedRows.value;
   // 远程数据按约定已分页，直接展示
   if (isRemote.value) return processedRows.value;
   const start = (currentPage.value - 1) * pageSize.value;
@@ -439,7 +476,7 @@ function bodyClick() {
       </button>
     </div>
 
-    <div v-if="pagination" class="cumquat-table__footer">
+    <div v-if="showPager" class="cumquat-table__footer">
       <Pagination
         :model-value="currentPage"
         :page-size="pageSize"

@@ -4,41 +4,94 @@ title: 快速上手
 
 # 快速上手
 
-## 引入方式
+## 安装与注册
 
 ```ts
-// 全量注册：模板中以 <c-button> 等 C 前缀标签使用
-import { Cumquat } from '@cumquat/vue/components';
-app.use(Cumquat);
+import { createApp } from 'vue';
+import { components } from 'cumquat';
 
-// 按需导入：无注册前缀，直接使用
-import { Button, Select, Table } from '@cumquat/vue/components';
+createApp(App).use(components.Cumquat).mount('#app');
 ```
 
-## 通用约定
+组件 JS 不自带样式，需引入一次主题：
 
-- **v-model 纯同步**：所有 `modelValue` / `open` / `visible` 等绑定值只做同步回写，异步副作用一律由外层驱动。
-- **异步状态 `:state` / `:data`**：数据型组件（Table、Select 等）可接收 `AsyncStateLike<T>`（`status / data / error / isStale? / retry?`），传入后组件内置加载 / 错误重试 / 空态 / stale 提示四态渲染，组件自身不发请求。
-- **远程资源 `:fetch`**：17 个资源型组件可绑定统一的 `Fetch<T>` 方法，挂载即请求，翻页 / 排序 / 筛选 / 搜索 / 展开自动重取，防抖、竞态、四态渲染全部内置，详见[远程数据](/fetch)。
-- **动作 `:action`**：动作型组件（Button、Popconfirm 等）接收一个同步或异步函数，执行期间自动派生 loading / disabled。
-- **受控 / 非受控统一**：所有异步 props 均可选，不传即为普通非受控组件。
-- **语义 class**：每个组件保留 `cumquat-xxx` 语义类名，作为主题化与测试锚点。
-
-## 样式接入
-
-```ts
-// 宿主已有 Tailwind v4：扫描组件类名并引入主题
-@import 'tailwindcss';
-@source '../node_modules/@cumquat/components/dist';
-@import '@cumquat/themes/basic.css';
-
-// 无 Tailwind：直接引入预编译样式
-import '@cumquat/components/dist/style.css';
+```css
+@import 'cumquat/themes/basic.css';
+@import 'cumquat/themes/light.css';
 ```
+
+## 交互动作：action
+
+交互组件传入返回 Promise 的 `action`，执行期间自动 loading、失败自动提示。
+
+```vue
+<template>
+  <c-button :action="save">保存</c-button>
+</template>
+
+<script setup lang="ts">
+const save = async () => {
+  const res = await fetch('/api/save', { method: 'POST' });
+  if (!res.ok) return { status: 'error', error: '保存失败，请重试' };
+};
+</script>
+```
+
+## 远程数据：fetch
+
+资源型组件传入 `fetch` 方法，挂载自动请求，翻页、排序、搜索等交互自动重取并注入查询参数。
+
+```vue
+<template>
+  <c-table :columns="columns" :fetch="loadUsers" pagination />
+</template>
+
+<script setup lang="ts">
+const columns = [
+  { key: 'name', title: '姓名' },
+  { key: 'email', title: '邮箱' },
+];
+
+const loadUsers = async (query) => {
+  const res = await fetch(`/api/users?page=${query.pagination?.currentPage ?? 1}`);
+  const body = await res.json();
+  return { list: body.records, total: body.total }; // 返回 { list, total } 自动识别为分页
+};
+</script>
+```
+
+## 数据展示：subscribe
+
+展示组件传入 `subscribe`，挂载时自动调用一次。返回的数据若为响应式对象，之后它的变化会持续更新视图——适合订阅服务端推送的场景：
+
+```vue
+<template>
+  <c-table :columns="columns" :subscribe="subscribeOrders" />
+</template>
+
+<script setup lang="ts">
+import { reactive } from 'vue';
+
+const columns = [
+  { key: 'id', title: '订单号' },
+  { key: 'amount', title: '金额' },
+];
+
+const subscribeOrders = async () => {
+  const list = reactive<Array<{ id: string; amount: number }>>([]);
+  const ws = new WebSocket('wss://example.com/orders');
+  ws.onmessage = (e) => list.push(JSON.parse(e.data)); // 收到消息即更新表格
+  return { data: list };
+  // 真实场景请在组件卸载时关闭连接
+};
+</script>
+```
+
+加载中渲染骨架、失败保留重试入口。
+
+不传 `action` / `fetch` / `subscribe` 就是普通本地组件。
 
 ## 下一步
 
-- 阅读[机制总览](/mechanisms)，全面了解架构、数据契约、远程数据、动作、订阅、主题等核心机制。
-- 浏览[组件总览](/components/button)，每个组件页都带有可编辑的实时演示。
-- 了解[远程数据 Fetch](/fetch) 的统一请求机制。
-- 在组件外使用 [组合函数](/composables) 导出异步状态、数据与刷新方法。
+- [远程数据 Fetch](/fetch) / [交互动作 Action](/action) / [数据订阅 Subscribe](/subscribe)：三大协议的完整行为。
+- [组件总览](/components/button)：每个组件页都有可编辑的实时演示。

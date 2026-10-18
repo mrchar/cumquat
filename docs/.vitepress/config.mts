@@ -125,6 +125,49 @@ const componentSidebar: SidebarGroup[] = groups.map((group) => ({
   })),
 }));
 
+const composableGroups: Array<{ text: string; items: Array<[string, string]> }> = [
+  { text: '开始', items: [['index', '总览']] },
+  {
+    text: '数据',
+    items: [
+      ['fetch', '数据请求 useFetch'],
+      ['subscribe', '数据订阅 useSubscribe'],
+      ['pagination', '分页 usePagination'],
+    ],
+  },
+  {
+    text: '表单',
+    items: [
+      ['form', '表单模型'],
+      ['date', '日期时间模型'],
+    ],
+  },
+  {
+    text: '反馈与浮层',
+    items: [
+      ['message', '消息服务'],
+      ['overlay', '浮层模型'],
+    ],
+  },
+  {
+    text: '基础',
+    items: [
+      ['control', '受控与动作'],
+      ['dom', 'DOM 与浏览器'],
+      ['focus', '焦点与键盘'],
+    ],
+  },
+];
+
+const composableSidebar: SidebarGroup[] = composableGroups.map((group) => ({
+  text: group.text,
+  collapsed: false,
+  items: group.items.map(([slug, title]) => ({
+    text: title,
+    link: slug === 'index' ? '/composables/' : `/composables/${slug}`,
+  })),
+}));
+
 export default defineConfig({
   lang: 'zh-CN',
   title: 'Cumquat',
@@ -134,28 +177,18 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: '指南', link: '/getting-started', activeMatch: '/getting-started' },
-      { text: '机制', link: '/mechanisms', activeMatch: '/mechanisms' },
       { text: '组件', link: '/components/button', activeMatch: '/components/' },
-      { text: '组合函数', link: '/composables' },
-      {
-        text: '设计文档',
-        items: [
-          { text: '数据请求机制', link: '/data-fetching' },
-          { text: '组件清单与优先级', link: '/components-list' },
-        ],
-      },
+      { text: '组合函数', link: '/composables/', activeMatch: '/composables/' },
     ],
     sidebar: {
       '/components/': componentSidebar,
+      '/composables/': composableSidebar,
       '/': [
         { text: '快速上手', link: '/getting-started' },
-        { text: '机制总览', link: '/mechanisms' },
         { text: '远程数据 Fetch', link: '/fetch' },
         { text: '交互动作 Action', link: '/action' },
         { text: '数据订阅 Subscribe', link: '/subscribe' },
-        { text: '组合函数', link: '/composables' },
-        { text: '数据请求机制', link: '/data-fetching' },
-        { text: '组件清单与优先级', link: '/components-list' },
+        { text: '类型参考', link: '/types' },
       ],
     },
     outline: [2, 3],

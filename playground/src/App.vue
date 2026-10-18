@@ -95,7 +95,7 @@ watch(activeKey, () => {
         </p>
       </header>
 
-      <CodeCard v-model:code="code" editable :title="activeSample().title">
+      <CodeCard v-model:code="code" editable default-expand :title="activeSample().title">
         <LiveDemo :code="code" :scope="scope" />
       </CodeCard>
     </main>

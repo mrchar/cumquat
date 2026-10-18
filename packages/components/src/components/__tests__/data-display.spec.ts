@@ -155,6 +155,82 @@ describe('Table', () => {
     expect(wrapper.find('.cumquat-table__errorbar').exists()).toBe(false);
     expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(1);
   });
+
+  it('受控分页：v-model:current-page 自动显示分页器，翻页回发并以新页码重取', async () => {
+    const fetcher = vi.fn(async () => ({ list: rows, total: 30 }));
+    const wrapper = mount(Table, {
+      props: {
+        columns,
+        fetch: fetcher,
+        currentPage: 1,
+        'onUpdate:currentPage': (page: number) => wrapper.setProps({ currentPage: page }),
+      },
+    });
+    await wait();
+    // 未传 pagination 布尔开关，绑定即自动展示分页器
+    expect(wrapper.find('.cumquat-table__footer').exists()).toBe(true);
+    expect(fetcher.mock.calls.at(-1)?.[0].pagination).toEqual({ currentPage: 1, pageSize: 10 });
+    await wrapper
+      .findAll('.cumquat-pagination__page')
+      .find((btn) => btn.text() === '2')!
+      .trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:currentPage')?.at(-1)).toEqual([2]);
+    expect(fetcher.mock.calls.at(-1)?.[0].pagination).toEqual({ currentPage: 2, pageSize: 10 });
+  });
+
+  it('受控每页条数：@update:page-size 存在时按受控切换并重取', async () => {
+    const fetcher = vi.fn(async () => ({ list: rows, total: 30 }));
+    const wrapper = mount(Table, {
+      props: {
+        columns,
+        fetch: fetcher,
+        pagination: true,
+        pageSize: 10,
+        'onUpdate:pageSize': (size: number) => wrapper.setProps({ pageSize: size }),
+      },
+    });
+    await wait();
+    await wrapper.find('.cumquat-pagination__select').setValue('20');
+    await wait();
+    expect(wrapper.emitted('update:pageSize')?.at(-1)).toEqual([20]);
+    expect(fetcher.mock.calls.at(-1)?.[0].pagination).toEqual({ currentPage: 1, pageSize: 20 });
+  });
+
+  it('受控排序：v-model:sorter 回发排序状态并注入查询', async () => {
+    const sortableColumns: TableColumn[] = [{ key: 'name', title: '名称', sortable: true }];
+    const fetcher = vi.fn(async () => ({ list: rows, total: 2 }));
+    const wrapper = mount(Table, {
+      props: {
+        columns: sortableColumns,
+        fetch: fetcher,
+        sorter: { key: '', order: null } as { key: string; order: 'asc' | 'desc' | null },
+        'onUpdate:sorter': (sorter: { key: string; order: 'asc' | 'desc' | null }) =>
+          wrapper.setProps({ sorter }),
+      },
+    });
+    await wait();
+    await wrapper.find('.cumquat-table__sorter').trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:sorter')?.at(-1)).toEqual([{ key: 'name', order: 'asc' }]);
+    expect(fetcher.mock.calls.at(-1)?.[0].sorter).toEqual({ key: 'name', order: 'asc' });
+  });
+
+  it('单向 :page-size 不传监听器时保持历史行为（作为初始条数，内部可切换）', async () => {
+    const localRows = Array.from({ length: 30 }, (_, index) => ({
+      name: `R${index}`,
+      age: 20,
+    }));
+    const wrapper = mount(Table, {
+      props: { columns, rows: localRows, pagination: true, pageSize: 10 },
+    });
+    await wait();
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(10);
+    await wrapper.find('.cumquat-pagination__select').setValue('20');
+    await wait();
+    // 非受控：内部状态自行切换，事件仍会回发（无监听器时无副作用）
+    expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(20);
+  });
 });
 
 describe('Pagination', () => {

@@ -33,15 +33,20 @@ interface TableColumn {
 | rowKey      | `(row: Row, index: number) => string \| number` | 取行索引       | 行唯一键                                                                                            |
 | selectable  | `boolean`                                       | `false`        | 显示行选择列                                                                                        |
 | expandable  | `boolean`                                       | `false`        | 显示展开列                                                                                          |
-| pagination  | `boolean`                                       | `false`        | 内置分页条                                                                                          |
-| pageSize    | `number`                                        | `10`           | 每页条数                                                                                            |
+| pagination  | `boolean`                                       | `false`        | 内置分页条；绑定 `v-model:current-page` 时自动开启                                                   |
+| currentPage | `number`                                        | -              | 当前页（受控，`v-model:current-page`）；不传为组件内部状态                                           |
+| pageSize    | `number`                                        | `10`           | 每页条数；挂 `@update:page-size` 监听即受控（`v-model:page-size`）                                   |
 | pageSizes   | `number[]`                                      | `[10, 20, 50]` | 每页条数选项                                                                                        |
-| defaultSort | `{ key: string; order: 'asc' \| 'desc' }`       | -              | 初始排序                                                                                            |
+| sorter      | `{ key: string; order: 'asc' \| 'desc' \| null }` | -            | 排序状态（受控，`v-model:sorter`）；不传为组件内部状态                                               |
+| defaultSort | `{ key: string; order: 'asc' \| 'desc' }`       | -              | 初始排序（非受控）                                                                                  |
 | fetch       | `Fetch<Row>`                                    | -              | 远程数据源：自动注入 pagination/sorter/filters；返回 `{ list, total }` 自动分页，返回数组按全量渲染 |
 
 | 事件                | 参数                                                                                            | 说明                                     |
 | ------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | update:selectedKeys | `keys: Array<string \| number>`                                                                 | 选中行 key 更新                          |
+| update:currentPage  | `page: number`                                                                                  | 当前页更新（受控回发）                   |
+| update:pageSize     | `size: number`                                                                                  | 每页条数更新（受控回发）                 |
+| update:sorter       | `{ key, order }`                                                                                | 排序状态更新（受控回发）                 |
 | change              | `{ pagination: { currentPage, pageSize }, sorter: { key, order }, filters: Record<string, …> }` | 分页/排序/筛选统一变化（外层据此发请求） |
 | rowExpand           | `{ row, expanded: boolean, key }`                                                               | 行展开/收起                              |
 
@@ -69,6 +74,29 @@ interface TableColumn {
 >
   <template #cell-status="{ value }"><Tag>{{ value }}</Tag></template>
 </Table>
+```
+
+### 受控分页 / 排序
+
+分页与排序默认由组件内部持有；绑定 `v-model` 后即由外部接管，绑定的变量与 `fetch` 注入的 query 始终是同一份状态，可在 `fetch` 方法里直接闭包读取（用于 URL 同步、外部筛选联动等场景）。绑定 `v-model:current-page` 后无需再写 `pagination` 开关：
+
+```vue
+<template>
+  <Table v-model:current-page="page" v-model:sorter="sort" :columns="columns" :fetch="loadUsers" />
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const page = ref(1);
+const sort = ref({ key: '', order: null });
+
+const loadUsers = async (query) => {
+  // query.pagination.currentPage 与 page.value 等价，任选其一
+  const res = await fetch(`/api/users?page=${page.value}`);
+  return res.json();
+};
+</script>
 ```
 
 ## 交互演示

@@ -24,12 +24,29 @@ export type SubscribeHandler<T> = () => Promise<SubscribeResult<T>> | SubscribeR
 
 **失败策略**：订阅失败时组件保留旧数据（若有），展示错误提示条，支持 `refresh` 重试，与 fetch 失败策略一致。
 
+## 响应式数据：持续更新
+
+处理方法只在挂载时调用一次，但返回的 `data` 若为响应式对象（`reactive` 数组 / 对象），组件渲染时会对它建立依赖——之后订阅源（WebSocket、EventEmitter、定时器）对它的任何修改都会自动更新视图，无需再次调用：
+
+```ts
+import { reactive } from 'vue';
+
+const subscribeOrders: SubscribeHandler<Row[]> = async () => {
+  const list = reactive<Row[]>([]);
+  const ws = new WebSocket('wss://example.com/orders');
+  ws.onmessage = (e) => list.push(JSON.parse(e.data)); // 收到推送即更新表格
+  return { data: list };
+};
+```
+
+这是 subscribe 与 fetch 的本质差异：fetch 每次交互产生一次新请求新数据，subscribe 的数据可以在 resolve 之后持续生长。注意在连接生命周期结束时自行关闭订阅源（如配合 `onUnmounted`）。
+
 ## 与 fetch 的边界
 
-| 机制        | 语义     | 数据流                                | 适用场景                                                        |
-| ----------- | -------- | ------------------------------------- | --------------------------------------------------------------- |
-| `fetch`     | 主动请求 | 组件构造 query → 拉取 → 渲染          | 分页 / 搜索 / 排序的查询型数据                                  |
-| `subscribe` | 被动订阅 | 外部事件 / 推送 → resolve 数据 → 渲染 | 实时数据、订阅型数据源（WebSocket、EventEmitter、响应式 store） |
+| 机制        | 语义     | 数据流                                                  | 适用场景                                                        |
+| ----------- | -------- | ------------------------------------------------------- | --------------------------------------------------------------- |
+| `fetch`     | 主动请求 | 组件构造 query → 拉取 → 渲染                            | 分页 / 搜索 / 排序的查询型数据                                  |
+| `subscribe` | 被动订阅 | resolve 数据 → 渲染；数据为响应式对象时推送持续更新视图 | 实时数据、订阅型数据源（WebSocket、EventEmitter、响应式 store） |
 
 两者可同时传入，数据优先级为 **subscribe > fetch > 本地 props**。subscribe 适合持续推送或外部驱动的数据流，fetch 适合组件主动发起的请求。
 
@@ -43,12 +60,12 @@ export type SubscribeHandler<T> = () => Promise<SubscribeResult<T>> | SubscribeR
   <LiveDemo :code="statisticCode" :scope="statisticScope" />
 </CodeCard>
 
-### 进度订阅：Progress
+### 订阅推送：Table 实时订单
 
-进度数据由外部驱动，失败时展示错误提示。
+返回响应式数组后，订阅源的每次推送都会自动更新表格（此处用定时器模拟服务端推送）。
 
-<CodeCard v-model:code="progressCode" editable title="Progress 订阅进度">
-  <LiveDemo :code="progressCode" :scope="progressScope" />
+<CodeCard v-model:code="tableCode" editable title="Table 订阅推送">
+  <LiveDemo :code="tableCode" :scope="tableScope" />
 </CodeCard>
 
 ## 数据展示组件清单
@@ -84,14 +101,14 @@ export type SubscribeHandler<T> = () => Promise<SubscribeResult<T>> | SubscribeR
 - `subscribeErrorText(error, fallback?)`：把订阅错误归一为可展示文案
 
 <script setup>
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 
 const statisticCode = ref(`
   <Statistic title="实时在线人数" :subscribe="loadOnline" suffix="人" />
 `);
 
-const progressCode = ref(`
-  <Progress :subscribe="loadProgress" :show-text="true" />
+const tableCode = ref(`
+  <Table :columns="orderColumns" :subscribe="subscribeOrders" />
 `);
 
 const statisticScope = {
@@ -104,13 +121,28 @@ const statisticScope = {
   },
 };
 
-const progressScope = {
-  loadProgress: async () => {
+const orderColumns = [
+  { key: 'id', title: '订单号' },
+  { key: 'amount', title: '金额', align: 'right' },
+];
+
+let orderSeq = 2;
+
+const tableScope = {
+  orderColumns,
+  subscribeOrders: async () => {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    if (Math.random() < 0.3) {
-      return { status: 'error', message: '进度获取失败，请重试' };
-    }
-    return { status: 'success', data: 73 };
+    const list = reactive([
+      { id: 'A-001', amount: 128 },
+      { id: 'A-002', amount: 256 },
+    ]);
+    // 模拟服务端推送：每秒新增一笔订单，演示推 6 条后停止
+    const timer = setInterval(() => {
+      orderSeq += 1;
+      list.push({ id: `A-00${orderSeq}`, amount: Math.floor(Math.random() * 900 + 100) });
+      if (orderSeq >= 8) clearInterval(timer);
+    }, 1000);
+    return { data: list };
   },
 };
 </script>
