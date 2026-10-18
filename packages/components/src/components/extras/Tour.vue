@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { useScrollIntoView, useZIndex } from '@cumquat/composables';
+import {
+  actionErrorText,
+  useActionState,
+  useScrollIntoView,
+  useZIndex,
+} from '@cumquat/composables';
+import type { ActionLike } from '@cumquat/composables';
 
 export interface TourStep {
   key: string;
@@ -22,8 +28,20 @@ const props = withDefaults(
     closable?: boolean;
     /** 高亮挖空区与目标的间距 */
     gap?: number;
+    /** 步骤推进动作：执行期间禁用推进，失败停留当前步骤并展示错误提示 */
+    action?: ActionLike;
+    /** 动作失败时的回退文案 */
+    errorText?: string;
   }>(),
-  { steps: () => [], open: false, skippable: true, closable: true, gap: 8 },
+  {
+    steps: () => [],
+    open: false,
+    skippable: true,
+    closable: true,
+    gap: 8,
+    action: undefined,
+    errorText: undefined,
+  },
 );
 
 const emit = defineEmits<{
@@ -32,6 +50,8 @@ const emit = defineEmits<{
   finish: [];
   skip: [];
   change: [current: number];
+  /** 推进动作失败（reject 或返回值导出错误）时触发 */
+  actionError: [error: unknown];
 }>();
 
 const visible = defineModel<boolean>('open', { default: false });
@@ -126,13 +146,29 @@ const cardStyle = computed(() => {
   };
 });
 
+const {
+  pending: actionPending,
+  error: actionError,
+  run: runAction,
+} = useActionState(() => props.action?.(), { onError: (err) => emit('actionError', err) });
+
+const errorText = computed(() =>
+  actionError.value != null ? actionErrorText(actionError.value, props.errorText) : null,
+);
+
 function activateStep(index: number) {
   current.value = index;
   emit('change', index);
   nextTick(measureTarget);
 }
 
-function next() {
+/** 推进：有 action 时执行并等待，成功才进入下一步/完成；失败停留当前步骤 */
+async function next() {
+  if (actionPending.value) return;
+  if (props.action) {
+    await runAction();
+    if (actionError.value != null) return;
+  }
   if (!isLast.value) activateStep(current.value + 1);
   else finish();
 }
@@ -228,16 +264,36 @@ watch(
           <p class="cumquat-tour__content">
             {{ step?.content }}
           </p>
+          <p v-if="errorText" class="cumquat-tour__error cq-state--error" role="alert">
+            {{ errorText }}
+          </p>
           <div class="cumquat-tour__actions">
-            <button v-if="skippable" type="button" class="cumquat-tour__skip" @click="skip">
+            <button
+              v-if="skippable"
+              type="button"
+              class="cumquat-tour__skip"
+              :disabled="actionPending"
+              @click="skip"
+            >
               跳过
             </button>
-            <button v-if="current > 0" type="button" class="cumquat-tour__prev" @click="prev">
+            <button
+              v-if="current > 0"
+              type="button"
+              class="cumquat-tour__prev"
+              :disabled="actionPending"
+              @click="prev"
+            >
               上一步
             </button>
             <span v-else />
-            <button type="button" class="cumquat-tour__next" @click="next">
-              {{ isLast ? '完成' : '下一步' }}
+            <button
+              type="button"
+              class="cumquat-tour__next"
+              :disabled="actionPending"
+              @click="next"
+            >
+              {{ isLast ? '完成' : actionPending ? '处理中…' : '下一步' }}
             </button>
           </div>
         </div>

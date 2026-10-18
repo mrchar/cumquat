@@ -223,6 +223,34 @@ describe('Tabs', () => {
       'cumquat-tabs__tab--active',
     );
   });
+
+  it('action 成功：确认后才切换到新页签', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Tabs, { props: { tabs, modelValue: 'a', action } });
+    await wrapper.findAll('.cumquat-tabs__tab')[1].trigger('click');
+    await wait();
+    expect(action).toHaveBeenCalledWith('b');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['b']);
+    await wrapper.setProps({ modelValue: 'b' });
+    expect(wrapper.findAll('.cumquat-tabs__tab')[1].classes()).toContain(
+      'cumquat-tabs__tab--active',
+    );
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：停留在原面板并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(Tabs, { props: { tabs, modelValue: 'a', action } });
+    await wrapper.findAll('.cumquat-tabs__tab')[1].trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    expect(wrapper.findAll('.cumquat-tabs__tab')[0].classes()).toContain(
+      'cumquat-tabs__tab--active',
+    );
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
+  });
 });
 
 describe('Collapse', () => {
@@ -268,6 +296,31 @@ describe('Tree', () => {
     const wrapper = mount(Tree, { props: { nodes, defaultExpandAll: true, checkable: true } });
     await wrapper.find('.cumquat-tree__checkbox').setValue();
     expect(wrapper.emitted('update:checked')?.[0]).toEqual([['p1']]);
+  });
+
+  it('action 成功：勾选新值生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Tree, {
+      props: { nodes, defaultExpandAll: true, checkable: true, action },
+    });
+    await wrapper.find('.cumquat-tree__checkbox').setValue();
+    await wait();
+    expect(action).toHaveBeenCalledWith(['p1']);
+    expect(wrapper.emitted('update:checked')?.at(-1)).toEqual([['p1']]);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：勾选回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(Tree, {
+      props: { nodes, defaultExpandAll: true, checkable: true, action },
+    });
+    await wrapper.find('.cumquat-tree__checkbox').setValue();
+    await wait();
+    expect(wrapper.emitted('update:checked')?.at(-1)).toEqual([[]]);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
   });
 
   it('fetch：挂载拉根节点，展开懒加载父节点时注入 parentKey', async () => {
@@ -351,6 +404,35 @@ describe('Cascader', () => {
       .find('.cumquat-cascader__option')
       .trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['city']);
+  });
+
+  it('action 成功：选择叶子后新值生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Cascader, { props: { options, action } });
+    await wrapper.find('.cumquat-cascader__trigger').trigger('click');
+    await wrapper
+      .findAll('.cumquat-cascader__column')[0]
+      .findAll('.cumquat-cascader__option')[1]
+      .trigger('click');
+    await wait();
+    expect(action).toHaveBeenCalledWith('north');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['north']);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：选择回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(Cascader, { props: { options, action } });
+    await wrapper.find('.cumquat-cascader__trigger').trigger('click');
+    await wrapper
+      .findAll('.cumquat-cascader__column')[0]
+      .findAll('.cumquat-cascader__option')[1]
+      .trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([null]);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
   });
 });
 

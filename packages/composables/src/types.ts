@@ -11,8 +11,18 @@ export interface AsyncStateLike<T> {
   retry?: () => void;
 }
 
-/** 动作：动作型组件传入的异步操作，执行期间自动派生 pending/disabled */
-export type ActionLike = (...args: any[]) => Promise<unknown> | unknown;
+/** 动作结果：action 返回值可导出状态与错误，组件据此控制状态与错误提示 */
+export interface ActionResult {
+  /** 动作结果状态，缺省视为 success */
+  status?: 'success' | 'error';
+  /** 失败信息；status 为 error 或携带 error 时组件进入失败分支 */
+  error?: unknown;
+  /** 提示文案，覆盖组件默认错误文案 */
+  message?: string;
+}
+
+/** 动作：交互组件传入的异步操作，执行期间自动派生 loading/disabled */
+export type ActionLike = (...args: any[]) => Promise<ActionResult | void> | ActionResult | void;
 
 /** 受控值的标准入参形态 */
 export interface ControlledProps<T> {

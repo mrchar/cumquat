@@ -8,6 +8,7 @@
 export type {
   AsyncStateLike,
   ActionLike,
+  ActionResult,
   ControlledProps,
   AsyncFn,
   Placement,
@@ -81,8 +82,10 @@ export type {
 } from './behavior/useListboxNavigation';
 export { useAsyncState } from './behavior/useAsyncState';
 export type { UseAsyncStateOptions, UseAsyncStateReturn } from './behavior/useAsyncState';
-export { useActionState } from './behavior/useActionState';
+export { useActionState, extractActionFailure, actionErrorText } from './behavior/useActionState';
 export type { UseActionStateOptions, UseActionStateReturn } from './behavior/useActionState';
+export { useActionValue } from './behavior/useActionValue';
+export type { UseActionValueReturn } from './behavior/useActionValue';
 export { useToastQueue } from './behavior/useToastQueue';
 export type {
   PushToastOptions,

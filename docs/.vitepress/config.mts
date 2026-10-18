@@ -150,6 +150,7 @@ export default defineConfig({
       '/': [
         { text: '快速上手', link: '/getting-started' },
         { text: '远程数据 Fetch', link: '/fetch' },
+        { text: '交互动作 Action', link: '/action' },
         { text: '组合函数', link: '/composables' },
         { text: '数据请求机制', link: '/data-fetching' },
         { text: '组件清单与优先级', link: '/components-list' },

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useControllableModel, useFetchResource, useRovingFocus } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import {
+  useActionValue,
+  useControllableModel,
+  useFetchResource,
+  useRovingFocus,
+} from '@cumquat/composables';
+import type { ActionLike, Fetch } from '@cumquat/composables';
 
 export interface TabItem {
   key: string;
@@ -21,6 +26,8 @@ const props = withDefaults(
     lazy?: boolean;
     /** 统一远程请求：挂载即拉取页签项，返回数组或 { list, total } */
     fetch?: Fetch<TabItem>;
+    /** 切换动作：配置后先确认再切换（成功才激活新页签，失败停留原面板） */
+    action?: ActionLike;
   }>(),
   {
     tabs: () => [],
@@ -29,6 +36,7 @@ const props = withDefaults(
     addText: '+',
     lazy: true,
     fetch: undefined,
+    action: undefined,
   },
 );
 
@@ -37,7 +45,12 @@ const emit = defineEmits<{
   change: [key: string];
   add: [];
   remove: [tab: TabItem];
+  /** 切换动作失败（reject 或返回值导出错误）时触发，停留在原面板 */
+  actionError: [error: unknown];
 }>();
+
+/* ---------------- action 切换动作：先确认再切换，失败停留 ---------------- */
+const { pending: actionPending, error: actionError, commit: commitAction } = useActionValue();
 
 const { value: active } = useControllableModel<string>({
   modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
@@ -52,6 +65,23 @@ const { value: active } = useControllableModel<string>({
 function activate(key: string) {
   active.value = key;
   visitedKeys.value.add(key);
+}
+
+/** 用户切换统一入口：无 action 乐观切换；有 action 先确认，成功才切换 */
+function requestActivate(key: string, index?: number) {
+  if (!props.action) {
+    if (index !== undefined) nav.setActiveIndex(index);
+    activate(key);
+    return;
+  }
+  void commitAction({ execute: () => props.action?.(key) }).then((ok) => {
+    if (!ok) {
+      if (actionError.value != null) emit('actionError', actionError.value);
+      return;
+    }
+    if (index !== undefined) nav.setActiveIndex(index);
+    activate(key);
+  });
 }
 
 /** 已访问过的页签（懒渲染依据） */
@@ -103,16 +133,16 @@ watch(sourceTabs, (tabs) => {
 });
 
 function onClickTab(tab: TabItem, index: number) {
-  if (tab.disabled) return;
-  nav.setActiveIndex(index);
-  activate(tab.key);
+  if (tab.disabled || actionPending.value) return;
+  requestActivate(tab.key, index);
 }
 
 function onNavKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
+    if (actionPending.value) return;
     const tab = sourceTabs.value[nav.activeIndex.value];
-    if (tab && !tab.disabled) activate(tab.key);
+    if (tab && !tab.disabled) requestActivate(tab.key);
     return;
   }
   nav.onKeydown(event);
@@ -141,7 +171,7 @@ const panelMounted = computed(() => !props.lazy || visitedKeys.value.size > 0 ||
         :data-roving-index="index"
         :aria-selected="tab.key === active"
         :tabindex="nav.getTabIndex(index)"
-        :disabled="tab.disabled"
+        :disabled="tab.disabled || actionPending"
         class="cumquat-tabs__tab"
         :class="tab.key === active ? 'cumquat-tabs__tab--active' : ''"
         @focus="nav.onItemFocus(index)"

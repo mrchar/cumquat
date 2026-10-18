@@ -1,6 +1,29 @@
 import { computed, ref } from 'vue';
 import type { Ref } from 'vue';
-import type { ActionLike } from '../types';
+import type { ActionLike, ActionResult } from '../types';
+
+/** 归一 action 返回值：resolve 值导出错误（status 为 error 或携带 error）时返回失败信息，否则 null */
+export function extractActionFailure(result: unknown): { error: unknown } | null {
+  if (result !== null && typeof result === 'object') {
+    const { status, error } = result as ActionResult;
+    if (status === 'error' || error != null) {
+      return { error: error ?? result };
+    }
+  }
+  return null;
+}
+
+/** 把动作错误归一为可展示文案：优先 message，其次 error 字符串 / Error.message，最后回退文案 */
+export function actionErrorText(error: unknown, fallback = '操作失败'): string {
+  if (error && typeof error === 'object') {
+    const candidate = error as ActionResult;
+    if (typeof candidate.message === 'string' && candidate.message) return candidate.message;
+    if (candidate.error != null) return actionErrorText(candidate.error, fallback);
+  }
+  if (typeof error === 'string' && error) return error;
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
 
 export interface UseActionStateOptions {
   /** 执行期间是否派生 disabled，默认 true */
@@ -47,6 +70,12 @@ export function useActionState(
     error.value = undefined;
     try {
       const result = await action?.(...args);
+      const failure = extractActionFailure(result);
+      if (failure) {
+        error.value = failure.error;
+        onError?.(failure.error);
+        return result;
+      }
       onSuccess?.(result);
       return result;
     } catch (err) {

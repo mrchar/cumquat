@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useFloating, useListboxNavigation, useOpen, useTimeModel } from '@cumquat/composables';
+import {
+  actionErrorText,
+  useActionState,
+  useFloating,
+  useListboxNavigation,
+  useOpen,
+  useTimeModel,
+} from '@cumquat/composables';
+import type { ActionLike } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -15,6 +23,10 @@ const props = withDefaults(
     useSeconds?: boolean;
     minTime?: string;
     maxTime?: string;
+    /** 确定动作：执行期间禁用面板按钮，失败保持面板打开并展示错误提示 */
+    action?: ActionLike;
+    /** 动作失败时的回退文案 */
+    errorText?: string;
   }>(),
   {
     modelValue: undefined,
@@ -25,12 +37,16 @@ const props = withDefaults(
     useSeconds: false,
     minTime: undefined,
     maxTime: undefined,
+    action: undefined,
+    errorText: undefined,
   },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | null];
   change: [value: string | null];
+  /** 确定动作失败（reject 或返回值导出错误）时触发 */
+  actionError: [error: unknown];
 }>();
 
 const { isOpen, toggle, close } = useOpen();
@@ -84,7 +100,23 @@ function focusUnit(unit: Unit, event: KeyboardEvent) {
   nav.onKeydown(event);
 }
 
-function confirm() {
+const {
+  pending: actionPending,
+  error: actionError,
+  run: runAction,
+} = useActionState(() => props.action?.(), { onError: (err) => emit('actionError', err) });
+
+const errorText = computed(() =>
+  actionError.value != null ? actionErrorText(actionError.value, props.errorText) : null,
+);
+
+/** 确定：有 action 时执行并等待，成功才提交并关闭；失败保持面板打开并展示错误条 */
+async function confirm() {
+  if (actionPending.value) return;
+  if (props.action) {
+    await runAction();
+    if (actionError.value != null) return;
+  }
   const value = time.confirm();
   emit('update:modelValue', value);
   emit('change', value);
@@ -191,9 +223,26 @@ const displayText = computed(() => time.displayText.value);
             </li>
           </ul>
         </div>
+        <p v-if="errorText" class="cumquat-time-picker__error cq-state--error" role="alert">
+          {{ errorText }}
+        </p>
         <div class="cumquat-time-picker__actions">
-          <button type="button" class="cumquat-time-picker__cancel" @click="cancel">取消</button>
-          <button type="button" class="cumquat-time-picker__confirm" @click="confirm">确定</button>
+          <button
+            type="button"
+            class="cumquat-time-picker__cancel"
+            :disabled="actionPending"
+            @click="cancel"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            class="cumquat-time-picker__confirm"
+            :disabled="actionPending"
+            @click="confirm"
+          >
+            {{ actionPending ? '处理中…' : '确定' }}
+          </button>
         </div>
       </div>
     </Transition>

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useModal, useOverlayContainer } from '@cumquat/composables';
+import {
+  actionErrorText,
+  useActionState,
+  useModal,
+  useOverlayContainer,
+} from '@cumquat/composables';
+import type { ActionLike } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -16,6 +22,14 @@ const props = withDefaults(
     escClosable?: boolean;
     lockScroll?: boolean;
     appendTo?: string | HTMLElement;
+    /** 确认动作：未提供 footer 插槽时渲染默认底部按钮，动作失败保持打开并展示错误提示 */
+    action?: ActionLike;
+    /** 默认底部确认按钮文案 */
+    confirmText?: string;
+    /** 默认底部取消按钮文案 */
+    cancelText?: string;
+    /** 动作失败时的回退文案 */
+    errorText?: string;
   }>(),
   {
     open: false,
@@ -27,6 +41,10 @@ const props = withDefaults(
     escClosable: true,
     lockScroll: true,
     appendTo: undefined,
+    action: undefined,
+    confirmText: '确认',
+    cancelText: '取消',
+    errorText: undefined,
   },
 );
 
@@ -34,7 +52,42 @@ const emit = defineEmits<{
   'update:open': [value: boolean];
   open: [];
   close: [];
+  /** 确认动作成功后触发（无 action 时点击确认即触发） */
+  confirm: [];
+  /** 默认底部取消按钮点击后触发 */
+  cancel: [];
+  /** 确认动作失败（reject 或返回值导出错误）时触发 */
+  actionError: [error: unknown];
 }>();
+
+const {
+  pending,
+  error: actionError,
+  run,
+} = useActionState(() => props.action?.(), {
+  onError: (err) => emit('actionError', err),
+});
+
+/** 确认：有 action 时执行并等待，成功才关闭；失败保持打开并展示错误条 */
+async function handleConfirm() {
+  if (pending.value) return;
+  if (props.action) {
+    await run();
+    if (actionError.value != null) return;
+  }
+  emit('confirm');
+  close();
+}
+
+function handleCancel() {
+  if (pending.value) return;
+  emit('cancel');
+  close();
+}
+
+const errorText = computed(() =>
+  actionError.value != null ? actionErrorText(actionError.value, props.errorText) : null,
+);
 
 const {
   isOpen,
@@ -107,9 +160,30 @@ defineExpose({ open: setOpen, close });
           </header>
           <div class="cumquat-drawer__body">
             <slot />
+            <p v-if="errorText" class="cumquat-drawer__error cq-state--error" role="alert">
+              {{ errorText }}
+            </p>
           </div>
           <footer v-if="$slots.footer" class="cumquat-drawer__footer">
             <slot name="footer" />
+          </footer>
+          <footer v-else-if="action" class="cumquat-drawer__footer">
+            <button
+              type="button"
+              class="cumquat-drawer__cancel"
+              :disabled="pending"
+              @click="handleCancel"
+            >
+              {{ cancelText }}
+            </button>
+            <button
+              type="button"
+              class="cumquat-drawer__confirm cumquat-button cumquat-button--primary"
+              :disabled="pending"
+              @click="handleConfirm"
+            >
+              {{ pending ? '处理中…' : confirmText }}
+            </button>
           </footer>
         </aside>
       </div>

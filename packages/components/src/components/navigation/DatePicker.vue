@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useDateGrid, useFloating, useFormField, useOpen } from '@cumquat/composables';
-import type { DateShortcut } from '@cumquat/composables';
+import {
+  useActionValue,
+  useDateGrid,
+  useFloating,
+  useFormField,
+  useOpen,
+} from '@cumquat/composables';
+import type { ActionLike, DateShortcut } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -13,6 +19,8 @@ const props = withDefaults(
     viewMonth?: Date;
     /** 快捷选项 */
     shortcuts?: DateShortcut[];
+    /** 选择动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用选择 */
+    action?: ActionLike;
   }>(),
   {
     modelValue: undefined,
@@ -20,13 +28,19 @@ const props = withDefaults(
     disabled: false,
     viewMonth: () => new Date(2026, 9, 1),
     shortcuts: () => [],
+    action: undefined,
   },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [value: number];
   change: [value: number];
+  /** 选择动作失败（reject 或返回值导出错误）时触发，值已回退 */
+  actionError: [error: unknown];
 }>();
+
+/* ---------------- action 选择动作：乐观应用，失败回退 ---------------- */
+const { pending: actionPending, error: actionError, commit: commitAction } = useActionValue();
 
 const field = useFormField<number | null>({
   modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
@@ -37,7 +51,7 @@ const field = useFormField<number | null>({
       emit('change', value);
     }
   },
-  disabled: () => props.disabled,
+  disabled: () => props.disabled || actionPending.value,
 });
 
 const { isOpen, toggle, close } = useOpen();
@@ -68,16 +82,30 @@ const displayText = computed(() => {
   return `${viewDate.value.getFullYear()}-${month}-${String(field.value.value).padStart(2, '0')}`;
 });
 
+/** 统一变更入口：先乐观应用，配置 action 时异步确认，失败回退 */
+function commitDate(next: number) {
+  const previous = field.value.value;
+  field.handleChange(next);
+  if (!props.action) return;
+  void commitAction({
+    execute: () => props.action?.(next),
+    revert: () => field.handleChange(previous),
+  }).then((ok) => {
+    if (!ok && actionError.value != null) emit('actionError', actionError.value);
+  });
+}
+
 function pickCell(cell: (typeof cells.value)[number]) {
-  if (!cell.inMonth || cell.disabled) return;
-  field.handleChange(cell.date.getDate());
+  if (!cell.inMonth || cell.disabled || actionPending.value) return;
+  commitDate(cell.date.getDate());
   close();
 }
 
 function applyShortcut(shortcut: DateShortcut) {
+  if (actionPending.value) return;
   const value = Array.isArray(shortcut.value) ? shortcut.value[0] : shortcut.value;
   viewDate.value = new Date(value);
-  field.handleChange(value.getDate());
+  commitDate(value.getDate());
   close();
 }
 </script>
@@ -89,7 +117,7 @@ function applyShortcut(shortcut: DateShortcut) {
       type="button"
       class="cumquat-date-picker__trigger"
       :class="isOpen ? 'cumquat-date-picker__trigger--open' : ''"
-      :disabled="disabled"
+      :disabled="disabled || actionPending"
       @click="toggle()"
     >
       <span

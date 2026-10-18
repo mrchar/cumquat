@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import {
+  useActionValue,
   useDismiss,
   useFetchResource,
   useFloating,
@@ -9,7 +10,7 @@ import {
   useOpen,
   useSelectModel,
 } from '@cumquat/composables';
-import type { AsyncStateLike, Fetch } from '@cumquat/composables';
+import type { ActionLike, AsyncStateLike, Fetch } from '@cumquat/composables';
 
 export interface SelectOption {
   label: string;
@@ -38,6 +39,8 @@ const props = withDefaults(
      * 返回选项数组或 { list, total }
      */
     fetch?: Fetch<SelectOption>;
+    /** 选择动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用选择 */
+    action?: ActionLike;
   }>(),
   {
     options: () => [],
@@ -49,12 +52,15 @@ const props = withDefaults(
     name: undefined,
     state: undefined,
     fetch: undefined,
+    action: undefined,
   },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [value: V | V[] | null];
   change: [value: V | V[] | null];
+  /** 选择动作失败（reject 或返回值导出错误）时触发，值已回退 */
+  actionError: [error: unknown];
 }>();
 
 /* ---------------- fetch 统一请求机制（keyword 防抖 300ms） ---------------- */
@@ -78,12 +84,29 @@ const remoteError = computed(() =>
 );
 const allOptions = computed<SelectOption[]>(() => activeState.value?.data ?? props.options);
 
+/* ---------------- action 选择动作：乐观应用，失败回退 ---------------- */
+const { pending: actionPending, error: actionError, commit: commitAction } = useActionValue();
+
+/** 统一变更入口：先经 field 应用新值，配置 action 时异步确认，失败回退并抛出 actionError */
+function handleFieldChange(next: V | V[] | null) {
+  const previous = field.value;
+  field.handleChange(next);
+  emit('update:modelValue', next);
+  if (!props.action) return;
+  void commitAction({
+    execute: () => props.action?.(next),
+    revert: () => field.handleChange(previous),
+  }).then((ok) => {
+    if (!ok && actionError.value != null) emit('actionError', actionError.value);
+  });
+}
+
 const field = useFormField<V | V[] | null>({
   name: props.name,
   modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
   defaultValue: null,
-  onChange: (value) => emit('update:modelValue', value),
-  disabled: () => props.disabled,
+  onChange: handleFieldChange,
+  disabled: () => props.disabled || actionPending.value,
 });
 
 const select = useSelectModel<V, string>({

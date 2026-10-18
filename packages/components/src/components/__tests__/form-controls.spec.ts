@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { h } from 'vue';
 import {
   Checkbox,
   Radio,
+  RadioGroup,
   Switch,
   InputNumber,
   Rate,
   Segmented,
+  Slider,
   AutoComplete,
   Mention,
   Select,
@@ -38,6 +41,28 @@ describe('Checkbox', () => {
       'cumquat-checkbox__box--active',
     );
   });
+
+  it('action 成功：勾选新值生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Checkbox, { props: { action } });
+    await wrapper.find('input').setValue(true);
+    await wait();
+    expect(action).toHaveBeenCalledWith(true);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([true]);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：勾选回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(Checkbox, { props: { action } });
+    await wrapper.find('input').setValue(true);
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([true]);
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
+  });
 });
 
 describe('Radio', () => {
@@ -45,6 +70,60 @@ describe('Radio', () => {
     const wrapper = mount(Radio, { props: { value: 'a', label: '选项A' } });
     await wrapper.find('input').setValue(true);
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['a']);
+  });
+
+  it('action 成功：选中新值生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Radio, { props: { value: 'a', label: '选项A', action } });
+    await wrapper.find('input').setValue(true);
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['a']);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：选中回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(Radio, { props: { value: 'a', label: '选项A', action } });
+    await wrapper.find('input').setValue(true);
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['a']);
+    await wait();
+    // 回退到初始 null 时经组件 onChange 语义不再 emit，选中态恢复为未选
+    expect(wrapper.emitted('update:modelValue')).toHaveLength(1);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
+    expect(wrapper.find('input').element.checked).toBe(false);
+  });
+});
+
+describe('RadioGroup action', () => {
+  const mountGroup = (action?: (...args: unknown[]) => unknown) =>
+    mount(RadioGroup, {
+      props: { modelValue: 'a', action },
+      slots: {
+        default: () => [h(Radio, { value: 'a', label: 'A' }), h(Radio, { value: 'b', label: 'B' })],
+      },
+    });
+
+  it('action 成功：组内切换生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mountGroup(action);
+    await wrapper.findAll('input[type=radio]')[1].setValue(true);
+    await wait();
+    expect(action).toHaveBeenCalledWith('b');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['b']);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：组值回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mountGroup(action);
+    await wrapper.findAll('input[type=radio]')[1].setValue(true);
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['a']);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
   });
 });
 
@@ -69,6 +148,27 @@ describe('Rate', () => {
     await wrapper.findAll('.cumquat-rate__star')[3].trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([4]);
   });
+
+  it('action 成功：新评分生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Rate, { props: { modelValue: 2, action } });
+    await wrapper.findAll('.cumquat-rate__star')[3].trigger('click');
+    await wait();
+    expect(action).toHaveBeenCalledWith(4);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([4]);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：评分回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(Rate, { props: { modelValue: 2, action } });
+    await wrapper.findAll('.cumquat-rate__star')[3].trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([2]);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
+  });
 });
 
 describe('Segmented', () => {
@@ -81,6 +181,58 @@ describe('Segmented', () => {
     const wrapper = mount(Segmented, { props: { options, modelValue: 'day' } });
     await wrapper.findAll('.cumquat-segmented__item')[1].trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['week']);
+  });
+
+  it('action 成功：切换生效并等待动作确认', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Segmented, { props: { options, modelValue: 'day', action } });
+    await wrapper.findAll('.cumquat-segmented__item')[1].trigger('click');
+    await wrapper.setProps({ modelValue: 'week' });
+    await wait();
+    expect(action).toHaveBeenCalledWith('week');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['week']);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：回退旧分段并触发 actionError', async () => {
+    let deny!: (error: Error) => void;
+    const action = vi.fn(
+      () =>
+        new Promise<never>((_resolve, reject) => {
+          deny = reject;
+        }),
+    );
+    const wrapper = mount(Segmented, { props: { options, modelValue: 'day', action } });
+    await wrapper.findAll('.cumquat-segmented__item')[1].trigger('click');
+    // 外部先回写乐观值（模拟 v-model），再让动作失败
+    await wrapper.setProps({ modelValue: 'week' });
+    deny(new Error('deny'));
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['day']);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
+  });
+});
+
+describe('Slider action', () => {
+  it('action 成功：键盘步进的新值生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Slider, { props: { min: 0, max: 10, action } });
+    await wrapper.find('.cumquat-slider__thumb').trigger('keydown', { key: 'ArrowRight' });
+    await wait();
+    expect(action).toHaveBeenCalledWith(1);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([1]);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：值回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(Slider, { props: { min: 0, max: 10, action } });
+    await wrapper.find('.cumquat-slider__thumb').trigger('keydown', { key: 'ArrowRight' });
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0]);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
   });
 });
 

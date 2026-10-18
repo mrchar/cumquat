@@ -129,6 +129,31 @@ describe('DatePicker', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([4]);
     expect(wrapper.find('.cumquat-date-picker__panel').exists()).toBe(false);
   });
+
+  it('action 成功：选择日期生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(DatePicker, { props: { action } });
+    await wrapper.find('.cumquat-date-picker__trigger').trigger('click');
+    await wrapper.findAll('.cumquat-date-picker__day')[7].trigger('click');
+    await wait();
+    expect(action).toHaveBeenCalledWith(4);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([4]);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：选择回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(DatePicker, { props: { action } });
+    await wrapper.find('.cumquat-date-picker__trigger').trigger('click');
+    await wrapper.findAll('.cumquat-date-picker__day')[7].trigger('click');
+    await wait();
+    // 回退到初始 null 时经组件 onChange 语义不再 emit，回显恢复占位文案
+    expect(wrapper.emitted('update:modelValue')).toHaveLength(1);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
+    expect(wrapper.find('.cumquat-date-picker__trigger').text()).toContain('选择日期');
+  });
 });
 
 describe('TimePicker', () => {
@@ -174,6 +199,33 @@ describe('ColorPicker', () => {
     await wrapper.findAll('.cumquat-color-picker__preset')[1].trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['#dc2626']);
   });
+
+  it('action 成功：预设色确认生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(ColorPicker, {
+      props: { presets, modelValue: '#4f46e5', action },
+    });
+    await wrapper.find('.cumquat-color-picker__trigger').trigger('click');
+    await wrapper.findAll('.cumquat-color-picker__preset')[1].trigger('click');
+    await wait();
+    expect(action).toHaveBeenCalledWith('#dc2626');
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['#dc2626']);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：颜色回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(ColorPicker, {
+      props: { presets, modelValue: '#4f46e5', action },
+    });
+    await wrapper.find('.cumquat-color-picker__trigger').trigger('click');
+    await wrapper.findAll('.cumquat-color-picker__preset')[1].trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['#4f46e5']);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
+  });
 });
 
 describe('Transfer', () => {
@@ -187,6 +239,29 @@ describe('Transfer', () => {
     const leftPanel = wrapper.findAll('.cumquat-transfer__panel')[0];
     await leftPanel.find('.cumquat-transfer__item').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([['1']]);
+  });
+
+  it('action 成功：穿梭结果生效', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Transfer, { props: { data, modelValue: [], action } });
+    const leftPanel = wrapper.findAll('.cumquat-transfer__panel')[0];
+    await leftPanel.find('.cumquat-transfer__item').trigger('click');
+    await wait();
+    expect(action).toHaveBeenCalledWith(['1']);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([['1']]);
+    expect(wrapper.emitted('actionError')).toBeUndefined();
+  });
+
+  it('action 失败：穿梭回退旧值并触发 actionError', async () => {
+    const action = vi.fn(async () => {
+      throw new Error('deny');
+    });
+    const wrapper = mount(Transfer, { props: { data, modelValue: [], action } });
+    const leftPanel = wrapper.findAll('.cumquat-transfer__panel')[0];
+    await leftPanel.find('.cumquat-transfer__item').trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([[]]);
+    expect(wrapper.emitted('actionError')).toHaveLength(1);
   });
 });
 

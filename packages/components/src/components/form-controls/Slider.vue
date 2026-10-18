@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useDraggable, useFormField } from '@cumquat/composables';
+import { useActionValue, useDraggable, useFormField } from '@cumquat/composables';
+import type { ActionLike } from '@cumquat/composables';
 
 type SliderValue = number | [number, number];
 
@@ -22,6 +23,8 @@ const props = withDefaults(
     marks?: Array<number | SliderMark>;
     /** 是否显示当前值文字 */
     showValue?: boolean;
+    /** 滑动动作：最终值变更时执行（拖动过程仅预览，松手后提交），动作失败自动回退旧值 */
+    action?: ActionLike;
   }>(),
   {
     modelValue: undefined,
@@ -32,18 +35,24 @@ const props = withDefaults(
     range: false,
     marks: () => [],
     showValue: true,
+    action: undefined,
   },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [value: SliderValue];
   change: [value: SliderValue];
+  /** 滑动动作失败（reject 或返回值导出错误）时触发，值已回退 */
+  actionError: [error: unknown];
 }>();
+
+/* ---------------- action 滑动动作：最终值提交，失败回退 ---------------- */
+const { pending: actionPending, error: actionError, commit: commitAction } = useActionValue();
 
 const field = useFormField<SliderValue>({
   modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
   defaultValue: props.range ? [props.min, props.max] : props.min,
-  disabled: () => props.disabled,
+  disabled: () => props.disabled || actionPending.value,
 });
 
 /** 最近一次提交值（受控 prop 不回写时拖拽仍连续） */
@@ -87,27 +96,52 @@ const activeThumb = ref<0 | 1>(0);
 
 const trackRef = ref<HTMLElement | null>(null);
 
-function commit(next: SliderValue) {
+/** 应用滑块值（含回退时的恢复路径） */
+function applyValue(next: SliderValue) {
   baseValue.value = next;
   emit('update:modelValue', next);
   emit('change', next);
   field.handleChange(next);
 }
 
+function commit(next: SliderValue) {
+  const previous = baseValue.value;
+  applyValue(next);
+  if (!props.action) return;
+  void commitAction({
+    execute: () => props.action?.(next),
+    revert: () => applyValue(previous),
+  }).then((ok) => {
+    if (!ok && actionError.value != null) emit('actionError', actionError.value);
+  });
+}
+
+/** 拖动中的即时应用：有 action 时仅内部预览（不逐帧提交），结束时统一 commit */
 function applyRatio(ratio: number) {
   const next = ratioToValue(ratio);
   if (!props.range) {
+    if (props.action) {
+      baseValue.value = next;
+      return;
+    }
     commit(next);
     return;
   }
   const [lo, hi] = baseValue.value as [number, number];
-  if (activeThumb.value === 0) commit([Math.min(next, hi), hi]);
-  else commit([lo, Math.max(next, lo)]);
+  if (activeThumb.value === 0) {
+    const merged = [Math.min(next, hi), hi] as SliderValue;
+    if (props.action) baseValue.value = merged;
+    else commit(merged);
+  } else {
+    const merged = [lo, Math.max(next, lo)] as SliderValue;
+    if (props.action) baseValue.value = merged;
+    else commit(merged);
+  }
 }
 
 useDraggable(trackRef, {
   axis: 'x',
-  disabled: () => props.disabled,
+  disabled: () => props.disabled || actionPending.value,
   onStart: (position) => {
     const next = ratioToValue(position.ratioX);
     if (props.range) {
@@ -118,11 +152,15 @@ useDraggable(trackRef, {
     applyRatio(position.ratioX);
   },
   onMove: (position) => applyRatio(position.ratioX),
+  // 有 action 时拖动过程只预览，松手统一提交一次
+  onEnd: () => {
+    if (props.action) commit(baseValue.value);
+  },
 });
 
 /* ---------- 键盘步进 ---------- */
 function nudge(thumb: 0 | 1, delta: number) {
-  if (props.disabled) return;
+  if (props.disabled || actionPending.value) return;
   if (!props.range) {
     commit(quantize((baseValue.value as number) + delta));
     return;

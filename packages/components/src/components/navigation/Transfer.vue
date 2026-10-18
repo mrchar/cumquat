@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import type { Ref } from 'vue';
-import { useFetchResource } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import { useActionValue, useFetchResource } from '@cumquat/composables';
+import type { ActionLike, Fetch } from '@cumquat/composables';
 
 export interface TransferItem {
   key: string;
@@ -22,6 +22,8 @@ const props = withDefaults(
      * 返回候选项数组或 { list, total }
      */
     fetch?: Fetch<TransferItem>;
+    /** 穿梭动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用搬移 */
+    action?: ActionLike;
   }>(),
   {
     data: () => [],
@@ -29,13 +31,19 @@ const props = withDefaults(
     titles: () => ['源列表', '目标列表'],
     searchable: false,
     fetch: undefined,
+    action: undefined,
   },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [keys: string[]];
   change: [keys: string[], direction: 'left' | 'right'];
+  /** 穿梭动作失败（reject 或返回值导出错误）时触发，值已回退 */
+  actionError: [error: unknown];
 }>();
+
+/* ---------------- action 穿梭动作：乐观应用，失败回退 ---------------- */
+const { pending: actionPending, error: actionError, commit: commitAction } = useActionValue();
 
 /** 右栏（已选）key 列表；受控 prop 不回写时内部保留最近提交值 */
 const selectedKeys = ref<string[]>(props.modelValue ?? []);
@@ -132,18 +140,30 @@ function toggleAll(items: TransferItem[], set: Ref<Set<string>>) {
 
 /* ---------- 搬移 ---------- */
 function commit(keys: string[], direction: 'left' | 'right') {
+  const previous = selectedKeys.value;
   selectedKeys.value = keys;
   emit('update:modelValue', keys);
   emit('change', keys, direction);
+  if (!props.action) return;
+  void commitAction({
+    execute: () => props.action?.(keys),
+    revert: () => {
+      selectedKeys.value = previous;
+      emit('update:modelValue', previous);
+      emit('change', previous, direction);
+    },
+  }).then((ok) => {
+    if (!ok && actionError.value != null) emit('actionError', actionError.value);
+  });
 }
 
 function toRight(item: TransferItem) {
-  if (item.disabled || selectedKeys.value.includes(item.key)) return;
+  if (item.disabled || actionPending.value || selectedKeys.value.includes(item.key)) return;
   commit([...selectedKeys.value, item.key], 'right');
 }
 
 function toLeft(item: TransferItem) {
-  if (item.disabled) return;
+  if (item.disabled || actionPending.value) return;
   commit(
     selectedKeys.value.filter((key) => key !== item.key),
     'left',
@@ -151,6 +171,7 @@ function toLeft(item: TransferItem) {
 }
 
 function moveCheckedRight() {
+  if (actionPending.value) return;
   const additions = leftItems.value
     .filter((item) => leftChecked.value.has(item.key))
     .map((item) => item.key);
@@ -160,7 +181,7 @@ function moveCheckedRight() {
 }
 
 function moveCheckedLeft() {
-  if (rightChecked.value.size === 0) return;
+  if (actionPending.value || rightChecked.value.size === 0) return;
   commit(
     selectedKeys.value.filter((key) => !rightChecked.value.has(key)),
     'left',
@@ -231,7 +252,7 @@ function moveCheckedLeft() {
       <button
         type="button"
         class="cumquat-transfer__action"
-        :disabled="leftChecked.size === 0"
+        :disabled="leftChecked.size === 0 || actionPending"
         aria-label="移到右侧"
         @click="moveCheckedRight"
       >
@@ -250,7 +271,7 @@ function moveCheckedLeft() {
       <button
         type="button"
         class="cumquat-transfer__action"
-        :disabled="rightChecked.size === 0"
+        :disabled="rightChecked.size === 0 || actionPending"
         aria-label="移到左侧"
         @click="moveCheckedLeft"
       >

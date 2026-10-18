@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import {
+  useActionValue,
   useFetchResource,
   useFloating,
   useFormField,
   useListboxNavigation,
   useOpen,
 } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import type { ActionLike, Fetch } from '@cumquat/composables';
 
 export interface CascaderOption {
   label: string;
@@ -34,6 +35,8 @@ const props = withDefaults(
      * { filters: { parentKey } } 拉取子级，返回选项数组或 { list, total }
      */
     fetch?: Fetch<CascaderOption>;
+    /** 选择动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用选择 */
+    action?: ActionLike;
   }>(),
   {
     options: () => [],
@@ -43,13 +46,19 @@ const props = withDefaults(
     changeOnSelect: false,
     emitPath: false,
     fetch: undefined,
+    action: undefined,
   },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | number | Array<string | number> | null];
   change: [value: string | number | Array<string | number> | null];
+  /** 选择动作失败（reject 或返回值导出错误）时触发，值已回退 */
+  actionError: [error: unknown];
 }>();
+
+/* ---------------- action 选择动作：乐观应用，失败回退 ---------------- */
+const { pending: actionPending, error: actionError, commit: commitAction } = useActionValue();
 
 const field = useFormField<string | number | Array<string | number> | null>({
   modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
@@ -58,7 +67,7 @@ const field = useFormField<string | number | Array<string | number> | null>({
     emit('update:modelValue', value);
     emit('change', value);
   },
-  disabled: () => props.disabled,
+  disabled: () => props.disabled || actionPending.value,
 });
 
 const { isOpen, toggle, close } = useOpen();
@@ -226,7 +235,7 @@ function onColumnKeydown(colIndex: number, event: KeyboardEvent) {
 }
 
 function pick(option: CascaderOption, colIndex: number) {
-  if (option.disabled) return;
+  if (option.disabled || actionPending.value) return;
   path.value = [...path.value.slice(0, colIndex), option.value];
   activeColumn.value = colIndex + 1;
   // 本地：无子级即叶子；远程：显式 leaf 或懒加载完成后仍为空
@@ -237,7 +246,17 @@ function pick(option: CascaderOption, colIndex: number) {
       loadedKeys.has(option.value) &&
       (!option.children || option.children.length === 0));
   if (isLeaf || props.changeOnSelect) {
-    field.handleChange(props.emitPath ? path.value : option.value);
+    const next = props.emitPath ? path.value : option.value;
+    const previous = field.value.value;
+    field.handleChange(next);
+    if (props.action) {
+      void commitAction({
+        execute: () => props.action?.(next),
+        revert: () => field.handleChange(previous),
+      }).then((ok) => {
+        if (!ok && actionError.value != null) emit('actionError', actionError.value);
+      });
+    }
   }
   if (isLeaf) close();
   if (
@@ -268,7 +287,7 @@ function retryColumn(col: Column) {
       type="button"
       class="cumquat-cascader__trigger"
       :class="isOpen ? 'cumquat-cascader__trigger--open' : ''"
-      :disabled="disabled"
+      :disabled="disabled || actionPending"
       @click="toggle()"
     >
       <span

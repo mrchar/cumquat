@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import {
+  useActionValue,
   useFetchResource,
   useRovingFocus,
   useTreeModel,
   useTypeahead,
   type TreeFlatNode,
 } from '@cumquat/composables';
-import type { Fetch } from '@cumquat/composables';
+import type { ActionLike, Fetch } from '@cumquat/composables';
 
 export interface TreeNode {
   key: string;
@@ -31,6 +32,8 @@ const props = withDefaults(
      * { filters: { parentKey } } 拉取子级，返回节点数组或 { list, total }
      */
     fetch?: Fetch<TreeNode>;
+    /** 勾选动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用勾选 */
+    action?: ActionLike;
   }>(),
   {
     nodes: () => [],
@@ -38,6 +41,7 @@ const props = withDefaults(
     defaultExpandAll: false,
     checked: undefined,
     fetch: undefined,
+    action: undefined,
   },
 );
 
@@ -46,7 +50,12 @@ const emit = defineEmits<{
   check: [keys: string[]];
   expand: [payload: { node: TreeNode; expanded: boolean }];
   'node-click': [node: TreeNode];
+  /** 勾选动作失败（reject 或返回值导出错误）时触发，勾选已回退 */
+  actionError: [error: unknown];
 }>();
+
+/* ---------------- action 勾选动作：乐观应用，失败回退 ---------------- */
+const { pending: actionPending, error: actionError, commit: commitAction } = useActionValue();
 
 function collectParentKeys(nodes: TreeNode[], acc: string[] = []): string[] {
   for (const node of nodes) {
@@ -187,7 +196,17 @@ function onExpanderClick(node: TreeFlatNode<string>) {
 }
 
 function toggleCheck(node: TreeFlatNode<string>) {
+  if (actionPending.value) return;
+  const previous = [...tree.checkedKeys.value];
   tree.check(node.key);
+  if (!props.action) return;
+  const next = [...tree.checkedKeys.value];
+  void commitAction({
+    execute: () => props.action?.(next),
+    revert: () => tree.setCheckedKeys(previous),
+  }).then((ok) => {
+    if (!ok && actionError.value != null) emit('actionError', actionError.value);
+  });
 }
 
 function onRowClick(node: TreeFlatNode<string>) {
@@ -313,7 +332,7 @@ function onTreeKeydown(event: KeyboardEvent) {
             class="cumquat-tree__checkbox"
             :checked="displayChecked(flat)"
             :indeterminate.prop="displayIndeterminate(flat)"
-            :disabled="flat.disabled"
+            :disabled="flat.disabled || actionPending"
             @change.stop="toggleCheck(flat)"
             @click.stop
           />

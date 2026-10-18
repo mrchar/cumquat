@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useDraggable, useFloating, useOpen } from '@cumquat/composables';
+import { useActionValue, useDraggable, useFloating, useOpen } from '@cumquat/composables';
+import type { ActionLike } from '@cumquat/composables';
 
 interface Hsva {
   h: number;
@@ -16,6 +17,8 @@ const props = withDefaults(
     presets?: string[];
     disabled?: boolean;
     showAlpha?: boolean;
+    /** 颜色确认动作：确认点（选预设 / 输入 hex / 关闭面板）先乐观应用，动作失败自动回退旧色 */
+    action?: ActionLike;
   }>(),
   {
     modelValue: '#4f46e5',
@@ -33,12 +36,15 @@ const props = withDefaults(
     ],
     disabled: false,
     showAlpha: false,
+    action: undefined,
   },
 );
 
 const emit = defineEmits<{
   'update:modelValue': [color: string];
   change: [color: string];
+  /** 颜色确认动作失败（reject 或返回值导出错误）时触发，颜色已回退 */
+  actionError: [error: unknown];
 }>();
 
 /* ---------- 颜色转换纯函数 ---------- */
@@ -131,6 +137,14 @@ function isValidHex(input: string) {
 /* ---------- 状态 ---------- */
 const color = ref<Hsva>(parseColor(props.modelValue));
 
+/* ---------------- action 颜色确认动作：乐观应用，失败回退 ---------------- */
+const { pending: actionPending, error: actionError, commit: commitAction } = useActionValue();
+
+/** 最近一次确认对外提交的颜色（revert 依据；拖拽预览值不算确认） */
+const lastConfirmed = ref(props.modelValue);
+
+const hexInput = ref(hsvaToHex(color.value));
+
 watch(
   () => props.modelValue,
   (next) => {
@@ -138,21 +152,45 @@ watch(
   },
 );
 
-function commit() {
-  const hex = hsvaToHex(color.value);
+function emitColor(hex: string) {
   emit('update:modelValue', hex);
   emit('change', hex);
   hexInput.value = hex;
 }
 
-const hexInput = ref(hsvaToHex(color.value));
+/** 拖拽等连续预览的即时提交（不触发 action） */
+function commit() {
+  const hex = hsvaToHex(color.value);
+  emitColor(hex);
+}
+
+/** 用户确认统一入口：选预设 / 输入 hex / 关闭面板。乐观应用，action 失败回退上一确认色 */
+function confirmColor(hex: string) {
+  if (actionPending.value) return;
+  const changed = hex !== lastConfirmed.value;
+  const previous = lastConfirmed.value;
+  lastConfirmed.value = hex;
+  emitColor(hex);
+  if (!props.action || !changed) return;
+  void commitAction({
+    execute: () => props.action?.(hex),
+    revert: () => {
+      color.value = parseColor(previous);
+      lastConfirmed.value = previous;
+      emitColor(previous);
+    },
+  }).then((ok) => {
+    if (!ok && actionError.value != null) emit('actionError', actionError.value);
+  });
+}
 
 const hueColor = computed(() => hsvaToHex({ ...color.value, s: 1, v: 1, a: 1 }));
 
 /* ---------- 开合与浮层 ---------- */
 const { isOpen, toggle, close } = useOpen({
   onChange: (next) => {
-    if (!next) commit();
+    // 关闭面板即最终确认当前颜色
+    if (!next) confirmColor(hsvaToHex(color.value));
   },
 });
 const { referenceRef, floatingRef, floatingStyles } = useFloating({
@@ -166,6 +204,7 @@ const hueRef = ref<HTMLElement | null>(null);
 const alphaRef = ref<HTMLElement | null>(null);
 
 useDraggable(areaRef, {
+  disabled: () => actionPending.value,
   onStart: (pos) => {
     color.value = { ...color.value, s: pos.ratioX, v: 1 - pos.ratioY };
     commit();
@@ -178,6 +217,7 @@ useDraggable(areaRef, {
 
 useDraggable(hueRef, {
   axis: 'x',
+  disabled: () => actionPending.value,
   onStart: (pos) => {
     color.value = { ...color.value, h: pos.ratioX * 360 };
     commit();
@@ -190,6 +230,7 @@ useDraggable(hueRef, {
 
 useDraggable(alphaRef, {
   axis: 'x',
+  disabled: () => actionPending.value,
   onStart: (pos) => {
     color.value = { ...color.value, a: pos.ratioX };
     commit();
@@ -202,7 +243,7 @@ useDraggable(alphaRef, {
 
 function pickPreset(preset: string) {
   color.value = parseColor(preset);
-  commit();
+  confirmColor(hsvaToHex(color.value));
   close();
 }
 
@@ -210,7 +251,7 @@ function onHexInput() {
   const value = hexInput.value.startsWith('#') ? hexInput.value : `#${hexInput.value}`;
   if (isValidHex(value)) {
     color.value = parseColor(value);
-    commit();
+    confirmColor(hsvaToHex(color.value));
   }
 }
 
@@ -230,7 +271,7 @@ function onTriggerKeydown(event: KeyboardEvent) {
       type="button"
       class="cumquat-color-picker__trigger"
       :class="isOpen ? 'cumquat-color-picker__trigger--open' : ''"
-      :disabled="disabled"
+      :disabled="disabled || actionPending"
       @click="toggle()"
       @keydown="onTriggerKeydown"
     >
