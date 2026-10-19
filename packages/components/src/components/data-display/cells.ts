@@ -58,7 +58,9 @@ export function resolveCell(column: CellColumn, local?: CellRenderer[]): CellRen
   let bestScore = 0;
   const consider = (cell: CellRenderer) => {
     const base = cell.fitness(column);
-    const score = (typeof base === 'number' && Number.isFinite(base) ? base : 0) + (column.bias?.[cell.name] ?? 0);
+    const score =
+      (typeof base === 'number' && Number.isFinite(base) ? base : 0) +
+      (column.bias?.[cell.name] ?? 0);
     if (score > bestScore) {
       best = cell;
       bestScore = score;
@@ -124,7 +126,9 @@ function enumLabel(column: CellColumn, value: unknown): string | undefined {
 }
 
 function cellClass(kind: string, extra?: string): string {
-  return extra ? `cumquat-cell cumquat-cell--${kind} ${extra}` : `cumquat-cell cumquat-cell--${kind}`;
+  return extra
+    ? `cumquat-cell cumquat-cell--${kind} ${extra}`
+    : `cumquat-cell cumquat-cell--${kind}`;
 }
 
 /* ---------------- 内建 Cell 集 ---------------- */
@@ -152,7 +156,13 @@ const booleanCell: CellRenderer = {
   render: (value) => {
     if (value === null || value === undefined || value === '') return '';
     const yes = !!value;
-    return h('span', { class: cellClass('boolean', yes ? 'cumquat-cell--boolean-yes' : 'cumquat-cell--boolean-no') }, yes ? '是' : '否');
+    return h(
+      'span',
+      {
+        class: cellClass('boolean', yes ? 'cumquat-cell--boolean-yes' : 'cumquat-cell--boolean-no'),
+      },
+      yes ? '是' : '否',
+    );
   },
 };
 
@@ -206,7 +216,11 @@ const linkCell: CellRenderer = {
   render: (value) => {
     const text = textOf(value);
     if (text === '') return '';
-    return h('a', { class: cellClass('link'), href: text, target: '_blank', rel: 'noopener noreferrer' }, text);
+    return h(
+      'a',
+      { class: cellClass('link'), href: text, target: '_blank', rel: 'noopener noreferrer' },
+      text,
+    );
   },
 };
 
@@ -221,6 +235,16 @@ const tagCell: CellRenderer = {
 };
 
 // 内建集在模块加载时注册；宿主后续 registerCell 同名即可覆盖
-for (const cell of [textCell, numberCell, booleanCell, enumCell, dateCell, datetimeCell, emailCell, linkCell, tagCell]) {
+for (const cell of [
+  textCell,
+  numberCell,
+  booleanCell,
+  enumCell,
+  dateCell,
+  datetimeCell,
+  emailCell,
+  linkCell,
+  tagCell,
+]) {
   registerCell(cell);
 }

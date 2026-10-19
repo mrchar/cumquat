@@ -34,3 +34,9 @@ docs/.vitepress/cache
 
 # AI agent worktrees
 .claude/worktrees/
+
+# @mrchar/cumquat 发布包构建产物
+packages/cumquat/style.css
+packages/cumquat/themes
+packages/cumquat/LICENSE
+*.tgz

@@ -6,7 +6,11 @@ import { flushTimers, withScope } from '../helpers';
 
 const tick = () => flushTimers(0);
 
-const msg = (id: string | number, content: string, extra: Partial<ChatMessage> = {}): ChatMessage => ({
+const msg = (
+  id: string | number,
+  content: string,
+  extra: Partial<ChatMessage> = {},
+): ChatMessage => ({
   id,
   content,
   time: 1_700_000_000_000,
@@ -118,10 +122,7 @@ describe('useChat：发送（send）', () => {
   });
 
   it('抛错保留 failed 气泡与错误文案，可重试', async () => {
-    const send = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('超时'))
-      .mockResolvedValueOnce(undefined);
+    const send = vi.fn().mockRejectedValueOnce(new Error('超时')).mockResolvedValueOnce(undefined);
     const chat = withScope(() => useChat({ send }));
     const failed = await chat.send('hi');
     expect(failed).toBeUndefined();
@@ -134,7 +135,9 @@ describe('useChat：发送（send）', () => {
   });
 
   it('action 结果携带错误视为失败', async () => {
-    const chat = withScope(() => useChat({ send: async () => ({ status: 'error', error: '被禁言' }) }));
+    const chat = withScope(() =>
+      useChat({ send: async () => ({ status: 'error', error: '被禁言' }) }),
+    );
     await chat.send('hi');
     expect(chat.messages.value[0]!.status).toBe('failed');
     expect(chat.sendError.value).toBe('被禁言');

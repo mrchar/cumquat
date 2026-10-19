@@ -16,7 +16,7 @@ function useSubscribe<T>(handler: SubscribeHandler<T>): UseSubscribeReturn<T>;
 
 ```ts
 import { reactive } from 'vue';
-import { useSubscribe } from '@cumquat/composables';
+import { useSubscribe } from '@mrchar/cumquat/composables';
 
 const { data, loading, error, refresh } = useSubscribe(async () => {
   const list = reactive<Row[]>([]);
@@ -26,11 +26,11 @@ const { data, loading, error, refresh } = useSubscribe(async () => {
 });
 ```
 
-| 返回成员 | 说明 |
-| --- | --- |
-| `state` | `Ref<AsyncStateLike<T>>` |
-| `data` / `loading` / `error` / `isStale` | 状态便捷访问 |
-| `refresh` | 重新执行订阅处理方法 |
+| 返回成员                                 | 说明                     |
+| ---------------------------------------- | ------------------------ |
+| `state`                                  | `Ref<AsyncStateLike<T>>` |
+| `data` / `loading` / `error` / `isStale` | 状态便捷访问             |
+| `refresh`                                | 重新执行订阅处理方法     |
 
 - 处理方法 `reject`，或 resolve 出 `status: 'error'` / 携带 `error`，视为失败：保留旧数据并展示错误
 - 初始调用经 `queueMicrotask` 延迟（与 fetch 一致），可在 effectScope 中正常工作

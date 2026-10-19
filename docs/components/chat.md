@@ -6,29 +6,29 @@ title: Chat 聊天框
 
 消息流 + 底部固定输入区的聊天窗。三大协议各司其职：`fetch` 加载历史消息（向上翻页，结果前插）、`subscribe` 订阅最新消息（追加去重）、`action` 发送消息（乐观上屏，失败保留气泡可重试）。
 
-| Prop        | 类型                                                    | 默认值             | 说明                                             |
-| ----------- | ------------------------------------------------------- | ------------------ | ------------------------------------------------ |
-| fetch       | `Fetch<ChatMessage[]>`                                  | —                  | 历史消息加载：currentPage 递增表示更早一页       |
-| subscribe   | `SubscribeHandler<ChatMessage[] \| ChatMessage>`        | —                  | 新消息订阅：推送单条或数组，响应式源持续推送     |
-| action      | `(content: string) => Promise<unknown>`                 | —                  | 发送动作：抛错或返回 error 结果即发送失败        |
-| pageSize    | `number`                                                | `20`               | 历史分页每页条数                                 |
-| placeholder | `string`                                                | `'输入消息，回车发送'` | 输入框占位文案                               |
-| disabled    | `boolean`                                               | `false`            | 禁用整窗交互                                     |
-| height      | `string`                                                | `'22rem'`          | 窗体高度                                         |
-| olderText   | `string`                                                | `'加载更早消息'`   | 顶部加载更早消息按钮文案                         |
+| Prop        | 类型                                             | 默认值                 | 说明                                         |
+| ----------- | ------------------------------------------------ | ---------------------- | -------------------------------------------- |
+| fetch       | `Fetch<ChatMessage[]>`                           | —                      | 历史消息加载：currentPage 递增表示更早一页   |
+| subscribe   | `SubscribeHandler<ChatMessage[] \| ChatMessage>` | —                      | 新消息订阅：推送单条或数组，响应式源持续推送 |
+| action      | `(content: string) => Promise<unknown>`          | —                      | 发送动作：抛错或返回 error 结果即发送失败    |
+| pageSize    | `number`                                         | `20`                   | 历史分页每页条数                             |
+| placeholder | `string`                                         | `'输入消息，回车发送'` | 输入框占位文案                               |
+| disabled    | `boolean`                                        | `false`                | 禁用整窗交互                                 |
+| height      | `string`                                         | `'22rem'`              | 窗体高度                                     |
+| olderText   | `string`                                         | `'加载更早消息'`       | 顶部加载更早消息按钮文案                     |
 
 事件：
 
-| 事件  | 参数                  | 说明                                       |
-| ----- | --------------------- | ------------------------------------------ |
-| send  | `(message)`           | 消息发送成功，参数为落位的本地消息         |
-| error | `(message: string)`   | 发送失败，参数为错误文案                   |
+| 事件  | 参数                | 说明                               |
+| ----- | ------------------- | ---------------------------------- |
+| send  | `(message)`         | 消息发送成功，参数为落位的本地消息 |
+| error | `(message: string)` | 发送失败，参数为错误文案           |
 
 插槽：
 
-| 插槽     | 作用域                      | 说明                       |
-| -------- | --------------------------- | -------------------------- |
-| message  | `{ message, retry }`        | 自定义气泡渲染，retry 重发 |
+| 插槽    | 作用域               | 说明                       |
+| ------- | -------------------- | -------------------------- |
+| message | `{ message, retry }` | 自定义气泡渲染，retry 重发 |
 
 消息契约 `ChatMessage`：`{ id, sender?, content, time?, self?, status? }`。`id` 是唯一锚点——历史与推送按 id 去重；本地乐观消息以 `__local_` 前缀占位，自己消息（`self: true`）被服务端回显时自动收敛为服务端消息；`status` 标记本地消息的 `sending / sent / failed` 中间态。
 
@@ -50,7 +50,7 @@ title: Chat 聊天框
 <script setup lang="ts">
 
 import { ref } from 'vue';
-import type { ChatMessage } from '@cumquat/composables';
+import type { ChatMessage } from '@mrchar/cumquat/composables';
 
 const SEED: ChatMessage[] = [
   { id: 'm1', sender: '林一', content: '这个组件库的协议设计真清爽', time: Date.now() - 3600_000 },

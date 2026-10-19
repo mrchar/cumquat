@@ -115,7 +115,11 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   function prepend(batch: ChatMessage[]) {
     const older = batch.filter(
-      (message) => message && message.id !== undefined && message.id !== null && !messages.value.some((item) => item.id === message.id),
+      (message) =>
+        message &&
+        message.id !== undefined &&
+        message.id !== null &&
+        !messages.value.some((item) => item.id === message.id),
     );
     if (older.length) messages.value.unshift(...older);
   }
@@ -191,5 +195,15 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   // 初始加载最新一页历史（延迟调用，与 fetch / subscribe 惯例一致，兼容 effectScope 测试）
   if (options.fetch) queueMicrotask(() => void loadOlder());
 
-  return { messages, sending, loadingOlder, hasMore, sendError, historyError, send, retry, loadOlder };
+  return {
+    messages,
+    sending,
+    loadingOlder,
+    hasMore,
+    sendError,
+    historyError,
+    send,
+    retry,
+    loadOlder,
+  };
 }

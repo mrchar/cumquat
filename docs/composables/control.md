@@ -18,8 +18,8 @@ const { value, setValue } = useControllableModel<string>({
   fallback: '',
 });
 
-value.value;        // 读取（受控时即 props.modelValue）
-setValue('next');   // 写入（受控时只触发 onChange，由外部回写）
+value.value; // 读取（受控时即 props.modelValue）
+setValue('next'); // 写入（受控时只触发 onChange，由外部回写）
 ```
 
 `createControllableModel` 为同一能力的工厂形态，供非 setup 场景使用。
@@ -30,8 +30,8 @@ setValue('next');   // 写入（受控时只触发 onChange，由外部回写）
 
 ```ts
 const { value, toggle, setTrue, setFalse } = useToggle(false);
-toggle();      // 取反
-toggle(true);  // 显式设置
+toggle(); // 取反
+toggle(true); // 显式设置
 ```
 
 ## useActionState
@@ -39,14 +39,11 @@ toggle(true);  // 显式设置
 action 协议的宿主侧原语：消费 `ActionLike`，执行期间派生 `pending / disabled`，错误归一。Button、Form、Popconfirm 等确认型组件内部使用。
 
 ```ts
-const { pending, disabled, error, run } = useActionState(
-  () => api.save(form),
-  {
-    disableOnPending: true,
-    onSuccess: () => message.success('已保存'),
-    onError: (e) => message.error('保存失败'),
-  },
-);
+const { pending, disabled, error, run } = useActionState(() => api.save(form), {
+  disableOnPending: true,
+  onSuccess: () => message.success('已保存'),
+  onError: (e) => message.error('保存失败'),
+});
 
 await run();
 ```
@@ -60,7 +57,7 @@ const { pending, error, commit } = useActionValue();
 
 await commit({
   execute: () => api.updateStatus(next), // 乐观值已由组件先行应用
-  revert: () => applyValue(prev),        // 失败回退
+  revert: () => applyValue(prev), // 失败回退
 });
 ```
 

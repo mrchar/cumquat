@@ -20,16 +20,16 @@ Vue 3 组件库，核心理念是**逻辑与渲染解耦**：Headless 组合函�
 ### 统一入口（命名空间导出）
 
 ```ts
-import { composables, components } from 'cumquat';
+import { composables, components } from '@mrchar/cumquat';
 
-const { useFetch, useSubscribe } = composables;
-const { Button, Table, Cumquat, message } = components;
+const { useFetch, useSubscribe, message } = composables;
+const { Button, Table, Cumquat } = components;
 ```
 
 ### 全量注册
 
 ```ts
-import { components } from 'cumquat';
+import { components } from '@mrchar/cumquat';
 
 app.use(components.Cumquat);
 // 模板中以 <cq-button> 等 C 前缀标签使用
@@ -40,20 +40,20 @@ app.use(components.Cumquat);
 ```css
 /* 宿主已有 Tailwind v4 */
 @import 'tailwindcss';
-@source '../node_modules/cumquat/packages/components/dist';
-@import 'cumquat/themes/basic.css';
-@import 'cumquat/themes/light.css'; /* 或 dark / high-contrast / glass */
+@source '../node_modules/@mrchar/cumquat/dist';
+@import '@mrchar/cumquat/themes/basic.css';
+@import '@mrchar/cumquat/themes/light.css'; /* 或 dark / high-contrast / glass */
 
 /* 无 Tailwind：直接引入预编译样式 */
-@import 'cumquat/style.css';
+@import '@mrchar/cumquat/style.css';
 ```
 
 ## 快速示例
 
 ```vue
 <script setup lang="ts">
-import { components } from 'cumquat';
-import type { components as c } from 'cumquat';
+import { components } from '@mrchar/cumquat';
+import type { components as c } from '@mrchar/cumquat';
 
 const { Table, Dialog } = components;
 
@@ -77,7 +77,7 @@ const confirmAction = async () => {
 
 ```vue
 <script setup lang="ts">
-import { components, composables } from 'cumquat';
+import { components, composables } from '@mrchar/cumquat';
 
 const { Table, Form, Button } = components;
 const { useResources } = composables;

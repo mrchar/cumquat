@@ -23,7 +23,7 @@ title: 资源池 useResources
 
 ```ts
 // src/api/resources.ts —— 模块级创建一次，全站复用
-import { useResources } from '@cumquat/composables';
+import { useResources } from '@mrchar/cumquat/composables';
 
 export const pool = useResources({
   server: 'https://api.example.com',
@@ -137,12 +137,12 @@ loading、失败回退提示等行为与动作协议一致。`properties` 提供
 
 字段元数据（同步只读值，随池初始化就绪，均由资源表的 `fields` 按场景标记投影）：
 
-| 成员         | 类型                                    | 说明                                                          |
-| ------------ | --------------------------------------- | ------------------------------------------------------------- |
-| `fields`     | `ResourceField[]`                       | 完整字段元数据原始列表                                        |
-| `columns`    | `{ key, title, type?, format?, sortable?, filters? }[]` | 列表列投影（`scope.list`），直接绑定 Table 的 `:columns`；`type` / `format` 供[单元格竞选](/cell)自动推断显示 |
-| `filters`    | `ResourceField[]`                       | 筛选字段投影（`scope.filter`），enum 字段自带 options         |
-| `properties` | `ResourceField[]`                       | 表单字段投影（`scope.create` / `scope.update`，保留场景标记），直接绑定 Form 的 `:properties`；`type` / `format` / `required` 供[字段竞选](/field)自动推断控件 |
+| 成员         | 类型                                                    | 说明                                                                                                                                                           |
+| ------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fields`     | `ResourceField[]`                                       | 完整字段元数据原始列表                                                                                                                                         |
+| `columns`    | `{ key, title, type?, format?, sortable?, filters? }[]` | 列表列投影（`scope.list`），直接绑定 Table 的 `:columns`；`type` / `format` 供[单元格竞选](/cell)自动推断显示                                                  |
+| `filters`    | `ResourceField[]`                                       | 筛选字段投影（`scope.filter`），enum 字段自带 options                                                                                                          |
+| `properties` | `ResourceField[]`                                       | 表单字段投影（`scope.create` / `scope.update`，保留场景标记），直接绑定 Form 的 `:properties`；`type` / `format` / `required` 供[字段竞选](/field)自动推断控件 |
 
 `list` 透传统一查询片段（含 `signal`，翻页 / 搜索的竞态取消由消费侧照常生效）；`detail` / `update` / `remove` 的 `id` 经资源表中的路径模板（`{id}`）替换进 URL。
 

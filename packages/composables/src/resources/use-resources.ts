@@ -35,7 +35,10 @@ function pickPath(body: unknown, path: string): unknown {
 }
 
 /** 统一查询片段 → 请求 query 参数（参数名按资源表映射，缺省回落默认名） */
-function buildListQuery(definition: ResourceDefinition, query?: FetchQuery): ResourceRequest['query'] {
+function buildListQuery(
+  definition: ResourceDefinition,
+  query?: FetchQuery,
+): ResourceRequest['query'] {
   const names = {
     keyword: 'keyword',
     currentPage: 'page',
@@ -151,7 +154,10 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
       return definition;
     };
 
-    const requireOp = (definition: ResourceDefinition, key: 'list' | 'detail' | 'create' | 'update' | 'remove'): ResourceOperation => {
+    const requireOp = (
+      definition: ResourceDefinition,
+      key: 'list' | 'detail' | 'create' | 'update' | 'remove',
+    ): ResourceOperation => {
       const op = definition[key];
       if (!op) throw new Error(`资源「${name}」未声明 ${key} 操作`);
       return op;
@@ -246,7 +252,9 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
       },
 
       get properties(): ResourceField[] {
-        return fieldsOf().filter((field) => field.scope?.create === true || field.scope?.update === true);
+        return fieldsOf().filter(
+          (field) => field.scope?.create === true || field.scope?.update === true,
+        );
       },
     };
   }

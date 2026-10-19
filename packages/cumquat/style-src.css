@@ -1,0 +1,12 @@
+/*
+ * 预编译样式入口：仅在构建期使用，产物为包根的 style.css。
+ * 组成：Tailwind 全量（含 preflight）+ 扫描组件源码中的工具类 + 全部主题。
+ */
+@import 'tailwindcss';
+@source '../components/src';
+@source '../composables/src';
+@import '@cumquat/themes/basic.css';
+@import '@cumquat/themes/light.css';
+@import '@cumquat/themes/dark.css';
+@import '@cumquat/themes/high-contrast.css';
+@import '@cumquat/themes/glass.css';

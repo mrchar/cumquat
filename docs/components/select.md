@@ -61,7 +61,7 @@ title: Select 选择器
 
 import { ref } from 'vue';
 
-import type { Fetch, FetchQuery } from '@cumquat/components';
+import type { Fetch, FetchQuery } from '@mrchar/cumquat/components';
 
 const selectValue = ref<string | number | null>('bj');
 

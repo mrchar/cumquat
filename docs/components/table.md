@@ -26,26 +26,26 @@ interface TableColumn {
 }
 ```
 
-| Prop        | 类型                                            | 默认值         | 说明                                                                                                |
-| ----------- | ----------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
-| columns     | `TableColumn[]`                                 | -              | 列配置（必填）                                                                                      |
-| rows        | `Row[]`                                         | `[]`           | 本地数据                                                                                            |
-| striped     | `boolean`                                       | `false`        | 斑马纹                                                                                              |
-| loading     | `boolean`                                       | `false`        | 外部加载态                                                                                          |
-| emptyText   | `string`                                        | `'暂无数据'`   | 空态文案                                                                                            |
-| data        | `AsyncStateLike<Row[]>`                         | -              | 远程数据状态：传入后 rows/loading 由其派生                                                          |
-| total       | `number`                                        | -              | 远程数据总条数（本地默认取 rows 长度）                                                              |
-| rowKey      | `(row: Row, index: number) => string \| number` | 取行索引       | 行唯一键                                                                                            |
-| selectable  | `boolean`                                       | `false`        | 显示行选择列                                                                                        |
-| expandable  | `boolean`                                       | `false`        | 显示展开列                                                                                          |
-| pagination  | `boolean`                                       | `false`        | 内置分页条；绑定 `v-model:current-page` 时自动开启                                                   |
-| currentPage | `number`                                        | -              | 当前页（受控，`v-model:current-page`）；不传为组件内部状态                                           |
-| pageSize    | `number`                                        | `10`           | 每页条数；挂 `@update:page-size` 监听即受控（`v-model:page-size`）                                   |
-| pageSizes   | `number[]`                                      | `[10, 20, 50]` | 每页条数选项                                                                                        |
-| sorter      | `{ key: string; order: 'asc' \| 'desc' \| null }` | -            | 排序状态（受控，`v-model:sorter`）；不传为组件内部状态                                               |
-| defaultSort | `{ key: string; order: 'asc' \| 'desc' }`       | -              | 初始排序（非受控）                                                                                  |
-| fetch       | `Fetch<Row>`                                    | -              | 远程数据源：自动注入 pagination/sorter/filters；返回 `{ list, total }` 自动分页，返回数组按全量渲染 |
-| cells       | `CellRenderer[]`                                | -              | 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先                              |
+| Prop        | 类型                                              | 默认值         | 说明                                                                                                |
+| ----------- | ------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| columns     | `TableColumn[]`                                   | -              | 列配置（必填）                                                                                      |
+| rows        | `Row[]`                                           | `[]`           | 本地数据                                                                                            |
+| striped     | `boolean`                                         | `false`        | 斑马纹                                                                                              |
+| loading     | `boolean`                                         | `false`        | 外部加载态                                                                                          |
+| emptyText   | `string`                                          | `'暂无数据'`   | 空态文案                                                                                            |
+| data        | `AsyncStateLike<Row[]>`                           | -              | 远程数据状态：传入后 rows/loading 由其派生                                                          |
+| total       | `number`                                          | -              | 远程数据总条数（本地默认取 rows 长度）                                                              |
+| rowKey      | `(row: Row, index: number) => string \| number`   | 取行索引       | 行唯一键                                                                                            |
+| selectable  | `boolean`                                         | `false`        | 显示行选择列                                                                                        |
+| expandable  | `boolean`                                         | `false`        | 显示展开列                                                                                          |
+| pagination  | `boolean`                                         | `false`        | 内置分页条；绑定 `v-model:current-page` 时自动开启                                                  |
+| currentPage | `number`                                          | -              | 当前页（受控，`v-model:current-page`）；不传为组件内部状态                                          |
+| pageSize    | `number`                                          | `10`           | 每页条数；挂 `@update:page-size` 监听即受控（`v-model:page-size`）                                  |
+| pageSizes   | `number[]`                                        | `[10, 20, 50]` | 每页条数选项                                                                                        |
+| sorter      | `{ key: string; order: 'asc' \| 'desc' \| null }` | -              | 排序状态（受控，`v-model:sorter`）；不传为组件内部状态                                              |
+| defaultSort | `{ key: string; order: 'asc' \| 'desc' }`         | -              | 初始排序（非受控）                                                                                  |
+| fetch       | `Fetch<Row>`                                      | -              | 远程数据源：自动注入 pagination/sorter/filters；返回 `{ list, total }` 自动分页，返回数组按全量渲染 |
+| cells       | `CellRenderer[]`                                  | -              | 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先                              |
 
 | 事件                | 参数                                                                                            | 说明                                     |
 | ------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -141,7 +141,7 @@ const columns = [
 宿主扩展：按同一契约注册自定义 Cell，全局竞选或局部竞选均可参与，无需修改 Table 内部：
 
 ```ts
-import { registerCell } from '@cumquat/components';
+import { registerCell } from '@mrchar/cumquat/components';
 
 registerCell({
   name: 'progress',
@@ -176,7 +176,7 @@ registerCell({
 
 import { ref } from 'vue';
 
-import type { Fetch, FetchQuery } from '@cumquat/components';
+import type { Fetch, FetchQuery } from '@mrchar/cumquat/components';
 
 const page = ref(1);
 

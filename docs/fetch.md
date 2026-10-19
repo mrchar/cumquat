@@ -8,7 +8,7 @@ title: 远程数据 Fetch
 挂载即请求、交互重取、防抖、竞态处理与四态渲染。
 
 ```ts
-import type { Fetch } from '@cumquat/components';
+import type { Fetch } from '@mrchar/cumquat/components';
 
 // 返回数组 → 普通列表；返回 { list, total } → 分页；返回其他 → 单值
 const fetchUsers: Fetch<UserRow> = async (query) => {
@@ -175,8 +175,8 @@ const fetchUsers: Fetch<UserRow> = async (query) => {
 
 ```vue
 <script setup lang="ts">
-import { Table } from '@cumquat/components';
-import type { TableColumn } from '@cumquat/components';
+import { Table } from '@mrchar/cumquat/components';
+import type { TableColumn } from '@mrchar/cumquat/components';
 
 const columns: TableColumn[] = [
   { key: 'name', title: '姓名', sortable: true },
@@ -247,7 +247,7 @@ const fetchUserOptions: Fetch<{ label: string; value: string }> = async ({ keywo
 需要在组件之外使用数据、错误或手动刷新时，用 `useFetch` 包装：
 
 ```ts
-import { useFetch } from '@cumquat/composables';
+import { useFetch } from '@mrchar/cumquat/composables';
 
 const {
   fetch, // 绑定给组件的方法

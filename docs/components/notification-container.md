@@ -17,7 +17,7 @@ title: NotificationContainer 通知容器
 ```
 
 ```ts
-import { notification } from '@cumquat/composables';
+import { notification } from '@mrchar/cumquat/composables';
 notification.success('导入完成', '共导入 128 条记录');
 notification.error('同步失败', '请检查网络后重试');
 ```

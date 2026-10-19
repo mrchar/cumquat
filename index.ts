@@ -7,9 +7,9 @@
  * - components：默认渲染组件、Cumquat 全量安装器与命令式服务
  *
  * 主题样式为纯 CSS，通过主包子路径引入：
- *   import 'cumquat/themes/basic.css';
- *   import 'cumquat/themes/light.css';
+ *   import '@mrchar/cumquat/themes/basic.css';
+ *   import '@mrchar/cumquat/themes/light.css';
  */
 
-export * as composables from '@cumquat/composables';
-export * as components from '@cumquat/components';
+export * as composables from '@mrchar/cumquat/composables';
+export * as components from '@mrchar/cumquat/components';

@@ -14,7 +14,7 @@ Cumquat 是一个 Vue 3 组件库，核心理念是**逻辑与渲染解耦**：H
 根包 `cumquat` 按子包路径名聚合导出，各子包命名空间独立，避免平铺合并的命名冲突：
 
 ```ts
-import { composables, components } from 'cumquat';
+import { composables, components } from '@mrchar/cumquat';
 
 // composables 空间：组合函数与协议类型
 const { useFetch, useActionState, useSubscribe } = composables;
@@ -29,16 +29,16 @@ const { Button, Table, Cumquat } = components;
 
 ```ts
 // 组合函数（无渲染）
-import { useFetch, useActionState, useSubscribe } from '@cumquat/composables';
+import { useFetch, useActionState, useSubscribe } from '@mrchar/cumquat/composables';
 
 // 默认渲染组件（开箱即用）
-import { Button, Table, Select, Dialog } from '@cumquat/components';
+import { Button, Table, Select, Dialog } from '@mrchar/cumquat/components';
 ```
 
 全量注册（模板中以 `Cq` 前缀标签使用，如 `<cq-button>`）：
 
 ```ts
-import { Cumquat } from '@cumquat/components';
+import { Cumquat } from '@mrchar/cumquat/components';
 app.use(Cumquat);
 ```
 
@@ -71,7 +71,7 @@ app.use(Cumquat);
 ### 3.1 基本用法
 
 ```ts
-import type { Fetch } from '@cumquat/components';
+import type { Fetch } from '@mrchar/cumquat/components';
 
 interface UserRow {
   id: number;
@@ -109,7 +109,7 @@ const fetchUsers: Fetch<UserRow> = async (query) => {
 ### 3.3 组件外消费状态
 
 ```ts
-import { useFetch } from '@cumquat/composables';
+import { useFetch } from '@mrchar/cumquat/composables';
 
 const { state, data, total, status, loading, error, refresh, fetch } = useFetch<UserRow>((query) =>
   fetchUsersApi(query),
@@ -240,15 +240,16 @@ interface AsyncStateLike<T> {
 ## 8. 命令式服务
 
 ```ts
-import { message, notification, loading } from '@cumquat/components';
+import { message, notification, useLoadingService } from '@mrchar/cumquat/composables';
 
 message.success('保存成功');
 message.error('操作失败');
 
 notification.open({ title: '新消息', description: '你有一条未读' });
 
-const hide = loading.show({ text: '加载中...' });
-// 完成后 hide()
+const loading = useLoadingService();
+const end = loading.start(); // 或 loading.wrap(promise) 包裹异步任务
+// 完成后 end()；需要隔离实例时用 createLoadingService()
 ```
 
 ## 9. 主题与样式
@@ -258,12 +259,12 @@ const hide = loading.show({ text: '加载中...' });
 ```css
 /* 宿主有 Tailwind v4 */
 @import 'tailwindcss';
-@source '../node_modules/cumquat/packages/components/dist';
-@import 'cumquat/themes/basic.css';
-@import 'cumquat/themes/light.css'; /* 或 dark / high-contrast / glass */
+@source '../node_modules/@mrchar/cumquat/dist';
+@import '@mrchar/cumquat/themes/basic.css';
+@import '@mrchar/cumquat/themes/light.css'; /* 或 dark / high-contrast / glass */
 
 /* 无 Tailwind：直接引入预编译样式 */
-@import 'cumquat/style.css';
+@import '@mrchar/cumquat/style.css';
 ```
 
 组件 JS 入口不隐式引入 CSS，需宿主显式引入；主题 CSS 经主包 `cumquat/themes/*.css` 子路径导出，无 Tailwind 时用预编译的 `cumquat/style.css`。
@@ -338,13 +339,15 @@ const submitForm = async (values: Record<string, unknown>) => {
 协议无关的资源池：传入服务器地址与文档地址，导出资源操作方法与字段元数据，与组件零胶水对接。
 
 ```ts
-import { composables } from 'cumquat';
+import { composables } from '@mrchar/cumquat';
 
 // 模块级创建一次，全站复用
-const userApi = composables.useResources({
-  server: 'https://api.example.com', // 服务器基地址
-  doc: '/v3/api-docs',               // OpenAPI 3 / Swagger 2.0 文档地址
-}).client('users');
+const userApi = composables
+  .useResources({
+    server: 'https://api.example.com', // 服务器基地址
+    doc: '/v3/api-docs', // OpenAPI 3 / Swagger 2.0 文档地址
+  })
+  .client('users');
 ```
 
 - 返回：`list / detail / create / update / remove` 方法 + `fields / columns / filters / properties` 元数据
@@ -365,7 +368,7 @@ const userApi = composables.useResources({
 - Form 绑定 properties 后，`required` 字段自动派生必填校验，宿主 rules 按字段名叠加其后
 
 ```ts
-import { components } from 'cumquat';
+import { components } from '@mrchar/cumquat';
 
 // 注册自定义单元格渲染器：对 format: color 给出高分，其余弃权
 components.registerCell({

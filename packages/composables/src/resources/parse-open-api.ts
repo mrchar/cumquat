@@ -1,4 +1,12 @@
-import type { MetadataParser, QueryNames, ResourceDefinition, ResourceField, ResourceFieldType, ResourceMethod, ResourceSchema } from './types';
+import type {
+  MetadataParser,
+  QueryNames,
+  ResourceDefinition,
+  ResourceField,
+  ResourceFieldType,
+  ResourceMethod,
+  ResourceSchema,
+} from './types';
 
 /**
  * OpenAPI（Swagger）默认解析器：同时支持 OpenAPI 3.x 与 Swagger 2.0。
@@ -57,7 +65,10 @@ function responseSchema(op: Dict): unknown {
 function requestBodySchema(doc: Dict, op: Dict): unknown {
   const requestBody = op.requestBody as Dict | undefined;
   if (requestBody) {
-    const body = typeof requestBody.$ref === 'string' ? (lookupRef(doc, requestBody.$ref) as Dict | undefined) : requestBody;
+    const body =
+      typeof requestBody.$ref === 'string'
+        ? (lookupRef(doc, requestBody.$ref) as Dict | undefined)
+        : requestBody;
     const content = body?.content as Dict | undefined;
     if (!content) return undefined;
     const json = (content['application/json'] ?? Object.values(content)[0]) as Dict | undefined;
@@ -160,7 +171,11 @@ function listShape(doc: Dict, schema: unknown): ListShape | null {
     if (resolvedProp.type === 'array' && listPath === undefined) {
       listPath = name;
       itemSchema = resolvedProp.items;
-    } else if (TOTAL_NAME.test(name) && resolvedProp.type === 'integer' && totalPath === undefined) {
+    } else if (
+      TOTAL_NAME.test(name) &&
+      resolvedProp.type === 'integer' &&
+      totalPath === undefined
+    ) {
       totalPath = name;
     }
   }
@@ -168,7 +183,11 @@ function listShape(doc: Dict, schema: unknown): ListShape | null {
 }
 
 /** 把提取的字段合并进资源：已存在则追加场景标记，否则新建 */
-function mergeField(definition: ResourceDefinition, partial: ExtractedField, scopeKey: 'list' | 'create' | 'update'): void {
+function mergeField(
+  definition: ResourceDefinition,
+  partial: ExtractedField,
+  scopeKey: 'list' | 'create' | 'update',
+): void {
   const fields = (definition.fields ??= []);
   let field = fields.find((item) => item.name === partial.name);
   if (!field) {
@@ -184,7 +203,10 @@ function mergeField(definition: ResourceDefinition, partial: ExtractedField, sco
 }
 
 /** 操作归类：路径占位符区分集合与单项 */
-function classify(method: string, hasPlaceholder: boolean): 'list' | 'detail' | 'create' | 'update' | 'remove' | null {
+function classify(
+  method: string,
+  hasPlaceholder: boolean,
+): 'list' | 'detail' | 'create' | 'update' | 'remove' | null {
   switch (method) {
     case 'get':
       return hasPlaceholder ? 'detail' : 'list';
@@ -228,7 +250,12 @@ function applyFilterScopes(doc: Dict, definition: ResourceDefinition, params: Di
   for (const param of params) {
     const name = param.name as string | undefined;
     if (!name || param.in !== 'query') continue;
-    if (PAGE_NAME.test(name) || PAGE_SIZE_NAME.test(name) || KEYWORD_NAME.test(name) || SORTER_NAME.test(name)) {
+    if (
+      PAGE_NAME.test(name) ||
+      PAGE_SIZE_NAME.test(name) ||
+      KEYWORD_NAME.test(name) ||
+      SORTER_NAME.test(name)
+    ) {
       continue;
     }
     const schema = resolve(doc, (param.schema as Dict | undefined) ?? param);
@@ -285,12 +312,15 @@ export const parseOpenApi: MetadataParser = (rawDoc) => {
         applyQueryNames(definition, params);
         const shape = listShape(doc, responseSchema(op));
         if (shape) {
-          if (shape.listPath) definition.response = { list: shape.listPath, total: shape.totalPath };
-          for (const field of extractFields(doc, shape.itemSchema)) mergeField(definition, field, 'list');
+          if (shape.listPath)
+            definition.response = { list: shape.listPath, total: shape.totalPath };
+          for (const field of extractFields(doc, shape.itemSchema))
+            mergeField(definition, field, 'list');
           applyFilterScopes(doc, definition, params);
         }
       } else if (key === 'create' || key === 'update') {
-        for (const field of extractFields(doc, requestBodySchema(doc, op))) mergeField(definition, field, key);
+        for (const field of extractFields(doc, requestBodySchema(doc, op)))
+          mergeField(definition, field, key);
       }
     }
   }

@@ -40,7 +40,9 @@ export const openApiDoc = {
           content: { 'application/json': { schema: { $ref: '#/components/schemas/UserInput' } } },
         },
         responses: {
-          '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } } },
+          '200': {
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } },
+          },
         },
       },
     },
@@ -50,7 +52,9 @@ export const openApiDoc = {
         tags: ['users'],
         summary: '用户详情',
         responses: {
-          '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } } },
+          '200': {
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } },
+          },
         },
       },
       put: {
@@ -60,7 +64,9 @@ export const openApiDoc = {
           content: { 'application/json': { schema: { $ref: '#/components/schemas/UserInput' } } },
         },
         responses: {
-          '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } } },
+          '200': {
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } },
+          },
         },
       },
       delete: {
@@ -107,7 +113,9 @@ export const openApiDoc = {
         tags: ['orders'],
         summary: '订单详情',
         responses: {
-          '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/Order' } } } },
+          '200': {
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Order' } } },
+          },
         },
       },
       delete: {
@@ -189,9 +197,7 @@ export const swaggerDoc = {
       post: {
         tags: ['pets'],
         summary: '新增宠物',
-        parameters: [
-          { name: 'body', in: 'body', schema: { $ref: '#/definitions/PetInput' } },
-        ],
+        parameters: [{ name: 'body', in: 'body', schema: { $ref: '#/definitions/PetInput' } }],
         responses: { '200': { description: '成功', schema: { $ref: '#/definitions/Pet' } } },
       },
     },

@@ -102,7 +102,9 @@ describe('useResources（请求方法）', () => {
     expect(await pool.client('users').list()).toEqual({ list: [{ id: 1 }], total: 42 });
 
     const unmapped: ResourceSchema = {
-      resources: { users: { list: { method: 'GET', path: '/users' }, response: { list: 'missing' } } },
+      resources: {
+        users: { list: { method: 'GET', path: '/users' }, response: { list: 'missing' } },
+      },
     };
     const bare = useResources({
       server: 'https://api.test',
@@ -186,8 +188,20 @@ describe('useResources（元数据与状态）', () => {
         users: {
           list: { method: 'GET', path: '/users' },
           fields: [
-            { name: 'email', label: '邮箱', type: 'string', format: 'email', scope: { list: true } },
-            { name: 'score', label: '积分', type: 'number', format: 'int64', scope: { list: true } },
+            {
+              name: 'email',
+              label: '邮箱',
+              type: 'string',
+              format: 'email',
+              scope: { list: true },
+            },
+            {
+              name: 'score',
+              label: '积分',
+              type: 'number',
+              format: 'int64',
+              scope: { list: true },
+            },
           ],
         },
       },

@@ -6,15 +6,15 @@ title: Form 表单
 
 字段容器与校验编排，配合 FormItem 使用。
 
-| Prop          | 类型                      | 默认值   | 说明                                                                                     |
-| ------------- | ------------------------- | -------- | ---------------------------------------------------------------------------------------- |
-| modelValue    | `Record<string, unknown>` | -        | 整表值（受控或作为初始值）                                                               |
-| rules         | `FormRules`               | `{}`     | 校验规则表（详见 composables 文档）                                                      |
-| disabled      | `boolean`                 | `false`  | 整表禁用                                                                                 |
-| labelPosition | `'top' \| 'left'`         | `'top'`  | 标签摆放位置                                                                             |
-| labelWidth    | `string`                  | `'6rem'` | 左排标签宽度                                                                             |
-| properties    | `FormFieldMeta[]`         | -        | 字段元数据：绑定后按[字段竞选](/field)自动生成完整表单（生成字段在前、插槽在后）         |
-| controls      | `FieldRenderer[]`         | -        | 局部控件渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先                     |
+| Prop          | 类型                      | 默认值   | 说明                                                                             |
+| ------------- | ------------------------- | -------- | -------------------------------------------------------------------------------- |
+| modelValue    | `Record<string, unknown>` | -        | 整表值（受控或作为初始值）                                                       |
+| rules         | `FormRules`               | `{}`     | 校验规则表（详见 composables 文档）                                              |
+| disabled      | `boolean`                 | `false`  | 整表禁用                                                                         |
+| labelPosition | `'top' \| 'left'`         | `'top'`  | 标签摆放位置                                                                     |
+| labelWidth    | `string`                  | `'6rem'` | 左排标签宽度                                                                     |
+| properties    | `FormFieldMeta[]`         | -        | 字段元数据：绑定后按[字段竞选](/field)自动生成完整表单（生成字段在前、插槽在后） |
+| controls      | `FieldRenderer[]`         | -        | 局部控件渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先             |
 
 | 事件              | 参数                                          | 说明           |
 | ----------------- | --------------------------------------------- | -------------- |
@@ -22,10 +22,10 @@ title: Form 表单
 | submit            | `values: Record<string, unknown>`             | 校验通过后提交 |
 | invalid           | `errors: Record<string, string \| undefined>` | 校验失败       |
 
-| 插槽                | 说明                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| default             | 表单内容，slot props：`{ values, errors, valid, dirty, submit, reset }`                           |
-| `field-{name}`      | 覆盖单个生成字段，slot props：`{ field, value, error, setValue }`（properties 绑定时生效）        |
+| 插槽           | 说明                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| default        | 表单内容，slot props：`{ values, errors, valid, dirty, submit, reset }`                    |
+| `field-{name}` | 覆盖单个生成字段，slot props：`{ field, value, error, setValue }`（properties 绑定时生效） |
 
 Expose：`values / errors / valid / dirty / validate() / validateField(name) / reset() / clearValidate() / submit()`。
 

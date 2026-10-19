@@ -10,11 +10,7 @@ export const navSamples: Sample[] = [
   <Breadcrumb :items="items" />
 `,
     scope: () => ({
-      items: [
-        { label: '首页' },
-        { label: '组件' },
-        { label: '导航' },
-      ],
+      items: [{ label: '首页' }, { label: '组件' }, { label: '导航' }],
     }),
   },
   {
@@ -27,10 +23,14 @@ export const navSamples: Sample[] = [
       active: ref('dashboard'),
       items: [
         { key: 'dashboard', label: '仪表盘' },
-        { key: 'sub', label: '管理中心', children: [
-          { key: 'users', label: '用户管理' },
-          { key: 'roles', label: '角色管理' },
-        ] },
+        {
+          key: 'sub',
+          label: '管理中心',
+          children: [
+            { key: 'users', label: '用户管理' },
+            { key: 'roles', label: '角色管理' },
+          ],
+        },
         { key: 'settings', label: '设置' },
       ],
     }),

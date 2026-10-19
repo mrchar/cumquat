@@ -14,7 +14,7 @@ title: 消息服务
 const message = createMessage({ duration: 3000, max: 5 });
 
 message.success('保存成功');
-message.error('保存失败', { duration: 0 });  // 不自动关闭
+message.error('保存失败', { duration: 0 }); // 不自动关闭
 const close = message.loading('提交中…');
 close();
 ```

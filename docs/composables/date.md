@@ -12,11 +12,11 @@ DatePicker、Calendar、TimePicker 共享的无头模型；宿主自研日期类
 
 ```ts
 const { panels, viewDate, prevMonth, nextMonth, prevYear, nextYear } = useDateGrid({
-  type: 'date',            // 'date' | 'month' | 'year'
+  type: 'date', // 'date' | 'month' | 'year'
   firstDayOfWeek: 1,
   disabledDate: (d) => d < new Date(),
   isSelected: (d) => isSameDay(d, value),
-  panelCount: 2,           // 范围选择双面板
+  panelCount: 2, // 范围选择双面板
 });
 ```
 

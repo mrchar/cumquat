@@ -65,7 +65,10 @@ export function registerField(field: FieldRenderer): void {
 }
 
 /** 按字段裁决：显式指定命中即生效，否则竞选取最高分（同分先注册者优先），无正分返回 undefined 走默认输入框 */
-export function resolveField(field: FormFieldMeta, local?: FieldRenderer[]): FieldRenderer | undefined {
+export function resolveField(
+  field: FormFieldMeta,
+  local?: FieldRenderer[],
+): FieldRenderer | undefined {
   if (field.control) {
     const hit =
       local?.find((item) => item.name === field.control) ??
@@ -76,7 +79,9 @@ export function resolveField(field: FormFieldMeta, local?: FieldRenderer[]): Fie
   let bestScore = 0;
   const consider = (item: FieldRenderer) => {
     const base = item.fitness(field);
-    const score = (typeof base === 'number' && Number.isFinite(base) ? base : 0) + (field.bias?.[item.name] ?? 0);
+    const score =
+      (typeof base === 'number' && Number.isFinite(base) ? base : 0) +
+      (field.bias?.[item.name] ?? 0);
     if (score > bestScore) {
       best = item;
       bestScore = score;

@@ -15,20 +15,28 @@ function useFetch<T>(fetcher: Fetch<T>): UseFetchReturn<T>;
 ```
 
 ```ts
-import { useFetch } from '@cumquat/composables';
+import { useFetch } from '@mrchar/cumquat/composables';
 
-const { fetch: fetchUsers, data, total, status, loading, error, isStale, refresh } =
-  useFetch<UserRow>((query) => fetchUsersApi(query));
+const {
+  fetch: fetchUsers,
+  data,
+  total,
+  status,
+  loading,
+  error,
+  isStale,
+  refresh,
+} = useFetch<UserRow>((query) => fetchUsersApi(query));
 ```
 
-| 返回成员 | 说明 |
-| --- | --- |
-| `fetch` | `(query?) => Promise<FetchResult<T>>`，可直接绑给组件的 `fetch` 属性 |
-| `state` | `ComputedRef<AsyncStateLike>`，四态 + retry |
-| `data` | 归一化后的负载：数组 / 分页 list / 单值 |
-| `total` | 分页总数；普通数组为数据条数；单值为 undefined |
-| `status` / `loading` / `error` / `isStale` | 状态便捷访问 |
-| `refresh` | 以最近查询重发；传入 query 时浅合并覆盖 |
+| 返回成员                                   | 说明                                                                 |
+| ------------------------------------------ | -------------------------------------------------------------------- |
+| `fetch`                                    | `(query?) => Promise<FetchResult<T>>`，可直接绑给组件的 `fetch` 属性 |
+| `state`                                    | `ComputedRef<AsyncStateLike>`，四态 + retry                          |
+| `data`                                     | 归一化后的负载：数组 / 分页 list / 单值                              |
+| `total`                                    | 分页总数；普通数组为数据条数；单值为 undefined                       |
+| `status` / `loading` / `error` / `isStale` | 状态便捷访问                                                         |
+| `refresh`                                  | 以最近查询重发；传入 query 时浅合并覆盖                              |
 
 行为：请求序号保证后到为准，旧请求经 `AbortController` 取消；重取期间保留旧数据并标 `isStale`。
 

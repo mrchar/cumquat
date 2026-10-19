@@ -55,19 +55,32 @@ const effectiveRules = computed<FormRules<FormValues>>(() => {
   return merged;
 });
 
-const { values, errors, valid, dirty, validate, validateField, reset, submit, clearValidate, setFieldValue } =
-  useForm<FormValues>({
-    modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
-    rules: () => effectiveRules.value,
-    disabled: props.disabled,
-    labelPosition: props.labelPosition,
-    onChange: (next) => emit('update:modelValue', next),
-    onSubmit: (next) => emit('submit', next),
-    onInvalid: (next) => emit('invalid', next),
-  });
+const {
+  values,
+  errors,
+  valid,
+  dirty,
+  validate,
+  validateField,
+  reset,
+  submit,
+  clearValidate,
+  setFieldValue,
+} = useForm<FormValues>({
+  modelValue: props.modelValue !== undefined ? () => props.modelValue : undefined,
+  rules: () => effectiveRules.value,
+  disabled: props.disabled,
+  labelPosition: props.labelPosition,
+  onChange: (next) => emit('update:modelValue', next),
+  onSubmit: (next) => emit('submit', next),
+  onInvalid: (next) => emit('invalid', next),
+});
 
 const fieldPlans = computed(() =>
-  (props.properties ?? []).map((field) => ({ field, renderer: resolveField(field, props.controls) })),
+  (props.properties ?? []).map((field) => ({
+    field,
+    renderer: resolveField(field, props.controls),
+  })),
 );
 
 /** 写回字段值；已存在错误的字段写回后自动重新校验，录入修正即时清除错误 */

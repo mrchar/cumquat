@@ -6,7 +6,7 @@ description: 使用 Cumquat 的 Headless 组合函数实现业务逻辑。涵盖
 # Cumquat 组合函数使用指南
 
 Cumquat 的组合函数层是组件库的 Headless 内核：**状态机与行为逻辑，零渲染**。引入
-`@cumquat/composables` 不会打包任何默认渲染代码与样式；组件层（`@cumquat/components`）
+`@mrchar/cumquat/composables` 不会打包任何默认渲染代码与样式；组件层（`@mrchar/cumquat/components`）
 只是同一套逻辑的默认渲染壳。二者通过 `AsyncStateLike`（status / data / error /
 isStale? / retry?）等最小契约通信。
 
@@ -14,10 +14,10 @@ isStale? / retry?）等最小契约通信。
 
 ```ts
 // 子包入口（推荐，无渲染）
-import { useForm, useFetch, useAsyncState } from '@cumquat/composables';
+import { useForm, useFetch, useAsyncState } from '@mrchar/cumquat/composables';
 
 // 或主包命名空间
-import { composables } from 'cumquat';
+import { composables } from '@mrchar/cumquat';
 const { useForm, useResources } = composables;
 ```
 
@@ -46,9 +46,11 @@ const { useForm, useResources } = composables;
 ### 3.1 useFetch：查询型请求
 
 ```ts
-import { useFetch } from '@cumquat/composables';
+import { useFetch } from '@mrchar/cumquat/composables';
 
-const { data, total, status, loading, error, refresh, fetch } = useFetch((query) => loadUsers(query));
+const { data, total, status, loading, error, refresh, fetch } = useFetch((query) =>
+  loadUsers(query),
+);
 
 // fetch 可直接绑给组件：<Table :fetch="fetch" />；refresh 命令式重取
 ```
@@ -98,28 +100,28 @@ const state = useAsyncState(() => loadDetail(id)); // 产出 AsyncStateLike
 
 ```ts
 const { messages, send, loadOlder, hasMore, sending } = useChat({
-  fetch: loadHistory,   // ChatMessage[] 或 { list, total }，判定是否还有更早消息
-  subscribe: onPush,    // 推送单条或数组；响应式源持续推送
-  send: submitMessage,  // 抛错或返回 error 结果即失败
+  fetch: loadHistory, // ChatMessage[] 或 { list, total }，判定是否还有更早消息
+  subscribe: onPush, // 推送单条或数组；响应式源持续推送
+  send: submitMessage, // 抛错或返回 error 结果即失败
 });
 ```
 
 ## 4. 表单模型域
 
-| 组合函数          | 职责                                                       |
-| ----------------- | ---------------------------------------------------------- |
-| useForm           | 整表状态机：values / errors / valid / dirty / validate / submit |
-| useFormField      | 单控件接入表单：取值、错误、校验触发（组件层 FormItem 即此） |
-| useCheckableGroup | 复选组值模型                                                |
-| useSelectModel    | 选择器值模型（含已选快照、多选）                            |
-| useTreeModel      | 树选择值模型                                                |
-| useAsyncSuggest   | 异步联想（防抖 + 竞态）                                     |
-| useDateGrid / useDateModel / useTimeModel | 日历网格与日期 / 时刻值模型           |
+| 组合函数                                  | 职责                                                            |
+| ----------------------------------------- | --------------------------------------------------------------- |
+| useForm                                   | 整表状态机：values / errors / valid / dirty / validate / submit |
+| useFormField                              | 单控件接入表单：取值、错误、校验触发（组件层 FormItem 即此）    |
+| useCheckableGroup                         | 复选组值模型                                                    |
+| useSelectModel                            | 选择器值模型（含已选快照、多选）                                |
+| useTreeModel                              | 树选择值模型                                                    |
+| useAsyncSuggest                           | 异步联想（防抖 + 竞态）                                         |
+| useDateGrid / useDateModel / useTimeModel | 日历网格与日期 / 时刻值模型                                     |
 
 ```ts
 const form = useForm({
-  modelValue: () => initial,        // 受控或初始值
-  rules: () => props.rules,          // FormRule / FormRule[]，支持异步校验
+  modelValue: () => initial, // 受控或初始值
+  rules: () => props.rules, // FormRule / FormRule[]，支持异步校验
   onSubmit: (values) => api.save(values),
   onInvalid: (errors) => message.error(Object.values(errors)[0]!),
 });
@@ -130,20 +132,20 @@ const form = useForm({
 
 ## 5. 浮层与反馈域
 
-| 组合函数                        | 职责                                       |
-| ------------------------------- | ------------------------------------------ |
-| useModal                        | 模态状态机（开 / 关 / 遮罩 / 焦点圈）      |
-| usePopoverModel                 | 弹层定位与触发（hover / click / focus）    |
-| message / notification          | 命令式服务：`createMessage()` 后全局调用   |
-| useLoadingService               | 全局 loading 汇聚（并发请求计数）          |
-| useToastQueue                   | 队列化提示                                 |
+| 组合函数               | 职责                                     |
+| ---------------------- | ---------------------------------------- |
+| useModal               | 模态状态机（开 / 关 / 遮罩 / 焦点圈）    |
+| usePopoverModel        | 弹层定位与触发（hover / click / focus）  |
+| message / notification | 命令式服务：`createMessage()` 后全局调用 |
+| useLoadingService      | 全局 loading 汇聚（并发请求计数）        |
+| useToastQueue          | 队列化提示                               |
 
 命令式服务建议在应用入口创建一次并注入，不要在每个组件里重复创建。
 
 ## 6. 数据展示域
 
 ```ts
-import { usePagination } from '@cumquat/composables';
+import { usePagination } from '@mrchar/cumquat/composables';
 
 const pagination = usePagination({ pageSize: 20, onChange: () => refresh() });
 // pagination.current / pageSize / total / pages / setPage …
@@ -171,19 +173,19 @@ const userApi = useResources({
 
 自建 headless 组件时按需取用：
 
-| 原语                           | 用途                                   |
-| ------------------------------ | -------------------------------------- |
-| useOpen / useDismiss           | 开关状态机 / 外点 + Esc 关闭（返回原因）|
-| useFloating                    | 弹层定位锚定                           |
-| useFocusTrap / useFocusReturn  | 焦点圈 / 关闭后焦点归还                |
-| useClickOutside                | 外点检测                               |
-| useRovingFocus / useTypeahead  | 列表键盘漫游 / 首字跳转                |
-| useHoverIntent / useListboxNavigation | 意图悬停 / 列表导航             |
-| useScrollLock / useScrollIntoView / useScroll | 滚动锁定 / 滚动定位 / 滚动监听 |
-| useControllableModel           | 受控 / 非受控统一值模型                |
-| useEventListener / useResizeObserver / useIntersectionObserver | 事件与观察器（SSR 安全） |
-| useTimeoutFn / useIntervalFn / useMediaQuery | 定时 / 媒体查询          |
-| useToggle / useClipboard / useDraggable / useZIndex / useTransitionVisible | 开关 / 剪贴板 / 拖拽 / 层级 / 过渡 |
+| 原语                                                                       | 用途                                     |
+| -------------------------------------------------------------------------- | ---------------------------------------- |
+| useOpen / useDismiss                                                       | 开关状态机 / 外点 + Esc 关闭（返回原因） |
+| useFloating                                                                | 弹层定位锚定                             |
+| useFocusTrap / useFocusReturn                                              | 焦点圈 / 关闭后焦点归还                  |
+| useClickOutside                                                            | 外点检测                                 |
+| useRovingFocus / useTypeahead                                              | 列表键盘漫游 / 首字跳转                  |
+| useHoverIntent / useListboxNavigation                                      | 意图悬停 / 列表导航                      |
+| useScrollLock / useScrollIntoView / useScroll                              | 滚动锁定 / 滚动定位 / 滚动监听           |
+| useControllableModel                                                       | 受控 / 非受控统一值模型                  |
+| useEventListener / useResizeObserver / useIntersectionObserver             | 事件与观察器（SSR 安全）                 |
+| useTimeoutFn / useIntervalFn / useMediaQuery                               | 定时 / 媒体查询                          |
+| useToggle / useClipboard / useDraggable / useZIndex / useTransitionVisible | 开关 / 剪贴板 / 拖拽 / 层级 / 过渡       |
 
 ## 9. 常见模式
 

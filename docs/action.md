@@ -21,7 +21,7 @@ export type ActionLike = (...args: any[]) => Promise<ActionResult | void> | Acti
 
 **失败判定**：action `reject`，或 resolve 出 `status: 'error'` / 携带 `error` 字段的对象，均视为失败；其余视为成功。
 
-**错误文案归一**：组件展示错误时按 `message` → `error` 字符串 → `Error.message` → 回退文案（各组件 `errorText` prop）取值，可通过 `@cumquat/composables` 的 `actionErrorText` 复用。
+**错误文案归一**：组件展示错误时按 `message` → `error` 字符串 → `Error.message` → 回退文案（各组件 `errorText` prop）取值，可通过 `@mrchar/cumquat/composables` 的 `actionErrorText` 复用。
 
 ## 两类动作语义
 

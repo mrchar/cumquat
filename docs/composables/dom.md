@@ -46,7 +46,7 @@ useClickOutside(panelRef, (event) => close(), { event: 'pointerdown' });
 目标元素 / 窗口滚动位置与方向。
 
 ```ts
-const { x, y, direction } = useScroll();           // 默认窗口
+const { x, y, direction } = useScroll(); // 默认窗口
 const box = useScroll(containerRef, { throttle: true });
 ```
 
@@ -64,7 +64,7 @@ const { isLocked, lock, unlock } = useScrollLock();
 
 ```ts
 const scrollIntoView = useScrollIntoView(defaultTarget);
-scrollIntoView();                    // 滚动默认目标
+scrollIntoView(); // 滚动默认目标
 scrollIntoView(otherRef, { block: 'center' });
 ```
 

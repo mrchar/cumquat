@@ -9,11 +9,11 @@ title: 类型参考
 所有类型均可从主包或 composables 子包导入：
 
 ```ts
-import type { composables } from 'cumquat';
+import type { composables } from '@mrchar/cumquat';
 type MyFetch = composables.Fetch<UserRow>;
 
 // 或直接从子包
-import type { Fetch, ActionResult, SubscribeResult } from '@cumquat/composables';
+import type { Fetch, ActionResult, SubscribeResult } from '@mrchar/cumquat/composables';
 ```
 
 ## 异步状态
@@ -197,10 +197,18 @@ export type AsyncFn<T, A extends unknown[]> = (...args: A) => Promise<T>;
 
 ```ts
 export type Placement =
-  | 'top' | 'top-start' | 'top-end'
-  | 'bottom' | 'bottom-start' | 'bottom-end'
-  | 'left' | 'left-start' | 'left-end'
-  | 'right' | 'right-start' | 'right-end';
+  | 'top'
+  | 'top-start'
+  | 'top-end'
+  | 'bottom'
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'left'
+  | 'left-start'
+  | 'left-end'
+  | 'right'
+  | 'right-start'
+  | 'right-end';
 
 /** fixed 相对视口，absolute 相对最近定位祖先 */
 export type Strategy = 'fixed' | 'absolute';

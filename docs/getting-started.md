@@ -6,9 +6,13 @@ title: 快速上手
 
 ## 安装与注册
 
+```bash
+pnpm add @mrchar/cumquat
+```
+
 ```ts
 import { createApp } from 'vue';
-import { components } from 'cumquat';
+import { components } from '@mrchar/cumquat';
 
 createApp(App).use(components.Cumquat).mount('#app');
 ```
@@ -16,9 +20,23 @@ createApp(App).use(components.Cumquat).mount('#app');
 组件 JS 不自带样式，需引入一次主题：
 
 ```css
-@import 'cumquat/themes/basic.css';
-@import 'cumquat/themes/light.css';
+@import '@mrchar/cumquat/themes/basic.css';
+@import '@mrchar/cumquat/themes/light.css';
 ```
+
+::: tip Vite 开发模式提示
+若同时使用主入口与子路径导入（如 `@mrchar/cumquat` 与 `@mrchar/cumquat/composables`），需在 `vite.config.ts` 中将其纳入同一次依赖预构建，否则模块级单例（如 `message` 队列）可能被拆分导致状态不通：
+
+```ts
+export default defineConfig({
+  optimizeDeps: {
+    include: ['@mrchar/cumquat', '@mrchar/cumquat/composables', '@mrchar/cumquat/components'],
+  },
+});
+```
+
+生产构建无此问题。
+:::
 
 ## 交互动作：action
 
@@ -97,7 +115,7 @@ const subscribeOrders = async () => {
 
 ```vue
 <script setup lang="ts">
-import { components, composables } from 'cumquat';
+import { components, composables } from '@mrchar/cumquat';
 
 const { Table, Form, Button } = components;
 const { useResources } = composables;

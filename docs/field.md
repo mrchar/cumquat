@@ -4,7 +4,7 @@ title: 字段竞选
 
 # 字段竞选
 
-> 机制已随 Form 落地：内建 Field 集与 `registerField` 由 @cumquat/components 导出，Form 支持 `properties` / `controls`，字段支持 `control` / `bias`。用法速览见 [Form 表单](/components/form)。
+> 机制已随 Form 落地：内建 Field 集与 `registerField` 由 @mrchar/cumquat/components 导出，Form 支持 `properties` / `controls`，字段支持 `control` / `bias`。用法速览见 [Form 表单](/components/form)。
 
 ## 动机
 
@@ -65,11 +65,11 @@ title: 字段竞选
 
 竞选之外提供三层外部调整，从轻到重：
 
-| 层级 | 位置              | 语义                                                                                                          |
-| ---- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
-| 加成 | 字段定义 `bias`   | `bias?: Record<string, number>`，对指定 Field 加减分，正负均可；代理在裁决前应用，可翻转竞选结果而无需注册新 Field |
-| 指定 | 字段定义 `control` | 按名称显式指定 Field，跳过竞选（见优先级链路）                                                                |
-| 覆盖 | 注册表            | 同名重注册替换既有实现（含内建），全局调整某一类字段的控件                                                    |
+| 层级 | 位置               | 语义                                                                                                               |
+| ---- | ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| 加成 | 字段定义 `bias`    | `bias?: Record<string, number>`，对指定 Field 加减分，正负均可；代理在裁决前应用，可翻转竞选结果而无需注册新 Field |
+| 指定 | 字段定义 `control` | 按名称显式指定 Field，跳过竞选（见优先级链路）                                                                     |
+| 覆盖 | 注册表             | 同名重注册替换既有实现（含内建），全局调整某一类字段的控件                                                         |
 
 - 加成示例：某备注字段想用多行文本，`bias: { input: +10 }` 即可在不声明 format 的情况下翻转结果
 - 覆盖示例：宿主重注册 `date`，全部日期字段统一换用自家选择器
@@ -95,8 +95,8 @@ interface FormFieldMeta {
   options?: Array<{ label: string; value: string | number }>;
   required?: boolean;
   placeholder?: string;
-  control?: string;               // 显式指定控件渲染器名称
-  bias?: Record<string, number>;  // 竞选加成
+  control?: string; // 显式指定控件渲染器名称
+  bias?: Record<string, number>; // 竞选加成
 }
 
 /** 装配上下文：控件的值与错误经此接入表单 */
@@ -120,13 +120,13 @@ interface FieldRenderer {
 
 ## 内建 Field 与评分约定
 
-| Field  | 得分依据                                 | 装配效果                                                       |
-| ------ | ---------------------------------------- | -------------------------------------------------------------- |
-| input  | 恒为 `1`（兜底）                         | 文本输入框；`format: textarea` / `multiline` → 多行；`format: email` / `uri` / `password` → 对应原生输入类型 |
-| number | `type: number` → `80`                    | 数值输入框                                                     |
-| switch | `type: boolean` → `90`                   | 开关                                                           |
-| select | `type: enum` → `100`                     | 下拉选择，options 映射为选项                                   |
-| date   | `type: date` → `90`                      | 日期选择器                                                     |
+| Field  | 得分依据               | 装配效果                                                                                                     |
+| ------ | ---------------------- | ------------------------------------------------------------------------------------------------------------ |
+| input  | 恒为 `1`（兜底）       | 文本输入框；`format: textarea` / `multiline` → 多行；`format: email` / `uri` / `password` → 对应原生输入类型 |
+| number | `type: number` → `80`  | 数值输入框                                                                                                   |
+| switch | `type: boolean` → `90` | 开关                                                                                                         |
+| select | `type: enum` → `100`   | 下拉选择，options 映射为选项                                                                                 |
+| date   | `type: date` → `90`    | 日期选择器                                                                                                   |
 
 - 表中得分依据仅是内建 Field 的实现选择（恰好使用 type / format）；契约本身允许 Field 依据字段定义的任何字段评价。评分不看字段值，值只进入装配阶段
 - `format` 得分普遍高于同 source 的 `type` 得分：内容格式比保存格式更具体，更具体者优先（如 `string + email` 的原生邮箱输入优先于兜底文本框）

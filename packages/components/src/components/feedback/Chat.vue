@@ -144,7 +144,9 @@ defineExpose({ chat });
           >
             <div v-if="message.sender || message.time" class="cumquat-chat__meta">
               <span v-if="message.sender" class="cumquat-chat__sender">{{ message.sender }}</span>
-              <span v-if="message.time" class="cumquat-chat__time">{{ formatTime(message.time) }}</span>
+              <span v-if="message.time" class="cumquat-chat__time">{{
+                formatTime(message.time)
+              }}</span>
             </div>
             <p class="cumquat-chat__content">{{ message.content }}</p>
             <button

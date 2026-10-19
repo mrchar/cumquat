@@ -16,7 +16,7 @@ title: MessageContainer 消息容器
 ```
 
 ```ts
-import { message } from '@cumquat/composables';
+import { message } from '@mrchar/cumquat/composables';
 message.success('保存成功');
 message.error('提交失败'); // 默认 5s
 message.loading('上传中…'); // duration 为 0，需手动 remove

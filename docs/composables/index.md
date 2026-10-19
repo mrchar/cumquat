@@ -4,17 +4,17 @@ title: 组合函数总览
 
 # 组合函数
 
-`@cumquat/composables` 是 Cumquat 的 Headless 逻辑层：只负责状态机、行为与派生数据，不输出任何 DOM、类名与样式。组件就是「组合函数 + 语义 class」的渲染壳；宿主也可以脱离组件独立使用这些函数。
+`@mrchar/cumquat/composables` 是 Cumquat 的 Headless 逻辑层：只负责状态机、行为与派生数据，不输出任何 DOM、类名与样式。组件就是「组合函数 + 语义 class」的渲染壳；宿主也可以脱离组件独立使用这些函数。
 
 ## 导入
 
 ```ts
 // 主包命名空间
-import { composables } from 'cumquat';
+import { composables } from '@mrchar/cumquat';
 const { data, refresh } = composables.useFetch(fetcher);
 
 // 或直接从子包
-import { useFetch, usePagination } from '@cumquat/composables';
+import { useFetch, usePagination } from '@mrchar/cumquat/composables';
 ```
 
 仅依赖 Vue 运行时，无 CSS、无浏览器强依赖，支持 tree-shaking。

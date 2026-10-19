@@ -111,7 +111,9 @@ describe('parseOpenApi（OpenAPI 3.x）', () => {
 });
 
 describe('parseOpenApi（Swagger 2.0）', () => {
-  const schema: ResourceSchema = parseOpenApi(swaggerDoc, { server: 'https://petstore.example.com' });
+  const schema: ResourceSchema = parseOpenApi(swaggerDoc, {
+    server: 'https://petstore.example.com',
+  });
 
   it('支持 definitions 引用与 in:body 请求参数', () => {
     const pets = schema.resources.pets;

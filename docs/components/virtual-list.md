@@ -38,7 +38,7 @@ title: VirtualList 虚拟列表
 
 import { ref } from 'vue';
 
-import type { Fetch, FetchQuery } from '@cumquat/components';
+import type { Fetch, FetchQuery } from '@mrchar/cumquat/components';
 
 const virtualItems = Array.from({ length: 50 }, (_, index) => `虚拟列表条目 ${index + 1}`);
 

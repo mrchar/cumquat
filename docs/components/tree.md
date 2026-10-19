@@ -45,7 +45,7 @@ title: Tree 树形控件
 
 import { ref } from 'vue';
 
-import type { Fetch, FetchQuery } from '@cumquat/components';
+import type { Fetch, FetchQuery } from '@mrchar/cumquat/components';
 
 const treeChecked = ref<string[]>([]);
 

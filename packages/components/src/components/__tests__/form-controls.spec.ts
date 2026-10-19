@@ -760,8 +760,7 @@ describe('Form 字段竞选', () => {
     const wrapper = mount(Form, {
       props: { modelValue: { name: 'x' } },
       slots: {
-        default: () =>
-          h(FormItem, { name: 'name', label: '姓名' }, { default: () => h(Input) }),
+        default: () => h(FormItem, { name: 'name', label: '姓名' }, { default: () => h(Input) }),
       },
     });
     expect(wrapper.findAll('.cumquat-form-item')).toHaveLength(1);

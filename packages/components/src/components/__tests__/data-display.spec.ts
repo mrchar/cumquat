@@ -425,9 +425,7 @@ describe('Table 单元格竞选', () => {
     const metaCell: CellRenderer = {
       name: 'meta',
       fitness: (column) =>
-        ((column as unknown as { cellMeta?: { highlight?: boolean } }).cellMeta?.highlight
-          ? 99
-          : 0),
+        (column as unknown as { cellMeta?: { highlight?: boolean } }).cellMeta?.highlight ? 99 : 0,
       render: (value) => h('strong', { class: 'cumquat-cell--meta' }, String(value)),
     };
     type MetaColumn = TableColumn & { cellMeta?: { highlight?: boolean } };
@@ -466,7 +464,9 @@ describe('Table 单元格竞选', () => {
       fitness: (column) => (column.format === 'email' ? 95 : 0),
       render: (value) => {
         const text = value === null || value === undefined ? '' : String(value);
-        return text === '' ? '' : h('a', { class: 'cumquat-cell cumquat-cell--email', href: `mailto:${text}` }, text);
+        return text === ''
+          ? ''
+          : h('a', { class: 'cumquat-cell cumquat-cell--email', href: `mailto:${text}` }, text);
       },
     });
   });

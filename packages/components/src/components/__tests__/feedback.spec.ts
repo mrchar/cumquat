@@ -111,7 +111,10 @@ describe('Chat', () => {
   });
 
   it('发送失败保留气泡可重试并展示错误条', async () => {
-    const action = vi.fn().mockRejectedValueOnce(new Error('超时')).mockResolvedValueOnce(undefined);
+    const action = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('超时'))
+      .mockResolvedValueOnce(undefined);
     const wrapper = mount(Chat, { props: { action } });
     await wrapper.find('input').setValue('hi');
     await wrapper.find('form').trigger('submit');

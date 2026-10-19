@@ -71,12 +71,14 @@ export const dataSamples: Sample[] = [
 `,
     scope: () => ({
       nodes: [
-        { key: 'root', label: '根节点', children: [
-          { key: 'a', label: '子节点 A' },
-          { key: 'b', label: '子节点 B', children: [
-            { key: 'b1', label: '孙节点 B1' },
-          ] },
-        ] },
+        {
+          key: 'root',
+          label: '根节点',
+          children: [
+            { key: 'a', label: '子节点 A' },
+            { key: 'b', label: '子节点 B', children: [{ key: 'b1', label: '孙节点 B1' }] },
+          ],
+        },
       ],
     }),
   },
@@ -91,15 +93,21 @@ export const dataSamples: Sample[] = [
     scope: () => ({
       value: ref<string | null>(null),
       options: [
-        { value: 'zj', label: '浙江', children: [
-          { value: 'hz', label: '杭州', children: [
-            { value: 'xihu', label: '西湖区' },
-            { value: 'binjiang', label: '滨江区' },
-          ] },
-        ] },
-        { value: 'js', label: '江苏', children: [
-          { value: 'nj', label: '南京' },
-        ] },
+        {
+          value: 'zj',
+          label: '浙江',
+          children: [
+            {
+              value: 'hz',
+              label: '杭州',
+              children: [
+                { value: 'xihu', label: '西湖区' },
+                { value: 'binjiang', label: '滨江区' },
+              ],
+            },
+          ],
+        },
+        { value: 'js', label: '江苏', children: [{ value: 'nj', label: '南京' }] },
       ],
     }),
   },
@@ -125,12 +133,7 @@ export const dataSamples: Sample[] = [
   <Steps :steps="steps" :current="1" class="max-w-xl" />
 `,
     scope: () => ({
-      steps: [
-        { title: '填写信息' },
-        { title: '确认订单' },
-        { title: '支付' },
-        { title: '完成' },
-      ],
+      steps: [{ title: '填写信息' }, { title: '确认订单' }, { title: '支付' }, { title: '完成' }],
     }),
   },
   {

@@ -4,7 +4,7 @@ title: 单元格竞选
 
 # 单元格竞选
 
-> 机制已随 Table 落地：内建 Cell 集与 `registerCell` 由 @cumquat/components 导出，`TableColumn` 支持 `type` / `format` / `cell` / `bias`，Table 支持 `cells` 局部渲染器。用法速览见 [Table 表格](/components/table)。
+> 机制已随 Table 落地：内建 Cell 集与 `registerCell` 由 @mrchar/cumquat/components 导出，`TableColumn` 支持 `type` / `format` / `cell` / `bias`，Table 支持 `cells` 局部渲染器。用法速览见 [Table 表格](/components/table)。
 
 ## 动机
 
@@ -139,6 +139,6 @@ registerCell({
 ## 落地清单
 
 - **字段元数据**：`ResourceField` 导出 `format`（原样透传文档声明的格式值）；`ResourceColumn` 投影携带 `type` / `format`
-- **组件**：内建 Cell 集与 `registerCell` 由 @cumquat/components 导出；`TableColumn` 增加可选 `type` / `format` / `options` / `cell` / `bias` 字段（完全向后兼容），Table 增加 `cells` 局部渲染器属性，列渲染管线已接入竞选
+- **组件**：内建 Cell 集与 `registerCell` 由 @mrchar/cumquat/components 导出；`TableColumn` 增加可选 `type` / `format` / `options` / `cell` / `bias` 字段（完全向后兼容），Table 增加 `cells` 局部渲染器属性，列渲染管线已接入竞选
 - **文档**：本页注册进导航，[Table 文档](/components/table)含用法演示，资源池文档交叉引用
 - **测试**：评分裁决与同分稳定性、bias 加成与注册覆盖、优先级链路（插槽 / 显式 / 竞选 / 兜底）、内建 Cell 覆盖矩阵、宿主注册扩展均有用例覆盖
