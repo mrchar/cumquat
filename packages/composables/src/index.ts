@@ -208,6 +208,29 @@ export { useSubscribe, extractSubscribeFailure } from './data/useSubscribe';
 export type { UseSubscribeReturn } from './data/useSubscribe';
 export { subscribeErrorText } from './data/useSubscribe';
 
+// L2 资源池
+export { useResources } from './resources/use-resources';
+export { parseOpenApi } from './resources/parse-open-api';
+export { createFetchAdapter, ResourceHttpError } from './resources/create-fetch-adapter';
+export type {
+  ResourceMethod,
+  ResourceOperation,
+  QueryNames,
+  ListResponseMapping,
+  ResourceFieldType,
+  ResourceFieldOption,
+  ResourceField,
+  ResourceColumn,
+  ResourceDefinition,
+  ResourceSchema,
+  MetadataParser,
+  ResourceRequest,
+  RequestAdapter,
+  UseResourcesOptions,
+  ResourceClient,
+  ResourcePool,
+} from './resources/types';
+
 // L2 媒体
 export { useImageState } from './media/useImageState';
 export type {

@@ -164,6 +164,11 @@ const fetchUsers: Fetch<UserRow> = async (query) => {
 | 结果识别 | 数组 → 列表；`{ list, total }` → 分页数据；单值 → 直接消费              |
 | 空数据   | success 且为空集合时渲染 Empty 空态                                     |
 
+当服务端已有 Swagger / OpenAPI 文档时，可以不必逐个手写 fetch 方法——资源池
+[useResources](/composables/resources) 从文档一次性生成全部请求方法与
+`columns` / `filters` / `properties` 字段元数据，方法签名与上表协议完全一致，
+直接绑定即可。
+
 ## 完整示例
 
 ### 分页表格：翻页 / 排序 / 筛选自动重取

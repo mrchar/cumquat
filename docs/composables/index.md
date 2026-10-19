@@ -42,6 +42,7 @@ L0  工具原语   useEventListener / useControllableModel / useId ...
 
 - [数据请求 useFetch](/composables/fetch)：useFetch / useFetchResource / createFetchController
 - [数据订阅 useSubscribe](/composables/subscribe)：useSubscribe / useAsyncState
+- [资源池 useResources](/composables/resources)：useResources / parseOpenApi / createFetchAdapter
 - [分页 usePagination](/composables/pagination)
 
 ### 表单

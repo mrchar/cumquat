@@ -132,6 +132,7 @@ const composableGroups: Array<{ text: string; items: Array<[string, string]> }> 
     items: [
       ['fetch', '数据请求 useFetch'],
       ['subscribe', '数据订阅 useSubscribe'],
+      ['resources', '资源池 useResources'],
       ['pagination', '分页 usePagination'],
     ],
   },
