@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { h } from 'vue';
 import {
   Table,
   Pagination,
@@ -12,7 +13,9 @@ import {
   Descriptions,
   Carousel,
   Progress,
+  registerCell,
 } from '../../index';
+import type { CellRenderer } from '../../index';
 import type { TableColumn } from '../data-display/Table.vue';
 import type { TabItem } from '../data-display/Tabs.vue';
 import type { CollapseItem } from '../data-display/Collapse.vue';
@@ -230,6 +233,242 @@ describe('Table', () => {
     await wait();
     // 非受控：内部状态自行切换，事件仍会回发（无监听器时无副作用）
     expect(wrapper.findAll('.cumquat-table__row')).toHaveLength(20);
+  });
+});
+
+describe('Table 单元格竞选', () => {
+  it('无提示列回落默认文本，不产出语义节点', () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [{ key: 'name', title: '名称' }],
+        rows: [{ name: 'Amber' }],
+      },
+    });
+    expect(wrapper.find('.cumquat-table__td').text()).toBe('Amber');
+    expect(wrapper.find('.cumquat-cell').exists()).toBe(false);
+  });
+
+  it('空值显示为空字符串', () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [
+          { key: 'name', title: '名称' },
+          { key: 'age', title: '年龄' },
+        ],
+        rows: [{ name: null, age: undefined }],
+      },
+    });
+    const cells = wrapper.findAll('.cumquat-table__td');
+    expect(cells[0].text()).toBe('');
+    expect(cells[1].text()).toBe('');
+  });
+
+  it('type 推断：number 千分位、boolean 是/否、date/datetime 格式化', () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [
+          { key: 'score', title: '积分', type: 'number' as const },
+          { key: 'active', title: '启用', type: 'boolean' as const },
+          { key: 'birthday', title: '生日', type: 'date' as const },
+          { key: 'createdAt', title: '创建时间', type: 'datetime' as const },
+        ],
+        rows: [
+          {
+            score: 1234567,
+            active: true,
+            birthday: '2026-03-05',
+            createdAt: '2026-03-05T08:09:10',
+          },
+          { score: '不是数字', active: false, birthday: '生日未知', createdAt: null },
+        ],
+      },
+    });
+    const firstRow = wrapper.findAll('.cumquat-table__row')[0].findAll('.cumquat-table__td');
+    expect(firstRow[0].find('.cumquat-cell--number').text()).toBe('1,234,567');
+    expect(firstRow[1].find('.cumquat-cell--boolean-yes').text()).toBe('是');
+    expect(firstRow[2].find('.cumquat-cell--date').text()).toBe('2026-03-05');
+    expect(firstRow[3].find('.cumquat-cell--datetime').text()).toBe('2026-03-05 08:09:10');
+    // 越界值由 Cell 自行降级：非法数字/日期显示原值，false 显示否，空值显示空
+    const secondRow = wrapper.findAll('.cumquat-table__row')[1].findAll('.cumquat-table__td');
+    expect(secondRow[0].text()).toBe('不是数字');
+    expect(secondRow[1].find('.cumquat-cell--boolean-no').text()).toBe('否');
+    expect(secondRow[2].text()).toBe('生日未知');
+    expect(secondRow[3].text()).toBe('');
+  });
+
+  it('type enum：显示 options label，越界值显示原值', () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [
+          {
+            key: 'status',
+            title: '状态',
+            type: 'enum' as const,
+            options: [
+              { label: '启用', value: 'active' },
+              { label: '禁用', value: 'disabled' },
+            ],
+          },
+        ],
+        rows: [{ status: 'active' }, { status: 'deleted' }, { status: null }],
+      },
+    });
+    const rows = wrapper.findAll('.cumquat-table__row');
+    expect(rows[0].find('.cumquat-cell--enum').text()).toBe('启用');
+    expect(rows[1].find('.cumquat-cell--enum-unknown').text()).toBe('deleted');
+    expect(rows[2].find('.cumquat-table__td').text()).toBe('');
+  });
+
+  it('format 推断：email 邮箱链接、uri 外链、tag/status 标签，均胜过兜底文本', () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [
+          { key: 'email', title: '邮箱', format: 'email' },
+          { key: 'site', title: '主页', format: 'uri' },
+          { key: 'level', title: '等级', format: 'tag' },
+          { key: 'state', title: '状态', format: 'status' },
+        ],
+        rows: [{ email: 'a@b.com', site: 'https://x.dev', level: '黄金', state: '在线' }],
+      },
+    });
+    const email = wrapper.find('.cumquat-cell--email');
+    expect(email.text()).toBe('a@b.com');
+    expect(email.attributes('href')).toBe('mailto:a@b.com');
+    const link = wrapper.find('.cumquat-cell--link');
+    expect(link.attributes('href')).toBe('https://x.dev');
+    expect(link.attributes('target')).toBe('_blank');
+    expect(link.attributes('rel')).toContain('noopener');
+    expect(wrapper.find('.cumquat-cell--tag').text()).toBe('黄金');
+    expect(wrapper.findAll('.cumquat-cell--tag')).toHaveLength(2);
+  });
+
+  it('bias 加成可翻转竞选结果，负向加成同样生效', () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [
+          {
+            key: 'status',
+            title: '状态',
+            type: 'enum' as const,
+            format: 'status',
+            bias: { tag: 30 },
+          },
+          {
+            key: 'level',
+            title: '等级',
+            type: 'enum' as const,
+            format: 'status',
+            bias: { enum: -50 },
+          },
+        ],
+        rows: [{ status: 'active', level: 'gold' }],
+      },
+    });
+    // enum 原本 100 分胜出，加成后 tag（85 + 30）反超
+    expect(wrapper.find('.cumquat-cell--tag').text()).toBe('active');
+    // 负向加成把 enum 压到 50 分，tag（85）胜出
+    expect(wrapper.findAll('.cumquat-cell--tag')[1].text()).toBe('gold');
+  });
+
+  it('显式指定 cell 跳过竞选，指定即生效', () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [{ key: 'status', title: '状态', type: 'enum' as const, cell: 'text' }],
+        rows: [{ status: 'active' }],
+      },
+    });
+    expect(wrapper.find('.cumquat-table__td').text()).toBe('active');
+    expect(wrapper.find('.cumquat-cell--enum').exists()).toBe(false);
+  });
+
+  it('插槽优先级最高，覆盖竞选结果', () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [{ key: 'status', title: '状态', type: 'enum' as const }],
+        rows: [{ status: 'active' }],
+      },
+      slots: { 'cell-status': '<em class="custom">自定义</em>' },
+    });
+    expect(wrapper.find('.custom').text()).toBe('自定义');
+    expect(wrapper.find('.cumquat-cell--enum').exists()).toBe(false);
+  });
+
+  it('局部 cells 参与竞选：按 format 命中、同分先注册者优先、显式指定命中局部', () => {
+    const progressCell: CellRenderer = {
+      name: 'progress',
+      fitness: (column) => (column.format === 'percent' ? 95 : 0),
+      render: (value) =>
+        h('span', { class: 'cumquat-cell cumquat-cell--progress' }, `${Number(value)}%`),
+    };
+    const rivalCell: CellRenderer = {
+      name: 'rival',
+      fitness: (column) => (column.format === 'percent' ? 95 : 0),
+      render: () => h('span', { class: 'cumquat-cell--rival' }, 'rival'),
+    };
+    const wrapper = mount(Table, {
+      props: {
+        columns: [
+          { key: 'rate', title: '进度', format: 'percent' },
+          { key: 'score', title: '得分', format: 'percent', cell: 'rival' },
+        ],
+        rows: [{ rate: 42, score: 7 }],
+        cells: [progressCell, rivalCell],
+      },
+    });
+    // 同分时先注册者（数组靠前）胜出
+    expect(wrapper.find('.cumquat-cell--progress').text()).toBe('42%');
+    // 显式指定在局部注册命中
+    expect(wrapper.find('.cumquat-cell--rival').text()).toBe('rival');
+  });
+
+  it('Cell 可依据宿主附加字段评分', () => {
+    const metaCell: CellRenderer = {
+      name: 'meta',
+      fitness: (column) =>
+        ((column as unknown as { cellMeta?: { highlight?: boolean } }).cellMeta?.highlight
+          ? 99
+          : 0),
+      render: (value) => h('strong', { class: 'cumquat-cell--meta' }, String(value)),
+    };
+    type MetaColumn = TableColumn & { cellMeta?: { highlight?: boolean } };
+    const wrapper = mount(Table, {
+      props: {
+        columns: [
+          { key: 'name', title: '名称' },
+          { key: 'name2', title: '名称二', cellMeta: { highlight: true } },
+        ] as MetaColumn[],
+        rows: [{ name: 'Amber', name2: 'Bolt' }],
+        cells: [metaCell],
+      },
+    });
+    expect(wrapper.find('.cumquat-cell--meta').text()).toBe('Bolt');
+    expect(wrapper.findAll('.cumquat-table__row')[0].findAll('.cumquat-table__td')[0].text()).toBe(
+      'Amber',
+    );
+  });
+
+  it('registerCell 同名覆盖内建实现，全局生效', () => {
+    registerCell({
+      name: 'email',
+      fitness: (column) => (column.format === 'email' ? 95 : 0),
+      render: (value) => h('b', { class: 'cumquat-cell--email-custom' }, String(value)),
+    });
+    const wrapper = mount(Table, {
+      props: {
+        columns: [{ key: 'email', title: '邮箱', format: 'email' }],
+        rows: [{ email: 'a@b.com' }],
+      },
+    });
+    expect(wrapper.find('.cumquat-cell--email-custom').text()).toBe('a@b.com');
+    // 还原内建实现，避免影响同文件后续用例
+    registerCell({
+      name: 'email',
+      fitness: (column) => (column.format === 'email' ? 95 : 0),
+      render: (value) => {
+        const text = value === null || value === undefined ? '' : String(value);
+        return text === '' ? '' : h('a', { class: 'cumquat-cell cumquat-cell--email', href: `mailto:${text}` }, text);
+      },
+    });
   });
 });
 

@@ -140,9 +140,9 @@ loading、失败回退提示等行为与动作协议一致。`properties` 提供
 | 成员         | 类型                                    | 说明                                                          |
 | ------------ | --------------------------------------- | ------------------------------------------------------------- |
 | `fields`     | `ResourceField[]`                       | 完整字段元数据原始列表                                        |
-| `columns`    | `{ key, title, sortable?, filters? }[]` | 列表列投影（`scope.list`），直接绑定 Table 的 `:columns`      |
+| `columns`    | `{ key, title, type?, format?, sortable?, filters? }[]` | 列表列投影（`scope.list`），直接绑定 Table 的 `:columns`；`type` / `format` 供[单元格竞选](/cell)自动推断显示 |
 | `filters`    | `ResourceField[]`                       | 筛选字段投影（`scope.filter`），enum 字段自带 options         |
-| `properties` | `ResourceField[]`                       | 表单字段投影（`scope.create` / `scope.update`，保留场景标记） |
+| `properties` | `ResourceField[]`                       | 表单字段投影（`scope.create` / `scope.update`，保留场景标记），直接绑定 Form 的 `:properties`；`type` / `format` / `required` 供[字段竞选](/field)自动推断控件 |
 
 `list` 透传统一查询片段（含 `signal`，翻页 / 搜索的竞态取消由消费侧照常生效）；`detail` / `update` / `remove` 的 `id` 经资源表中的路径模板（`{id}`）替换进 URL。
 
@@ -183,6 +183,8 @@ interface ResourceField {
   label: string;
   /** 值类型：决定筛选与表单的控件选择 */
   type: 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum';
+  /** 内容格式：原样透传文档声明的 format（如 email / uri / int64），与 type 的保存格式互补 */
+  format?: string;
   /** 枚举选项：type 为 enum 时提供，可直接喂给选项组件 */
   options?: Array<{ label: string; value: string | number }>;
   /** 表单场景是否必填 */

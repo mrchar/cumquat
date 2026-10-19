@@ -55,6 +55,8 @@ export interface ResourceField {
   /** 展示名，解析自文档描述，缺失回落字段名 */
   label: string;
   type: ResourceFieldType;
+  /** 内容格式：原样透传文档声明的 format（如 email / uri / int64），与 type 的保存格式互补 */
+  format?: string;
   /** 枚举选项：type 为 enum 时提供，可直接喂给选项组件 */
   options?: ResourceFieldOption[];
   /** 表单场景是否必填 */
@@ -76,6 +78,10 @@ export interface ResourceField {
 export interface ResourceColumn {
   key: string;
   title: string;
+  /** 保存格式提示：字段 type 原样投影，供 Table 单元格竞选消费 */
+  type?: ResourceFieldType;
+  /** 内容格式提示：字段 format 原样透传（如 email / uri / int64） */
+  format?: string;
   sortable?: boolean;
   /** 枚举字段的筛选项（表头勾选面板） */
   filters?: ResourceFieldOption[];

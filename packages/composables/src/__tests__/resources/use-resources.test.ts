@@ -171,13 +171,34 @@ describe('useResources（元数据与状态）', () => {
     expect(pool.has('users')).toBe(true);
     expect(pool.names).toEqual(['users']);
     expect(users.columns).toEqual([
-      { key: 'id', title: 'ID' },
-      { key: 'name', title: '姓名' },
-      { key: 'status', title: '状态', filters: [{ label: '启用', value: 1 }] },
+      { key: 'id', title: 'ID', type: 'number' },
+      { key: 'name', title: '姓名', type: 'string' },
+      { key: 'status', title: '状态', type: 'enum', filters: [{ label: '启用', value: 1 }] },
     ]);
     expect(users.filters.map((field) => field.name)).toEqual(['status']);
     expect(users.properties.map((field) => field.name)).toEqual(['name']);
     expect(users.fields).toHaveLength(3);
+  });
+
+  it('columns 投影携带 type 与原样透传的 format', async () => {
+    const schema: ResourceSchema = {
+      resources: {
+        users: {
+          list: { method: 'GET', path: '/users' },
+          fields: [
+            { name: 'email', label: '邮箱', type: 'string', format: 'email', scope: { list: true } },
+            { name: 'score', label: '积分', type: 'number', format: 'int64', scope: { list: true } },
+          ],
+        },
+      },
+    };
+    const { adapter } = recordingAdapter(() => []);
+    const pool = useResources({ server: 'https://api.test', schema, request: adapter });
+    await flush();
+    expect(pool.client('users').columns).toEqual([
+      { key: 'email', title: '邮箱', type: 'string', format: 'email' },
+      { key: 'score', title: '积分', type: 'number', format: 'int64' },
+    ]);
   });
 
   it('池就绪后取未知资源抛错；未声明操作的方法读取同样抛错', async () => {

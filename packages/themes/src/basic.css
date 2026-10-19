@@ -1003,6 +1003,35 @@
     @apply flex items-center gap-2 border-b border-cumquat-border px-4 py-2 text-sm text-cumquat-danger;
   }
 
+  /* ---------- 单元格竞选渲染器 ---------- */
+  .cumquat-cell--number,
+  .cumquat-cell--date,
+  .cumquat-cell--datetime {
+    @apply tabular-nums;
+  }
+  .cumquat-cell--boolean {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .cumquat-cell--boolean-yes {
+    @apply bg-cumquat-accent-soft text-cumquat-accent;
+  }
+  .cumquat-cell--boolean-no {
+    @apply bg-cumquat-surface-2 text-cumquat-text-muted;
+  }
+  .cumquat-cell--enum {
+    @apply inline-flex items-center rounded-cumquat border border-cumquat-border bg-cumquat-surface-2 px-2 py-0.5 text-xs text-cumquat-text;
+  }
+  .cumquat-cell--enum-unknown {
+    @apply border-dashed text-cumquat-text-muted;
+  }
+  .cumquat-cell--tag {
+    @apply inline-flex items-center rounded-cumquat bg-cumquat-accent-soft px-2 py-0.5 text-xs text-cumquat-accent;
+  }
+  .cumquat-cell--email,
+  .cumquat-cell--link {
+    @apply text-cumquat-accent underline-offset-2 hover:underline;
+  }
+
   /* ---------- Pagination ---------- */
   .cumquat-pagination {
     @apply inline-flex items-center gap-1.5;

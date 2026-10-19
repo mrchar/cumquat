@@ -101,8 +101,15 @@ interface ExtractedField {
   name: string;
   label: string;
   type: ResourceFieldType;
+  /** 文档声明的内容格式，原样透传（date-time / date / email / uri / int64…） */
+  format?: string;
   options?: Array<{ label: string; value: string | number }>;
   required?: boolean;
+}
+
+/** 文档声明的内容格式：仅透传字符串形式的 format，其余忽略 */
+function fieldFormat(schema: Dict): string | undefined {
+  return typeof schema.format === 'string' && schema.format !== '' ? schema.format : undefined;
 }
 
 /** 从对象 schema 的 properties 提取字段描述（仅原始类型） */
@@ -121,6 +128,7 @@ function extractFields(doc: Dict, schema: unknown): ExtractedField[] {
       name,
       label: (resolvedProp.description as string) ?? (resolvedProp.title as string) ?? name,
       type,
+      format: fieldFormat(resolvedProp),
       options: type === 'enum' ? fieldOptions(resolvedProp) : undefined,
       required: requiredList.includes(name) || undefined,
     });
@@ -166,7 +174,10 @@ function mergeField(definition: ResourceDefinition, partial: ExtractedField, sco
   if (!field) {
     field = { name: partial.name, label: partial.label, type: partial.type, scope: {} };
     if (partial.options) field.options = partial.options;
+    if (partial.format) field.format = partial.format;
     fields.push(field);
+  } else if (partial.format) {
+    field.format ??= partial.format;
   }
   field.scope = { ...field.scope, [scopeKey]: true };
   if (partial.required) field.required = true;
@@ -232,7 +243,11 @@ function applyFilterScopes(doc: Dict, definition: ResourceDefinition, params: Di
         type,
         scope: { filter: true },
       };
-      if (schema && fieldType(schema) === 'enum') field.options = fieldOptions(schema);
+      if (schema) {
+        const format = fieldFormat(schema);
+        if (format) field.format = format;
+        if (fieldType(schema) === 'enum') field.options = fieldOptions(schema);
+      }
       fields.push(field);
     }
   }

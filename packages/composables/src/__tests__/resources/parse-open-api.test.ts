@@ -53,6 +53,7 @@ describe('parseOpenApi（OpenAPI 3.x）', () => {
       'birthday',
       'active',
       'score',
+      'website',
     ]);
     const byName = Object.fromEntries(fields.map((field) => [field.name, field]));
     expect(byName.id).toMatchObject({ label: '用户ID', type: 'number', required: true });
@@ -67,6 +68,19 @@ describe('parseOpenApi（OpenAPI 3.x）', () => {
         { label: 'disabled', value: 'disabled' },
       ],
     });
+  });
+
+  it('format 原样透传：内容格式与保存格式并存，互不覆盖', () => {
+    const byName = Object.fromEntries(
+      (schema.resources.users.fields ?? []).map((field) => [field.name, field]),
+    );
+    expect(byName.email).toMatchObject({ type: 'string', format: 'email' });
+    expect(byName.website).toMatchObject({ type: 'string', format: 'uri' });
+    expect(byName.score).toMatchObject({ type: 'number', format: 'int64' });
+    expect(byName.createdAt).toMatchObject({ type: 'datetime', format: 'date-time' });
+    expect(byName.birthday).toMatchObject({ type: 'date', format: 'date' });
+    // 未声明 format 的字段不携带该键
+    expect(byName.name.format).toBeUndefined();
   });
 
   it('场景标记：列表响应、创建 / 更新请求体、查询参数筛选与 required', () => {
@@ -120,7 +134,8 @@ describe('parseOpenApi（Swagger 2.0）', () => {
     expect(byName.name.scope).toEqual({ list: true, create: true });
     expect(byName.name.required).toBe(true);
     // 数组与对象类型不进入元数据
-    expect(pets.fields?.map((field) => field.name)).toEqual(['id', 'name', 'kind']);
+    expect(pets.fields?.map((field) => field.name)).toEqual(['id', 'name', 'kind', 'homepage']);
+    expect(byName.homepage).toMatchObject({ type: 'string', format: 'uri' });
     expect(pets.response).toEqual({ list: 'records', total: 'total' });
   });
 });

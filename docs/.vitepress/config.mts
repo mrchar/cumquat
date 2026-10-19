@@ -189,6 +189,8 @@ export default defineConfig({
         { text: '远程数据 Fetch', link: '/fetch' },
         { text: '交互动作 Action', link: '/action' },
         { text: '数据订阅 Subscribe', link: '/subscribe' },
+        { text: '单元格竞选', link: '/cell' },
+        { text: '字段竞选', link: '/field' },
         { text: '类型参考', link: '/types' },
       ],
     },

@@ -81,6 +81,9 @@ import Tour from './components/extras/Tour.vue';
 import QRCode from './components/extras/QRCode.vue';
 import CodeCard from './components/extras/CodeCard.vue';
 
+import { registerCell } from './components/data-display/cells';
+import { registerField } from './components/form-controls/fields';
+
 /** 组件导出名无前缀，按需导入后直接使用 */
 export {
   Button,
@@ -156,6 +159,12 @@ export {
   FloatButton,
 };
 export { LiveDemo };
+/** 单元格竞选：注册自定义单元格渲染器（同名替换内建实现） */
+export { registerCell };
+export type { CellRenderer, CellColumn } from './components/data-display/cells';
+/** 字段竞选：注册自定义控件渲染器（同名替换内建实现） */
+export { registerField };
+export type { FieldRenderer, FormFieldMeta, FieldContext } from './components/form-controls/fields';
 
 /** 全量注册映射：组件 → C 前缀 PascalCase 注册名（模板中使用 <c-button> 等） */
 const registry: Record<string, unknown> = {

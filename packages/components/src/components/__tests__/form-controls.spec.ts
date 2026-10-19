@@ -3,6 +3,9 @@ import { mount } from '@vue/test-utils';
 import { h } from 'vue';
 import {
   Checkbox,
+  Form,
+  FormItem,
+  Input,
   Radio,
   RadioGroup,
   Switch,
@@ -14,7 +17,9 @@ import {
   Mention,
   Select,
   TreeSelect,
+  registerField,
 } from '../../index';
+import type { FieldRenderer, FormFieldMeta } from '../../index';
 import type { SelectOption } from '../form-controls/Select.vue';
 
 const wait = (ms = 0) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -563,5 +568,202 @@ describe('TreeSelect', () => {
     expect(fetcher.mock.calls.at(-1)?.[0].filters).toEqual({ parentKey: 'a' });
     const nodes = wrapper.findAll('.cumquat-tree-select__leaf');
     expect(nodes.some((node) => node.text().includes('远程子节点'))).toBe(true);
+  });
+});
+
+describe('Form 字段竞选', () => {
+  const baseProperties: FormFieldMeta[] = [
+    { name: 'name', label: '姓名', type: 'string' },
+    { name: 'age', label: '年龄', type: 'number' },
+    { name: 'active', label: '启用', type: 'boolean' },
+    {
+      name: 'status',
+      label: '状态',
+      type: 'enum',
+      options: [
+        { label: '启用', value: 'active' },
+        { label: '禁用', value: 'disabled' },
+      ],
+    },
+    { name: 'birthday', label: '生日', type: 'date' },
+  ];
+
+  it('type 推断：string→输入框、number→数值、boolean→开关、enum→下拉、date→日期', () => {
+    const wrapper = mount(Form, { props: { properties: baseProperties } });
+    const items = wrapper.findAll('.cumquat-form-item');
+    expect(items).toHaveLength(5);
+    expect(items[0].find('.cumquat-form-item__label').text()).toContain('姓名');
+    expect(items[0].find('input').exists()).toBe(true);
+    expect(items[1].find('.cumquat-input-number').exists()).toBe(true);
+    expect(items[2].find('[aria-checked]').exists()).toBe(true);
+    expect(items[3].find('.cumquat-select').exists()).toBe(true);
+    expect(items[4].find('.cumquat-date-picker').exists()).toBe(true);
+  });
+
+  it('format 推断：textarea 多行、email/uri/password 原生输入类型', () => {
+    const wrapper = mount(Form, {
+      props: {
+        properties: [
+          { name: 'bio', label: '简介', type: 'string', format: 'textarea' },
+          { name: 'email', label: '邮箱', type: 'string', format: 'email' },
+          { name: 'site', label: '主页', type: 'string', format: 'uri' },
+          { name: 'pwd', label: '密码', type: 'string', format: 'password' },
+        ],
+      },
+    });
+    const items = wrapper.findAll('.cumquat-form-item');
+    expect(items[0].find('textarea').exists()).toBe(true);
+    expect(items[1].find('input[type="email"]').exists()).toBe(true);
+    expect(items[2].find('input[type="url"]').exists()).toBe(true);
+    expect(items[3].find('input[type="password"]').exists()).toBe(true);
+  });
+
+  it('required 派生校验：空提交报错，录入修正即时清除', async () => {
+    const wrapper = mount(Form, {
+      props: {
+        properties: [{ name: 'name', label: '姓名', type: 'string', required: true }],
+      },
+    });
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(wrapper.find('.cumquat-form-item__error').text()).toBe('姓名不能为空');
+    expect(wrapper.emitted('invalid')).toHaveLength(1);
+    // 录入修正：写回后自动重新校验并清除错误
+    await wrapper.find('input').setValue('Amber');
+    await wait();
+    expect(wrapper.find('.cumquat-form-item__error').exists()).toBe(false);
+  });
+
+  it('自注册控件（Select）同样继承派生必填规则', async () => {
+    const wrapper = mount(Form, {
+      props: {
+        properties: [
+          {
+            name: 'status',
+            label: '状态',
+            type: 'enum',
+            required: true,
+            options: [{ label: '启用', value: 'active' }],
+          },
+        ],
+      },
+    });
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(wrapper.find('.cumquat-form-item__error').text()).toBe('状态不能为空');
+  });
+
+  it('宿主 rules 按字段名叠加在派生规则之后', async () => {
+    const wrapper = mount(Form, {
+      props: {
+        properties: [{ name: 'name', label: '姓名', type: 'string', required: true }],
+        rules: {
+          name: (value: unknown) => (value === 'bad' ? '不允许该值' : true),
+        },
+      },
+    });
+    await wrapper.find('input').setValue('bad');
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(wrapper.find('.cumquat-form-item__error').text()).toBe('不允许该值');
+  });
+
+  it('显式指定 control 跳过竞选', () => {
+    const wrapper = mount(Form, {
+      props: {
+        properties: [{ name: 'status', label: '状态', type: 'enum', control: 'input' }],
+      },
+    });
+    expect(wrapper.find('.cumquat-select').exists()).toBe(false);
+    expect(wrapper.find('input').exists()).toBe(true);
+  });
+
+  it('bias 加成可翻转竞选结果', () => {
+    const wrapper = mount(Form, {
+      props: {
+        properties: [{ name: 'active', label: '启用', type: 'boolean', bias: { select: 100 } }],
+      },
+    });
+    // switch（90）原本胜出，加成后 select（100）反超
+    expect(wrapper.find('[aria-checked]').exists()).toBe(false);
+    expect(wrapper.find('.cumquat-select').exists()).toBe(true);
+  });
+
+  it('字段插槽优先级最高', () => {
+    const wrapper = mount(Form, {
+      props: { properties: [{ name: 'name', label: '姓名', type: 'string' }] },
+      slots: { 'field-name': '<div class="custom-field">自定义</div>' },
+    });
+    expect(wrapper.find('.custom-field').exists()).toBe(true);
+    expect(wrapper.find('input').exists()).toBe(false);
+  });
+
+  it('控件写回整表值并回发 update:modelValue；disabled 整表透传', async () => {
+    const wrapper = mount(Form, {
+      props: {
+        modelValue: { name: '' },
+        properties: [{ name: 'name', label: '姓名', type: 'string' }],
+      },
+    });
+    await wrapper.find('input').setValue('Amber');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([{ name: 'Amber' }]);
+    const disabledForm = mount(Form, {
+      props: { disabled: true, properties: [{ name: 'name', label: '姓名', type: 'string' }] },
+    });
+    expect(disabledForm.find('input').attributes('disabled')).toBeDefined();
+  });
+
+  it('局部 controls 参与竞选，ResourceField 附加字段（scope）无害', async () => {
+    const colorField: FieldRenderer = {
+      name: 'color',
+      fitness: (field) => (field.format === 'color' ? 95 : 0),
+      render: (_value, _field, ctx) =>
+        h('div', { class: 'cumquat-field--color-custom', onClick: () => ctx.setValue('#ff0000') }),
+    };
+    // ResourceField 形状：额外 scope 字段结构兼容
+    const properties = [
+      { name: 'theme', label: '主题色', type: 'string', format: 'color', scope: { create: true } },
+    ] as unknown as FormFieldMeta[];
+    const wrapper = mount(Form, { props: { properties, controls: [colorField] } });
+    expect(wrapper.find('.cumquat-field--color-custom').exists()).toBe(true);
+    await wrapper.find('.cumquat-field--color-custom').trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([{ theme: '#ff0000' }]);
+  });
+
+  it('registerField 同名覆盖内建实现，全局生效', () => {
+    registerField({
+      name: 'switch',
+      fitness: (field) => (field.type === 'boolean' ? 90 : 0),
+      render: (_value, _field, ctx) =>
+        h('div', { class: 'cumquat-field--switch-custom', onClick: () => ctx.setValue(true) }),
+    });
+    const wrapper = mount(Form, {
+      props: { properties: [{ name: 'active', label: '启用', type: 'boolean' }] },
+    });
+    expect(wrapper.find('.cumquat-field--switch-custom').exists()).toBe(true);
+    // 还原内建实现，避免影响同文件后续用例
+    registerField({
+      name: 'switch',
+      fitness: (field) => (field.type === 'boolean' ? 90 : 0),
+      render: (value, _field, ctx) =>
+        h(Switch, {
+          modelValue: value === true,
+          'onUpdate:modelValue': (next: boolean) => ctx.setValue(next),
+          disabled: ctx.disabled,
+        }),
+    });
+  });
+
+  it('未绑定 properties 时保持既有插槽用法', () => {
+    const wrapper = mount(Form, {
+      props: { modelValue: { name: 'x' } },
+      slots: {
+        default: () =>
+          h(FormItem, { name: 'name', label: '姓名' }, { default: () => h(Input) }),
+      },
+    });
+    expect(wrapper.findAll('.cumquat-form-item')).toHaveLength(1);
   });
 });

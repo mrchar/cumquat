@@ -8,12 +8,24 @@ import {
 } from '@cumquat/composables';
 import type { AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composables';
 import Pagination from './Pagination.vue';
+import { resolveCell } from './cells';
+import type { CellRenderer } from './cells';
 
 export interface TableColumn {
   key: string;
   title: string;
   width?: string;
   align?: 'left' | 'center' | 'right';
+  /** 保存格式提示（string / number / boolean / date / datetime / enum）：单元格竞选的评分输入，资源池投影自动携带 */
+  type?: 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum';
+  /** 内容格式提示（email / uri / tag / status…）：单元格竞选的评分输入，资源池投影自动携带 */
+  format?: string;
+  /** 枚举选项：type 为 enum 时据此显示 label */
+  options?: Array<{ label: string; value: string | number }>;
+  /** 显式指定单元格渲染器名称（如 'tag'），指定即生效，跳过竞选 */
+  cell?: string;
+  /** 竞选加成：对指定渲染器加减分（正负均可），可翻转竞选结果 */
+  bias?: Record<string, number>;
   /** 该列可排序 */
   sortable?: boolean;
   /** 本地排序比较器；远程排序时仅回发状态 */
@@ -61,6 +73,8 @@ const props = withDefaults(
     sorter?: { key: string; order: 'asc' | 'desc' | null };
     /** 初始排序字段（非受控） */
     defaultSort?: { key: string; order: 'asc' | 'desc' };
+    /** 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先 */
+    cells?: CellRenderer[];
   }>(),
   {
     rows: () => [],
@@ -78,6 +92,7 @@ const props = withDefaults(
     pageSize: 10,
     pageSizes: () => [10, 20, 50],
     defaultSort: undefined,
+    cells: undefined,
   },
 );
 
@@ -321,6 +336,22 @@ function stopFilterPanel(event: MouseEvent) {
 function bodyClick() {
   openFilterKey.value = null;
 }
+
+/* ---------------- 单元格竞选（按列裁决，插槽优先级最高） ---------------- */
+const columnCells = computed(() => {
+  const plan = new Map<string, CellRenderer | undefined>();
+  for (const column of props.columns) {
+    plan.set(column.key, resolveCell(column, props.cells));
+  }
+  return plan;
+});
+
+/** 默认文本渲染：与竞选 Cell 输出同形，nullish 显示为空 */
+const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColumn }) => {
+  const value = cellProps.row[cellProps.column.key];
+  if (cellProps.cell) return cellProps.cell.render(value, cellProps.column);
+  return value === null || value === undefined ? '' : String(value);
+};
 </script>
 
 <template>
@@ -425,7 +456,7 @@ function bodyClick() {
               :class="`cumquat-table__td--${col.align ?? 'left'}`"
             >
               <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
-                {{ row[col.key] }}
+                <CellView :cell="columnCells.get(col.key)" :row="row" :column="col" />
               </slot>
             </td>
             <td v-if="expandable" class="cumquat-table__td cumquat-table__expand-cell">
