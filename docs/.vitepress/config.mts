@@ -82,6 +82,7 @@ const groups: Array<{ text: string; items: Array<[string, string, string]> }> = 
       ['skeleton', 'Skeleton 骨架屏'],
       ['result', 'Result 结果页'],
       ['upload', 'Upload 上传'],
+      ['chat', 'Chat 聊天框'],
     ],
   },
   {

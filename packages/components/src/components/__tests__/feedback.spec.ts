@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { Message, Alert, Notification, Loading, Skeleton, Result, Upload } from '../../index';
+import { describe, expect, it, vi } from 'vitest';
+import { reactive } from 'vue';
+import { flushPromises, mount } from '@vue/test-utils';
+import { Message, Alert, Notification, Loading, Skeleton, Result, Upload, Chat } from '../../index';
+import type { ChatMessage } from '@cumquat/composables';
 import type { UploadFile } from '../feedback/Upload.vue';
 
 describe('Message', () => {
@@ -72,5 +74,76 @@ describe('Upload', () => {
     expect(wrapper.findAll('.cumquat-upload__item')).toHaveLength(1);
     await wrapper.find('.cumquat-upload__remove').trigger('click');
     expect(wrapper.emitted('remove')?.[0]).toEqual([fileList[0]]);
+  });
+});
+
+describe('Chat', () => {
+  it('fetch 加载历史并渲染气泡方向', async () => {
+    const wrapper = mount(Chat, {
+      props: {
+        fetch: async () =>
+          [
+            { id: 1, sender: 'Alice', content: '早' },
+            { id: 2, content: '晚', self: true },
+          ] as ChatMessage[],
+      },
+    });
+    await flushPromises();
+    const rows = wrapper.findAll('.cumquat-chat__row');
+    expect(rows).toHaveLength(2);
+    expect(rows[0].classes()).not.toContain('cumquat-chat__row--self');
+    expect(rows[1].classes()).toContain('cumquat-chat__row--self');
+    expect(wrapper.find('.cumquat-chat__sender').text()).toBe('Alice');
+  });
+
+  it('发送消息：action 调用、气泡上屏、输入清空并 emit send', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(Chat, { props: { action } });
+    await wrapper.find('input').setValue('你好');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(action).toHaveBeenCalledWith('你好');
+    const rows = wrapper.findAll('.cumquat-chat__row');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].classes()).toContain('cumquat-chat__row--self');
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
+    expect(wrapper.emitted('send')).toHaveLength(1);
+  });
+
+  it('发送失败保留气泡可重试并展示错误条', async () => {
+    const action = vi.fn().mockRejectedValueOnce(new Error('超时')).mockResolvedValueOnce(undefined);
+    const wrapper = mount(Chat, { props: { action } });
+    await wrapper.find('input').setValue('hi');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(wrapper.find('.cumquat-chat__bubble--failed').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-chat__alert').text()).toContain('超时');
+    expect(wrapper.emitted('error')).toHaveLength(1);
+    await wrapper.find('.cumquat-chat__retry').trigger('click');
+    await flushPromises();
+    expect(action).toHaveBeenCalledTimes(2);
+    expect(wrapper.find('.cumquat-chat__bubble--failed').exists()).toBe(false);
+    expect(wrapper.find('.cumquat-chat__alert').exists()).toBe(false);
+  });
+
+  it('subscribe 推送追加新消息', async () => {
+    const source = reactive<ChatMessage[]>([{ id: 1, content: 'a' }]);
+    const wrapper = mount(Chat, {
+      props: { subscribe: async () => ({ status: 'success', data: source }) },
+    });
+    await flushPromises();
+    expect(wrapper.findAll('.cumquat-chat__row')).toHaveLength(1);
+    source.push({ id: 2, content: 'b' });
+    await flushPromises();
+    expect(wrapper.findAll('.cumquat-chat__row')).toHaveLength(2);
+    expect(wrapper.text()).toContain('b');
+  });
+
+  it('无消息渲染空态，disabled 禁用输入与按钮', async () => {
+    const wrapper = mount(Chat, { props: { disabled: true } });
+    await flushPromises();
+    expect(wrapper.find('.cumquat-chat__empty').text()).toBe('暂无消息');
+    expect(wrapper.find('input').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('.cumquat-chat__footer button').attributes('disabled')).toBeDefined();
   });
 });

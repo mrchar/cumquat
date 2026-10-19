@@ -62,6 +62,8 @@ app.use(Cumquat);
 
 不想手写每一列、每一项？走元数据直通路线：`useResources` 资源池（见第 11 节）导出资源方法与字段元数据，展示与录入由竞选机制自动推断（见第 12 节）。
 
+聊天场景三个协议同屏：`Chat` 组件用 `fetch` 载历史、`subscribe` 收推送、`action` 发消息（见第 10 节速查）。
+
 ## 3. 远程数据 Fetch
 
 用于组件**主动发起**的查询型请求（分页、搜索、排序、筛选）。组件自动注入查询参数并处理防抖、竞态、四态渲染。
@@ -298,6 +300,18 @@ const submitForm = async (values: Record<string, unknown>) => {
 <Form :properties="userApi.properties" :action="userApi.create">
   <Button type="primary" native-type="submit">保存</Button>
 </Form>
+```
+
+### 聊天窗（三协议同屏）
+
+```vue
+<Chat :fetch="loadHistory" :subscribe="subscribeLive" :action="sendMessage" height="22rem" />
+```
+
+```ts
+// fetch：currentPage 递增表示更早一页，返回 { list, total } 自动判定是否还有更早消息
+// subscribe：推送单条或数组，自己消息（self: true）回显自动收敛为服务端 id
+// action：抛错或返回 error 结果即发送失败，气泡保留可点击重试
 ```
 
 ### 弹层确认后关闭

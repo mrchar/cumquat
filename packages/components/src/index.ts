@@ -59,6 +59,7 @@ import Loading from './components/feedback/Loading.vue';
 import Skeleton from './components/feedback/Skeleton.vue';
 import Result from './components/feedback/Result.vue';
 import Upload from './components/feedback/Upload.vue';
+import Chat from './components/feedback/Chat.vue';
 // 导航与布局
 import Breadcrumb from './components/navigation/Breadcrumb.vue';
 import Menu from './components/navigation/Menu.vue';
@@ -117,6 +118,7 @@ export {
   DatePicker,
   TimePicker,
   Upload,
+  Chat,
   InputNumber,
   AutoComplete,
   Breadcrumb,
@@ -199,6 +201,7 @@ const registry: Record<string, unknown> = {
   CDatePicker: DatePicker,
   CTimePicker: TimePicker,
   CUpload: Upload,
+  CChat: Chat,
   CInputNumber: InputNumber,
   CAutoComplete: AutoComplete,
   CBreadcrumb: Breadcrumb,

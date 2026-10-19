@@ -1759,6 +1759,71 @@
   .cumquat-upload__remove-icon {
     @apply size-4;
   }
+
+  /* Chat 聊天框 */
+  .cumquat-chat {
+    @apply flex flex-col overflow-hidden rounded-cumquat border border-cumquat-border bg-cumquat-surface;
+  }
+  .cumquat-chat__body {
+    @apply flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3;
+  }
+  .cumquat-chat__older {
+    @apply flex justify-center py-1;
+  }
+  .cumquat-chat__older-btn {
+    @apply cursor-pointer rounded-cumquat px-3 py-1 text-xs text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-chat__older-btn:hover {
+    @apply bg-cumquat-accent-soft text-cumquat-accent;
+  }
+  .cumquat-chat__older-btn:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+  .cumquat-chat__older-end {
+    @apply text-xs text-cumquat-text-muted;
+  }
+  .cumquat-chat__empty {
+    @apply py-8 text-center text-sm text-cumquat-text-muted;
+  }
+  .cumquat-chat__row {
+    @apply flex;
+  }
+  .cumquat-chat__row--self {
+    @apply justify-end;
+  }
+  .cumquat-chat__bubble {
+    @apply max-w-[80%] rounded-cumquat bg-cumquat-surface-2 px-3 py-2 text-sm;
+  }
+  .cumquat-chat__bubble--self {
+    @apply bg-cumquat-accent-soft;
+  }
+  .cumquat-chat__bubble--sending {
+    @apply opacity-70;
+  }
+  .cumquat-chat__bubble--failed {
+    @apply border border-cumquat-danger;
+  }
+  .cumquat-chat__meta {
+    @apply mb-1 flex items-center gap-2 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-chat__content {
+    @apply break-words text-cumquat-text [white-space:pre-wrap];
+  }
+  .cumquat-chat__retry {
+    @apply mt-1 cursor-pointer text-xs text-cumquat-danger;
+  }
+  .cumquat-chat__alert {
+    @apply flex items-center gap-2 border-t border-cumquat-border bg-cumquat-danger-soft px-4 py-1.5 text-xs text-cumquat-danger;
+  }
+  .cumquat-chat__alert-retry {
+    @apply cursor-pointer font-medium underline;
+  }
+  .cumquat-chat__footer {
+    @apply flex shrink-0 items-center gap-2 border-t border-cumquat-border px-3 py-2;
+  }
+  .cumquat-chat--disabled {
+    @apply pointer-events-none opacity-60;
+  }
 }
 
 /*

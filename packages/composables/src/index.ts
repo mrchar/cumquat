@@ -208,6 +208,9 @@ export { useSubscribe, extractSubscribeFailure } from './data/useSubscribe';
 export type { UseSubscribeReturn } from './data/useSubscribe';
 export { subscribeErrorText } from './data/useSubscribe';
 
+export { useChat } from './data/useChat';
+export type { ChatMessage, UseChatOptions, UseChatReturn } from './data/useChat';
+
 // L2 资源池
 export { useResources } from './resources/use-resources';
 export { parseOpenApi } from './resources/parse-open-api';

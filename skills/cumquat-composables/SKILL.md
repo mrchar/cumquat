@@ -32,6 +32,7 @@ const { useForm, useResources } = composables;
 ├─ 浮层 / 消息反馈 / 全局 loading → L2 浮层与反馈（第 5 节）
 ├─ 远程数据 / 订阅 / 分页 → L2 数据（第 3、6 节）
 ├─ 资源 CRUD + 字段元数据 → L2 资源池（第 7 节）
+├─ 聊天消息流（历史 + 推送 + 发送）→ useChat（第 3.5 节）
 ├─ 开 / 关、弹出、焦点圈、键盘导航 → L1 行为原语（第 8 节）
 └─ 受控值、事件监听、定时、滚动、剪贴板 → L0 工具原语（第 8 节）
 ```
@@ -88,6 +89,20 @@ const state = useAsyncState(() => loadDetail(id)); // 产出 AsyncStateLike
 
 不属于查询 / 动作 / 订阅三形态的异步逻辑，用它兜底；任何视图只依赖
 `AsyncStateLike` 契约即可渲染四态。
+
+### 3.5 useChat：聊天消息模型
+
+三协议聚合体：`fetch` 管历史（currentPage 递增向上翻页，结果前插去重）、
+`subscribe` 管推送（追加去重，自己消息回显自动收敛为服务端 id）、
+`send` 管发送（乐观上屏，失败保留气泡可重试）。
+
+```ts
+const { messages, send, loadOlder, hasMore, sending } = useChat({
+  fetch: loadHistory,   // ChatMessage[] 或 { list, total }，判定是否还有更早消息
+  subscribe: onPush,    // 推送单条或数组；响应式源持续推送
+  send: submitMessage,  // 抛错或返回 error 结果即失败
+});
+```
 
 ## 4. 表单模型域
 
