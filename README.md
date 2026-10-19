@@ -10,6 +10,8 @@ Vue 3 组件库，核心理念是**逻辑与渲染解耦**：Headless 组合函�
   - `action` — 交互动作绑定 Promise，自动派生 loading/disabled，失败错误条或乐观回退
   - `subscribe` — 被动订阅外部推送数据，失败保留旧数据并支持重试
 - **统一契约**：`AsyncStateLike` / `ActionResult` / `SubscribeResult` 最小类型集合通信
+- **资源池**：`useResources` 绑定服务器与 OpenAPI / Swagger 文档地址，即导出资源 list / detail / create / update / remove 方法与 `columns` / `properties` 字段元数据
+- **竞选机制**：`type` / `format` 元数据自动推断渲染——Table 单元格竞选管展示（枚举标签、邮箱链接、日期格式化…），Form 字段竞选管录入（下拉、开关、数值、日期…，`required` 自动派生校验）；优先级为插槽 > 显式指定 > 竞选推断 > 兜底，`bias` 加成、`registerCell` / `registerField` 覆盖与局部渲染器支持宿主扩展
 - **语义化主题**：`cq-` 前缀语义 token + 5 套主题包（basic / light / dark / high-contrast / glass）
 - **v-model 纯同步**：异步 props 全部可选，不传即普通组件
 
@@ -71,6 +73,33 @@ const confirmAction = async () => {
 </template>
 ```
 
+### 元数据驱动（资源池 + 竞选机制）
+
+```vue
+<script setup lang="ts">
+import { components, composables } from 'cumquat';
+
+const { Table, Form, Button } = components;
+const { useResources } = composables;
+
+// 模块级创建一次，全站复用：绑定服务器与 Swagger 文档地址即可
+const userApi = useResources({
+  server: 'https://api.example.com',
+  doc: '/v3/api-docs',
+}).client('users');
+</script>
+
+<template>
+  <!-- 列表：columns 元数据经单元格竞选自动推断展示（枚举→标签、email→链接、datetime→格式化） -->
+  <Table :columns="userApi.columns" :fetch="userApi.list" :page-size="20" />
+
+  <!-- 创建：properties 元数据经字段竞选自动推断控件，required 自动派生校验 -->
+  <Form :properties="userApi.properties" :action="userApi.create">
+    <Button type="primary" native-type="submit">保存</Button>
+  </Form>
+</template>
+```
+
 ## 仓库结构
 
 ```
@@ -95,5 +124,6 @@ pnpm docs:build     # 构建文档站点
 
 ## 文档
 
-- [远程数据 Fetch](docs/fetch.md) / [交互动作 Action](docs/action.md) / [数据订阅 Subscribe](docs/subscribe.md)
+- [远程数据 Fetch](docs/fetch.md) / [交互动作 Action](docs/action.md) / [数据订阅 Subscribe](docs/subscribe.md) / [资源池 useResources](docs/composables/resources.md)
+- [单元格竞选](docs/cell.md) / [字段竞选](docs/field.md) — 元数据驱动展示与录入的机制设计
 - [组件文档](docs/components/) — 每个组件页含可编辑实时演示

@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Cumquat
   text: Vue 3 组件库
-  tagline: 绑定一个方法，剩下的交给组件 —— 数据、动作、订阅全部内置状态管理
+  tagline: 绑定一个方法，剩下的交给组件 —— 数据、动作、订阅全部内置状态管理，元数据自动推断展示与录入
   actions:
     - theme: brand
       text: 快速上手
@@ -23,6 +23,12 @@ features:
   - icon: 📡
     title: subscribe 订阅实时数据
     details: WebSocket、响应式 store 等外部推送源直接绑到展示组件，失败保留旧数据，优先级高于本地与请求数据。
+  - icon: 🏷️
+    title: 元数据自动推断展示与录入
+    details: 单元格竞选按列定义自动推断展示（枚举标签、邮箱链接、日期格式化），字段竞选按字段定义自动装配表单控件；插槽 > 显式指定 > 竞选推断 > 兜底，可扩展可调整。
+  - icon: 🗃️
+    title: 资源池直通 Swagger 文档
+    details: useResources 绑定服务器与 OpenAPI 文档地址即导出资源方法与字段元数据，Table / Form 零胶水对接，元数据原样透传。
   - icon: 🎨
     title: 五套主题开箱即用
     details: 浅色、深色、高对比、液态玻璃随 class 一键切换；组件只暴露语义变量，宿主重写同名变量即可深度换肤。

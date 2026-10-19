@@ -60,6 +60,8 @@ app.use(Cumquat);
 
 三者可同时传入，数据优先级：**subscribe > fetch > 本地 props**。
 
+不想手写每一列、每一项？走元数据直通路线：`useResources` 资源池（见第 11 节）导出资源方法与字段元数据，展示与录入由竞选机制自动推断（见第 12 节）。
+
 ## 3. 远程数据 Fetch
 
 用于组件**主动发起**的查询型请求（分页、搜索、排序、筛选）。组件自动注入查询参数并处理防抖、竞态、四态渲染。
@@ -269,16 +271,16 @@ const hide = loading.show({ text: '加载中...' });
 ### 表单提交
 
 ```vue
-<Form :model="form" :action="submitForm" @submit-success="onSuccess">
-  <FormItem label="用户名" prop="name">
-    <Input v-model="form.name" />
+<Form v-model="form" :action="submitForm" @submit="onSuccess">
+  <FormItem label="用户名" name="name" required>
+    <Input name="name" />
   </FormItem>
 </Form>
 ```
 
 ```ts
-const submitForm = async () => {
-  await api.save(form.value);
+const submitForm = async (values: Record<string, unknown>) => {
+  await api.save(values);
 };
 ```
 
@@ -286,6 +288,16 @@ const submitForm = async () => {
 
 ```vue
 <Table :columns="columns" :fetch="fetchList" :pagination="{ pageSize: 20 }" />
+```
+
+### 元数据直通（资源池 + 竞选）
+
+```vue
+<!-- 列展示与表单控件均由 type / format 元数据自动推断 -->
+<Table :columns="userApi.columns" :fetch="userApi.list" :page-size="20" />
+<Form :properties="userApi.properties" :action="userApi.create">
+  <Button type="primary" native-type="submit">保存</Button>
+</Form>
 ```
 
 ### 弹层确认后关闭
@@ -307,7 +319,51 @@ const submitForm = async () => {
 />
 ```
 
-## 11. 注意事项
+## 11. 资源池 useResources
+
+协议无关的资源池：传入服务器地址与文档地址，导出资源操作方法与字段元数据，与组件零胶水对接。
+
+```ts
+import { composables } from 'cumquat';
+
+// 模块级创建一次，全站复用
+const userApi = composables.useResources({
+  server: 'https://api.example.com', // 服务器基地址
+  doc: '/v3/api-docs',               // OpenAPI 3 / Swagger 2.0 文档地址
+}).client('users');
+```
+
+- 返回：`list / detail / create / update / remove` 方法 + `fields / columns / filters / properties` 元数据
+- `columns` 直接绑 Table 的 `:columns`（按 `scope.list` 投影，携带 type / format）；`properties` 直接绑 Form 的 `:properties`（按 `scope.create` / `scope.update` 投影）；`filters` 供筛选面板
+- 分页信封自动识别（list / total 点分路径）；字段 `format` 原样透传文档声明
+- 自定义协议只需替换两个注入边界：`parse`（元数据解析器）与 `request`（请求适配器）
+
+完整契约见 [docs/composables/resources.md](../../docs/composables/resources.md)。
+
+## 12. 竞选机制：元数据自动推断
+
+同一套机制的两个应用：**单元格竞选**管展示（Table），**字段竞选**管录入（Form）。
+
+- 优先级链路：插槽（`#cell-{key}` / `#field-{name}`）> 显式指定（列上 `cell` / 字段上 `control`）> 竞选推断 > 兜底（默认文本 / 默认输入框）
+- 评分：渲染器对**完整列 / 字段定义**自我评价返回适配度分数（0 弃权），代理按列 / 字段裁决取最高分，同分先注册者优先
+- 外部调整三层：列 / 字段上 `bias` 加减分、显式指定、`registerCell` / `registerField` 同名覆盖；Table 的 `cells` / Form 的 `controls` 可传局部渲染器
+- 内建 Cell：text / number / boolean / enum / date / datetime / email / link / tag；内建 Field：input / number / switch / select / date（input 按 format 衍生 textarea / email / uri / password 形态）
+- Form 绑定 properties 后，`required` 字段自动派生必填校验，宿主 rules 按字段名叠加其后
+
+```ts
+import { components } from 'cumquat';
+
+// 注册自定义单元格渲染器：对 format: color 给出高分，其余弃权
+components.registerCell({
+  name: 'color',
+  fitness: (column) => (column.format === 'color' ? 95 : 0),
+  render: (value) => h('span', { style: { color: String(value) } }, '●'),
+});
+```
+
+机制设计详见 [docs/cell.md](../../docs/cell.md)（展示）与 [docs/field.md](../../docs/field.md)（录入）。
+
+## 13. 注意事项
 
 - **组件不发请求**：翻页/排序/搜索只 emit 事件，由外层响应式参数驱动。
 - **错误文案归一**：`message` → `error` 字符串 → `Error.message` → `errorText` prop。

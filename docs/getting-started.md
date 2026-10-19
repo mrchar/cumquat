@@ -91,7 +91,35 @@ const subscribeOrders = async () => {
 
 不传 `action` / `fetch` / `subscribe` 就是普通本地组件。
 
+## 元数据直通：资源池 + 竞选
+
+不想手写每一列、每一项？`useResources` 绑定服务器与 Swagger 文档地址即可导出资源方法与字段元数据，展示交给单元格竞选、录入交给字段竞选自动推断：
+
+```vue
+<script setup lang="ts">
+import { components, composables } from 'cumquat';
+
+const { Table, Form, Button } = components;
+const { useResources } = composables;
+
+const userApi = useResources({
+  server: 'https://api.example.com',
+  doc: '/v3/api-docs',
+}).client('users');
+</script>
+
+<template>
+  <!-- 列展示与表单控件均由 type / format 元数据自动推断 -->
+  <Table :columns="userApi.columns" :fetch="userApi.list" :page-size="20" />
+  <Form :properties="userApi.properties" :action="userApi.create">
+    <Button type="primary" native-type="submit">保存</Button>
+  </Form>
+</template>
+```
+
 ## 下一步
 
 - [远程数据 Fetch](/fetch) / [交互动作 Action](/action) / [数据订阅 Subscribe](/subscribe)：三大协议的完整行为。
+- [资源池 useResources](/composables/resources)：绑定文档地址即得资源方法与字段元数据。
+- [单元格竞选](/cell) / [字段竞选](/field)：元数据自动推断展示与录入的机制设计。
 - [组件总览](/components/button)：每个组件页都有可编辑的实时演示。

@@ -205,3 +205,161 @@ export type Placement =
 /** fixed 相对视口，absolute 相对最近定位祖先 */
 export type Strategy = 'fixed' | 'absolute';
 ```
+
+## 资源池
+
+完整契约见[资源池 useResources](/composables/resources)；此处收录跨模块共享的核心类型。
+
+### ResourceField
+
+字段元数据：视图中性的字段描述，`columns` / `filters` / `properties` 均按 `scope` 投影。
+
+```ts
+export type ResourceFieldType = 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum';
+
+export interface ResourceFieldOption {
+  label: string;
+  value: string | number;
+}
+
+export interface ResourceField {
+  /** 字段名：数据对象键 */
+  name: string;
+  /** 展示名，解析自文档描述，缺失回落字段名 */
+  label: string;
+  type: ResourceFieldType;
+  /** 内容格式：原样透传文档声明的 format（如 email / uri / int64），与 type 的保存格式互补 */
+  format?: string;
+  /** 枚举选项：type 为 enum 时提供 */
+  options?: ResourceFieldOption[];
+  /** 表单场景是否必填 */
+  required?: boolean;
+  /** 出现场景标记：未标记的字段不进入任何投影 */
+  scope?: { list?: boolean; filter?: boolean; create?: boolean; update?: boolean };
+}
+```
+
+### ResourceColumn
+
+列表列投影：与 Table 的 columns 属性形状对齐，`type` / `format` 供单元格竞选消费。
+
+```ts
+export interface ResourceColumn {
+  key: string;
+  title: string;
+  /** 保存格式提示：字段 type 原样投影 */
+  type?: ResourceFieldType;
+  /** 内容格式提示：字段 format 原样透传 */
+  format?: string;
+  sortable?: boolean;
+  /** 枚举字段的筛选项（表头勾选面板） */
+  filters?: ResourceFieldOption[];
+}
+```
+
+### ResourceSchema / ResourceDefinition / MetadataParser / RequestAdapter
+
+协议无关性的两条注入边界：解析器把任意协议文档转为资源表，适配器消费池生成的请求描述。
+
+```ts
+/** 资源表：元数据解析的唯一产物，也是池运行的唯一依据 */
+export interface ResourceSchema {
+  resources: Record<string, ResourceDefinition>;
+}
+
+/** 单个资源的操作集合与元数据：未声明的操作不可用 */
+export interface ResourceDefinition {
+  list?: ResourceOperation;
+  detail?: ResourceOperation;
+  create?: ResourceOperation;
+  update?: ResourceOperation;
+  remove?: ResourceOperation;
+  queryNames?: QueryNames;
+  /** 列表响应形状（list / total 的点分路径），由解析器识别 */
+  response?: ListResponseMapping;
+  /** 字段元数据：columns / filters / properties 的唯一来源 */
+  fields?: ResourceField[];
+}
+
+/** 元数据解析器：输入任意协议文档，输出资源表（默认提供 OpenAPI 3 / Swagger 2.0 解析器） */
+export type MetadataParser = (
+  doc: unknown,
+  context: { server: string },
+) => ResourceSchema | Promise<ResourceSchema>;
+```
+
+## 竞选
+
+机制设计见[单元格竞选](/cell)（展示）与[字段竞选](/field)（录入）；两套契约同构：自我评价 + 代理裁决 + 三层外部调整。
+
+### CellRenderer / CellColumn
+
+单元格渲染器：Table 列定义驱动的展示推断。
+
+```ts
+export interface CellColumn {
+  key: string;
+  title: string;
+  /** 保存格式提示 */
+  type?: 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum';
+  /** 内容格式提示：email / uri / tag / status…（原样透传文档声明） */
+  format?: string;
+  options?: Array<{ label: string; value: string | number }>;
+  filters?: Array<{ label: string; value: string | number }>;
+  /** 显式指定单元格渲染器名称，跳过竞选 */
+  cell?: string;
+  /** 竞选加成：对指定渲染器加减分，正负均可 */
+  bias?: Record<string, number>;
+}
+
+export interface CellRenderer {
+  /** 注册名：显式指定的目标；同名重注册替换既有实现（含内建） */
+  name: string;
+  /** 自我评价：完整列定义 → 适配度分数，0 弃权；纯函数、不读单元格值 */
+  fitness: (column: CellColumn) => number;
+  /** 渲染：值 → 展示内容；需自行处理空值与越界值 */
+  render: (value: unknown, column: CellColumn) => VNodeChild;
+}
+```
+
+### FieldRenderer / FormFieldMeta / FieldContext
+
+控件渲染器：Form 字段定义驱动的录入推断，值与错误经上下文接入表单。
+
+```ts
+export interface FormFieldMeta {
+  name: string;
+  label: string;
+  /** 保存格式提示 */
+  type: 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum';
+  /** 内容格式提示：email / uri / textarea / password…（原样透传文档声明） */
+  format?: string;
+  /** 枚举选项：select Field 据此装配选项 */
+  options?: Array<{ label: string; value: string | number }>;
+  /** 必填：自动派生必填校验规则 */
+  required?: boolean;
+  /** 占位提示，缺省回落 label */
+  placeholder?: string;
+  /** 显式指定控件渲染器名称，跳过竞选 */
+  control?: string;
+  /** 竞选加成：对指定渲染器加减分，正负均可 */
+  bias?: Record<string, number>;
+}
+
+export interface FieldContext {
+  name: string;
+  disabled: boolean;
+  /** 当前校验错误信息（无错误为 undefined） */
+  error: string | undefined;
+  /** 写回整表值；已存在错误的字段写回后自动重新校验 */
+  setValue: (value: unknown) => void;
+}
+
+export interface FieldRenderer {
+  name: string;
+  /** 自我评价：完整字段定义 → 适配度分数，0 弃权；纯函数、不读字段值 */
+  fitness: (field: FormFieldMeta) => number;
+  /** 装配：值 + 字段定义 + 上下文 → 控件节点 */
+  render: (value: unknown, field: FormFieldMeta, ctx: FieldContext) => VNodeChild;
+}
+```
