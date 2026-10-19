@@ -79,11 +79,30 @@ export function useSelectModel<V = string | number, L = string>(
   const findOption = (value: V) =>
     toValue(optionSource).find((option) => equals(option.value, value));
 
+  /**
+   * 已选快照：pick 时记下完整选项对象，独立于当前可见数据源。
+   * 分页 / 服务端搜索后选项已不在当前页时，据此仍能回显已选标签；
+   * 不从数据源中淘汰，仅随取消选中或清空移除。
+   */
+  const pickedOptions = ref<Array<SelectOption<V, L>>>([]);
+
+  const findPicked = (value: V) =>
+    pickedOptions.value.find((option) => equals(option.value, value));
+
+  const remember = (option: SelectOption<V, L>) => {
+    if (findPicked(option.value)) return;
+    pickedOptions.value = [...pickedOptions.value, option];
+  };
+
+  const forget = (value: V) => {
+    pickedOptions.value = pickedOptions.value.filter((option) => !equals(option.value, value));
+  };
+
   const selectedOptions = computed(() => {
     const current = model.value;
     const values = Array.isArray(current) ? current : current === null ? [] : [current];
     return values
-      .map((value) => findOption(value))
+      .map((value) => findPicked(value) ?? findOption(value))
       .filter((option): option is SelectOption<V, L> => !!option);
   });
 
@@ -112,8 +131,13 @@ export function useSelectModel<V = string | number, L = string>(
     if (multiple) {
       const set = new Set((Array.isArray(model.value) ? model.value : []) as V[]);
       const nextChecked = checked ?? !set.has(option.value);
-      if (nextChecked) set.add(option.value);
-      else set.delete(option.value);
+      if (nextChecked) {
+        set.add(option.value);
+        remember(option);
+      } else {
+        set.delete(option.value);
+        forget(option.value);
+      }
       model.value = Array.from(set);
     } else {
       if (checked === false) return false;
@@ -121,6 +145,7 @@ export function useSelectModel<V = string | number, L = string>(
         return false;
       }
       model.value = option.value;
+      remember(option);
     }
     keyword.value = '';
     return true;
@@ -129,10 +154,12 @@ export function useSelectModel<V = string | number, L = string>(
   const removeValue = (value: V) => {
     if (!multiple || !Array.isArray(model.value)) return;
     model.value = model.value.filter((item) => !equals(item, value));
+    forget(value);
   };
 
   const clear = () => {
     model.value = multiple ? [] : null;
+    pickedOptions.value = [];
     keyword.value = '';
   };
 

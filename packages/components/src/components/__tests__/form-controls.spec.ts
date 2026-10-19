@@ -364,6 +364,181 @@ describe('Select', () => {
     expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(1);
     expect(wrapper.find('.cumquat-select__option').text()).toContain('恢复项');
   });
+
+  /** 模拟面板滚动到底部（jsdom 下 scrollHeight/clientHeight 恒为 0，需显式定义） */
+  async function scrollToBottom(element: HTMLElement, trigger: () => Promise<void>) {
+    Object.defineProperty(element, 'scrollHeight', { value: 600, configurable: true });
+    Object.defineProperty(element, 'clientHeight', { value: 240, configurable: true });
+    element.scrollTop = 360;
+    await trigger();
+  }
+
+  function makePagedFetcher(totalPerPage = 2) {
+    return vi.fn(async (query: { pagination?: { currentPage: number } }) => {
+      const page = query.pagination?.currentPage ?? 1;
+      return {
+        list: Array.from({ length: totalPerPage }, (_, i) => ({
+          label: `第${page}页第${i + 1}项`,
+          value: `p${page}-${i + 1}`,
+        })),
+        total: totalPerPage * 3,
+      };
+    });
+  }
+
+  it('fetch 注入分页参数：首页 currentPage 1，pageSize 可配置', async () => {
+    const fetcher = makePagedFetcher();
+    mount(Select, { props: { fetch: fetcher, pageSize: 10 } });
+    await wait();
+    expect(fetcher.mock.calls[0][0].pagination).toEqual({ currentPage: 1, pageSize: 10 });
+  });
+
+  it('滚动触底以递增页码取下一页并累积，取完后不再请求', async () => {
+    const fetcher = makePagedFetcher();
+    const wrapper = mount(Select, { props: { fetch: fetcher, pageSize: 2 } });
+    await wait();
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(2);
+
+    const dropdown = wrapper.find('.cumquat-select__dropdown');
+    const element = dropdown.element as HTMLElement;
+    await scrollToBottom(element, () => dropdown.trigger('scroll'));
+    await wait();
+    expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(4);
+
+    await scrollToBottom(element, () => dropdown.trigger('scroll'));
+    await wait();
+    expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(6);
+
+    // total 已取满，再触底不应产生新请求
+    await scrollToBottom(element, () => dropdown.trigger('scroll'));
+    await wait();
+    expect(fetcher.mock.calls.map((call) => call[0].pagination?.currentPage)).toEqual([1, 2, 3]);
+  });
+
+  it('跨页重复 value 自动去重', async () => {
+    const fetcher = vi.fn(async (query: { pagination?: { currentPage: number } }) => {
+      const page = query.pagination?.currentPage ?? 1;
+      return {
+        list:
+          page === 1
+            ? [{ label: '甲', value: 'a' }]
+            : [
+                { label: '甲（重复）', value: 'a' },
+                { label: '乙', value: 'b' },
+              ],
+        total: 3,
+      };
+    });
+    const wrapper = mount(Select, { props: { fetch: fetcher, pageSize: 1 } });
+    await wait();
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    const dropdown = wrapper.find('.cumquat-select__dropdown');
+    await scrollToBottom(dropdown.element as HTMLElement, () => dropdown.trigger('scroll'));
+    await wait();
+    expect(wrapper.findAll('.cumquat-select__option').map((o) => o.text())).toEqual(['甲', '乙']);
+  });
+
+  it('关面板回到第 1 页并丢弃累积的翻页数据', async () => {
+    const fetcher = makePagedFetcher();
+    const wrapper = mount(Select, { props: { fetch: fetcher, pageSize: 2 } });
+    await wait();
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    const dropdown = wrapper.find('.cumquat-select__dropdown');
+    await scrollToBottom(dropdown.element as HTMLElement, () => dropdown.trigger('scroll'));
+    await wait();
+    expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(4);
+
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    await wait();
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    await wait();
+    expect(fetcher.mock.calls.at(-1)?.[0].pagination?.currentPage).toBe(1);
+    expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(2);
+  });
+
+  it('单选：数据源被替换后，已选标签靠快照保留', async () => {
+    const wrapper = mount(Select, {
+      props: {
+        state: { status: 'success' as const, data: [{ label: '苹果', value: 'apple' }] },
+      },
+    });
+    await wait();
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    await wrapper.findAll('.cumquat-select__option')[0].trigger('click');
+    expect(wrapper.find('.cumquat-select__trigger').text()).toContain('苹果');
+
+    // 数据源被替换为另一次查询的结果，苹果已不在其中
+    await wrapper.setProps({
+      state: { status: 'success' as const, data: [{ label: '香蕉', value: 'banana' }] },
+    });
+    await wait();
+    // 单选选中后面板已关闭，重新展开查看候选项
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    await wait();
+    expect(wrapper.findAll('.cumquat-select__option').map((o) => o.text())).toEqual(['香蕉']);
+    expect(wrapper.find('.cumquat-select__trigger').text()).toContain('苹果');
+  });
+
+  it('多选：点击累积为数组值，标签渲染且可移除', async () => {
+    const wrapper = mount(Select, { props: { options, multiple: true } });
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    await wrapper.findAll('.cumquat-select__option')[0].trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([['bj']]);
+    expect(wrapper.findAll('.cumquat-select__tag').map((t) => t.text())).toEqual(['北京']);
+
+    await wrapper.findAll('.cumquat-select__option')[1].trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([['bj', 'sh']]);
+    expect(wrapper.findAll('.cumquat-select__tag')).toHaveLength(2);
+
+    await wrapper.find('.cumquat-select__tag-close').trigger('click');
+    await wait();
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([['sh']]);
+    expect(wrapper.findAll('.cumquat-select__tag').map((t) => t.text())).toEqual(['上海']);
+  });
+
+  it('多选 + fetch：渲染搜索框且过滤交由服务端', async () => {
+    const fetcher = vi.fn(async () => [{ label: '项一', value: 'x1' }]);
+    const wrapper = mount(Select, { props: { multiple: true, fetch: fetcher } });
+    await wait();
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    expect(wrapper.find('.cumquat-select__search').exists()).toBe(true);
+    await wrapper.find('.cumquat-select__search').setValue('项');
+    await wait(350);
+    expect(fetcher.mock.calls.at(-1)?.[0].keyword).toBe('项');
+  });
+
+  it('条目达到阈值切虚拟滚动：仅渲染可视窗口并以占位撑高', async () => {
+    const many = Array.from({ length: 150 }, (_, i) => ({ label: `项${i}`, value: `v${i}` }));
+    const wrapper = mount(Select, {
+      props: { state: { status: 'success' as const, data: many } },
+    });
+    await wait();
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    const rendered = wrapper.findAll('.cumquat-select__option');
+    expect(rendered.length).toBeLessThan(150);
+    expect(rendered[0].text()).toBe('项0');
+    expect(wrapper.find('.cumquat-select__spacer').exists()).toBe(true);
+  });
+
+  it('低于阈值保留分组标题且不启用占位', async () => {
+    const wrapper = mount(Select, {
+      props: {
+        options: [
+          { label: '苹果', value: 'a', group: '水果' },
+          { label: '白菜', value: 'b', group: '蔬菜' },
+        ],
+      },
+    });
+    await wrapper.find('.cumquat-select__trigger').trigger('click');
+    expect(wrapper.findAll('.cumquat-select__group-title').map((n) => n.text())).toEqual([
+      '水果',
+      '蔬菜',
+    ]);
+    expect(wrapper.find('.cumquat-select__spacer').exists()).toBe(false);
+  });
 });
 
 describe('TreeSelect', () => {

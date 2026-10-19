@@ -379,6 +379,34 @@
   .cumquat-select__trigger--open {
     @apply border-cumquat-accent;
   }
+  /* 多选：标签可换行，高度自适应 */
+  .cumquat-select__trigger--multiple {
+    @apply h-auto min-h-10 flex-wrap justify-start gap-1 py-1.5;
+  }
+  .cumquat-select__tag {
+    @apply inline-flex max-w-full items-center gap-1 rounded-cumquat bg-cumquat-surface-3 px-2 py-0.5 text-xs text-cumquat-text;
+  }
+  .cumquat-select__tag-close {
+    @apply flex size-3.5 shrink-0 cursor-pointer items-center justify-center rounded-full text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-select__tag-close:hover {
+    @apply bg-cumquat-danger/10 text-cumquat-danger;
+  }
+  .cumquat-select__tag-close-icon {
+    @apply size-3;
+  }
+  .cumquat-select__search {
+    @apply min-w-0 flex-1 border-0 bg-transparent text-sm text-cumquat-text outline-none placeholder:text-cumquat-text-muted;
+  }
+  .cumquat-select__clear {
+    @apply flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-select__clear:hover {
+    @apply bg-cumquat-surface-2 text-cumquat-text;
+  }
+  .cumquat-select__clear-icon {
+    @apply size-3.5;
+  }
   .cumquat-select__value {
     @apply text-cumquat-text;
   }
@@ -393,6 +421,13 @@
   }
   .cumquat-select__dropdown {
     @apply absolute z-20 mt-1.5 max-h-60 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
+  }
+  /* 虚拟滚动占位行：仅用于撑高，不参与交互 */
+  .cumquat-select__spacer {
+    @apply pointer-events-none p-0;
+  }
+  .cumquat-select__group-title {
+    @apply px-3 py-1 text-xs font-medium text-cumquat-text-muted;
   }
   .cumquat-select__option {
     @apply cursor-pointer px-3 py-2 text-sm text-cumquat-text transition-colors;

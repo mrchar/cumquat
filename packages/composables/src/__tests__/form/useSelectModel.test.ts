@@ -76,3 +76,51 @@ describe('useSelectModel（多选）', () => {
     expect(ctx.selectedLabel.value).toBe('后到的选项');
   });
 });
+
+describe('useSelectModel（已选快照）', () => {
+  it('数据源翻页替换后，已选标签仍能回显', () => {
+    const options = ref<SelectOption<number>[]>([{ value: 1, label: '苹果' }]);
+    const ctx = withScope(() => useSelectModel<number>({ options, multiple: true }));
+    ctx.selectOption(options.value[0]);
+    expect(ctx.selectedLabel.value).toBe('苹果');
+    // 模拟翻页：可见数据被替换为第二页，第一页选项已不在其中
+    options.value = [{ value: 2, label: '香蕉' }];
+    expect(ctx.model.value).toEqual([1]);
+    expect(ctx.selectedOptions.value.map((o) => o.label)).toEqual(['苹果']);
+  });
+
+  it('服务端搜索排除原选项后，旧值与新值可共存', () => {
+    const options = ref<SelectOption<number>[]>([{ value: 1, label: '苹果' }]);
+    const ctx = withScope(() => useSelectModel<number>({ options, multiple: true }));
+    ctx.selectOption(options.value[0]);
+    // 搜索后数据源只剩另一个选项
+    options.value = [{ value: 2, label: '香蕉' }];
+    ctx.selectOption(options.value[0]);
+    expect(ctx.selectedOptions.value.map((o) => o.label)).toEqual(['苹果', '香蕉']);
+  });
+
+  it('取消选中与 clear 会从快照移除', () => {
+    const options = ref<SelectOption<number>[]>([
+      { value: 1, label: '苹果' },
+      { value: 2, label: '香蕉' },
+    ]);
+    const ctx = withScope(() => useSelectModel<number>({ options, multiple: true }));
+    ctx.selectOption(options.value[0]);
+    ctx.selectOption(options.value[1]);
+    ctx.removeValue(1);
+    // 数据源清空后，仅剩的已选值仍靠快照回显
+    options.value = [];
+    expect(ctx.selectedOptions.value.map((o) => o.label)).toEqual(['香蕉']);
+    ctx.clear();
+    expect(ctx.selectedOptions.value).toHaveLength(0);
+  });
+
+  it('未经 pick 的受控值不写入快照，数据源移除后不再回显', () => {
+    const options = ref<SelectOption<number>[]>([{ value: 7, label: '外部值' }]);
+    const ctx = withScope(() => useSelectModel<number>({ options, defaultValue: 7 }));
+    expect(ctx.selectedLabel.value).toBe('外部值');
+    // 未经 pick 无快照可依，只能依赖数据源，移除后即失去回显能力
+    options.value = [];
+    expect(ctx.selectedOptions.value).toHaveLength(0);
+  });
+});

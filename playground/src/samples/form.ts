@@ -5,20 +5,40 @@ import type { Sample } from '../samples';
 export const formSamples: Sample[] = [
   {
     key: 'select',
-    title: 'Select 选择器',
+    title: 'Select 选择器（远程分页 + 多选）',
     code: `
   <div class="flex items-center gap-3">
-    <Select v-model="value" :options="options" placeholder="请选择水果" clearable class="w-56" />
-    <span class="text-sm text-cumquat-text-muted">已选：{{ value ?? '无' }}</span>
+    <Select
+      v-model="value"
+      multiple
+      clearable
+      filterable
+      :fetch="loadFruits"
+      :page-size="20"
+      placeholder="请选择水果"
+      class="w-72"
+    />
+    <span class="text-sm text-cumquat-text-muted">已选 {{ (value ?? []).length }} 项</span>
   </div>
 `,
     scope: () => ({
-      value: ref<string | null>(null),
-      options: [
-        { value: 'apple', label: '苹果' },
-        { value: 'banana', label: '香蕉' },
-        { value: 'cherry', label: '樱桃', disabled: true },
-      ],
+      value: ref<string[]>([]),
+      // 远程分页：滚动到面板底部自动取下一页，搜索词变化回到第 1 页
+      loadFruits: async (query: {
+        keyword?: string;
+        pagination?: { currentPage: number; pageSize: number };
+      }) => {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        // 共 160 条：滚动到底部逐页加载，累积到 100 条以上自动切换为虚拟滚动
+        const all = Array.from({ length: 160 }, (_, i) => ({
+          value: `f${i}`,
+          label: `水果 ${i + 1}`,
+        }));
+        const matched = query.keyword ? all.filter((o) => o.label.includes(query.keyword!)) : all;
+        const size = query.pagination?.pageSize ?? 10;
+        const start = ((query.pagination?.currentPage ?? 1) - 1) * size;
+        return { list: matched.slice(start, start + size), total: matched.length };
+      },
     }),
   },
   {
@@ -188,13 +208,15 @@ export const formSamples: Sample[] = [
     scope: () => ({
       value: ref<string | null>(null),
       tree: [
-        { key: 'fruit', label: '水果', children: [
-          { key: 'apple', label: '苹果' },
-          { key: 'banana', label: '香蕉' },
-        ] },
-        { key: 'veg', label: '蔬菜', children: [
-          { key: 'carrot', label: '胡萝卜' },
-        ] },
+        {
+          key: 'fruit',
+          label: '水果',
+          children: [
+            { key: 'apple', label: '苹果' },
+            { key: 'banana', label: '香蕉' },
+          ],
+        },
+        { key: 'veg', label: '蔬菜', children: [{ key: 'carrot', label: '胡萝卜' }] },
       ],
     }),
   },
