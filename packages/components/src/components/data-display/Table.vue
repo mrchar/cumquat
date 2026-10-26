@@ -380,7 +380,7 @@ const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColum
             :style="col.width ? { width: col.width } : undefined"
           >
             <span class="cumquat-table__th-title">
-              {{ col.title }}
+              <span class="cumquat-table__th-text" :title="col.title">{{ col.title }}</span>
               <button
                 v-if="col.sortable"
                 type="button"

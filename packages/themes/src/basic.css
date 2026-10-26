@@ -958,7 +958,13 @@
     @apply bg-cumquat-surface-2;
   }
   .cumquat-table__th {
-    @apply border-b border-cumquat-border px-4 py-3 font-medium text-cumquat-text-muted;
+    @apply min-w-20 whitespace-nowrap border-b border-cumquat-border px-4 py-3 font-medium text-cumquat-text-muted;
+  }
+  .cumquat-table__th-title {
+    @apply inline-flex max-w-full items-center gap-1 align-bottom;
+  }
+  .cumquat-table__th-text {
+    @apply max-w-48 overflow-hidden text-ellipsis whitespace-nowrap;
   }
   .cumquat-table__th--left,
   .cumquat-table__td--left {
