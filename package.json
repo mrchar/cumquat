@@ -16,6 +16,7 @@
     "docs:preview": "pnpm -C docs preview"
   },
   "devDependencies": {
+    "cross-env": "catalog:",
     "unplugin-vue": "catalog:",
     "vite-plus": "catalog:"
   },
