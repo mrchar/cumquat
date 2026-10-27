@@ -5,6 +5,9 @@
 @import '@cumquat/themes/high-contrast.css';
 @import '@cumquat/themes/glass.css';
 
+/* 扫描组件源码中的模板工具类，使组件真实样式与文档站一致 */
+@source '../../packages/components/src';
+
 html {
   scroll-behavior: smooth;
   color-scheme: light;

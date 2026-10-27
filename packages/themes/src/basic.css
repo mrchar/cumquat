@@ -281,12 +281,6 @@
   .cumquat-statistic__state.cq-state--error {
     @apply text-cumquat-danger;
   }
-  .cumquat-statistic__retry {
-    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-statistic__retry:hover {
-    @apply opacity-80;
-  }
 
   /* ---------- Typography ---------- */
   .cumquat-typography {
@@ -449,12 +443,6 @@
   }
   .cumquat-select__error {
     @apply flex items-center gap-2 px-3 py-2 text-sm text-cumquat-danger;
-  }
-  .cumquat-select__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-select__retry:hover {
-    @apply opacity-80;
   }
 
   /* ---------- Checkbox ---------- */
@@ -624,12 +612,6 @@
   .cumquat-autocomplete__state.cq-state--error {
     @apply text-cumquat-danger;
   }
-  .cumquat-autocomplete__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-autocomplete__retry:hover {
-    @apply opacity-80;
-  }
 
   /* ---------- Mention ---------- */
   .cumquat-mention {
@@ -656,12 +638,6 @@
   }
   .cumquat-mention__error {
     @apply flex items-center gap-2 px-3 py-2 text-sm text-cumquat-danger;
-  }
-  .cumquat-mention__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-mention__retry:hover {
-    @apply opacity-80;
   }
 
   /* ---------- Form ---------- */
@@ -738,12 +714,6 @@
   }
   .cumquat-tree-select__state.cq-state--error {
     @apply text-cumquat-danger;
-  }
-  .cumquat-tree-select__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-tree-select__retry:hover {
-    @apply opacity-80;
   }
   .cumquat-tree-select__indent {
     @apply size-4 shrink-0;
@@ -869,7 +839,16 @@
     @apply inline-flex;
   }
   .cumquat-dropdown__menu {
-    @apply absolute left-0 z-20 mt-1.5 min-w-36 rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1.5 shadow-cumquat-overlay;
+    @apply z-20 flex min-w-36 flex-col rounded-cumquat border border-cumquat-border bg-cumquat-surface p-2 shadow-cumquat-overlay;
+  }
+  .cumquat-dropdown__item {
+    @apply w-full justify-start rounded px-3 py-2 text-left text-sm font-normal;
+  }
+  .cumquat-dropdown__item--hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-dropdown__item--disabled {
+    @apply cursor-not-allowed opacity-50;
   }
 
   /* ---------- Popover ---------- */
@@ -880,7 +859,7 @@
     @apply inline-flex;
   }
   .cumquat-popover__content {
-    @apply absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4 text-sm shadow-cumquat-overlay;
+    @apply z-20 w-64 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4 text-sm shadow-cumquat-overlay;
   }
   .cumquat-popover__arrow {
     @apply absolute -bottom-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-r border-b border-cumquat-border bg-cumquat-surface;
@@ -903,7 +882,7 @@
     @apply inline-flex;
   }
   .cumquat-popconfirm__content {
-    @apply absolute bottom-full left-1/2 z-20 mb-2 w-60 -translate-x-1/2 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-3 text-sm shadow-cumquat-overlay;
+    @apply z-20 w-60 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-3 text-sm shadow-cumquat-overlay;
   }
   .cumquat-popconfirm__arrow {
     @apply absolute -bottom-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-r border-b border-cumquat-border bg-cumquat-surface;
@@ -920,13 +899,7 @@
     @apply relative inline-flex;
   }
   .cumquat-tooltip__content {
-    @apply pointer-events-none absolute z-20 rounded-md bg-cumquat-text px-2.5 py-1.5 text-xs whitespace-nowrap text-cumquat-text-inverse shadow-cumquat-overlay;
-  }
-  .cumquat-tooltip__content--top {
-    @apply bottom-full left-1/2 mb-1.5 -translate-x-1/2;
-  }
-  .cumquat-tooltip__content--bottom {
-    @apply top-full left-1/2 mt-1.5 -translate-x-1/2;
+    @apply pointer-events-none z-20 rounded-md bg-cumquat-text px-2.5 py-1.5 text-xs whitespace-nowrap text-cumquat-text-inverse shadow-cumquat-overlay;
   }
 }
 
@@ -983,12 +956,6 @@
   }
   .cumquat-table__loading {
     @apply inline-block size-5 animate-spin rounded-full border-2 border-cumquat-border border-t-cumquat-accent;
-  }
-  .cumquat-table__retry {
-    @apply cursor-pointer bg-transparent text-cumquat-danger underline underline-offset-2;
-  }
-  .cumquat-table__retry:hover {
-    @apply opacity-80;
   }
   .cumquat-table--stale .cumquat-table__table {
     @apply opacity-60 transition-opacity;
@@ -1078,12 +1045,6 @@
   .cumquat-tabs__state.cq-state--error {
     @apply text-cumquat-danger;
   }
-  .cumquat-tabs__retry {
-    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-tabs__retry:hover {
-    @apply opacity-80;
-  }
   .cumquat-tabs__panel {
     @apply text-sm text-cumquat-text;
   }
@@ -1103,12 +1064,6 @@
   }
   .cumquat-collapse__state.cq-state--error {
     @apply text-cumquat-danger;
-  }
-  .cumquat-collapse__retry {
-    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-collapse__retry:hover {
-    @apply opacity-80;
   }
   .cumquat-collapse__chevron {
     @apply size-4 shrink-0 text-cumquat-text-muted transition-transform;
@@ -1172,12 +1127,6 @@
   .cumquat-tree__state.cq-state--error {
     @apply text-cumquat-danger;
   }
-  .cumquat-tree__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-tree__retry:hover {
-    @apply opacity-80;
-  }
   .cumquat-tree__indent {
     @apply size-4 shrink-0;
   }
@@ -1232,12 +1181,6 @@
   .cumquat-cascader__state.cq-state--error {
     @apply text-cumquat-danger;
   }
-  .cumquat-cascader__retry {
-    @apply cursor-pointer whitespace-nowrap bg-transparent underline underline-offset-2;
-  }
-  .cumquat-cascader__retry:hover {
-    @apply opacity-80;
-  }
 
   /* ---------- Timeline ---------- */
   .cumquat-timeline {
@@ -1269,12 +1212,6 @@
   }
   .cumquat-timeline__state.cq-state--error {
     @apply text-cumquat-danger;
-  }
-  .cumquat-timeline__retry {
-    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-timeline__retry:hover {
-    @apply opacity-80;
   }
   .cumquat-timeline__body {
     @apply flex-1;
@@ -1346,12 +1283,6 @@
   .cumquat-descriptions__state.cq-state--error {
     @apply text-cumquat-danger;
   }
-  .cumquat-descriptions__retry {
-    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-descriptions__retry:hover {
-    @apply opacity-80;
-  }
   .cumquat-descriptions__list {
     @apply grid gap-x-8 gap-y-3 overflow-hidden rounded-cumquat text-sm;
   }
@@ -1392,12 +1323,6 @@
   }
   .cumquat-carousel__state.cq-state--error {
     @apply text-cumquat-danger;
-  }
-  .cumquat-carousel__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-carousel__retry:hover {
-    @apply opacity-80;
   }
   .cumquat-carousel__prev,
   .cumquat-carousel__next {
@@ -1764,12 +1689,6 @@
   .cumquat-chat__older {
     @apply flex justify-center py-1;
   }
-  .cumquat-chat__older-btn {
-    @apply cursor-pointer rounded-cumquat px-3 py-1 text-xs text-cumquat-text-muted transition-colors;
-  }
-  .cumquat-chat__older-btn:hover {
-    @apply bg-cumquat-accent-soft text-cumquat-accent;
-  }
   .cumquat-chat__older-btn:disabled {
     @apply cursor-not-allowed opacity-60;
   }
@@ -1869,7 +1788,7 @@
     @apply flex flex-col gap-0.5 pl-3;
   }
   .cumquat-menu__item {
-    @apply cursor-pointer rounded px-3 py-2 text-left text-sm transition-colors;
+    @apply w-full justify-start rounded px-3 py-2 text-left text-sm font-normal transition-colors;
   }
   .cumquat-menu__item--active {
     @apply bg-cumquat-accent-soft font-medium text-cumquat-accent;
@@ -1885,12 +1804,6 @@
   }
   .cumquat-menu__state.cq-state--error {
     @apply text-cumquat-danger;
-  }
-  .cumquat-menu__retry {
-    @apply ml-1 cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-menu__retry:hover {
-    @apply opacity-80;
   }
 
   /* ---------- Anchor ---------- */
@@ -2071,12 +1984,6 @@
   .cumquat-calendar__state.cq-state--error {
     @apply text-cumquat-danger;
   }
-  .cumquat-calendar__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-calendar__retry:hover {
-    @apply opacity-80;
-  }
   .cumquat-calendar__weekday {
     @apply py-1.5 text-xs text-cumquat-text-muted;
   }
@@ -2195,12 +2102,6 @@
   }
   .cumquat-transfer__state.cq-state--error {
     @apply text-cumquat-danger;
-  }
-  .cumquat-transfer__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-transfer__retry:hover {
-    @apply opacity-80;
   }
   .cumquat-transfer__actions {
     @apply flex flex-col gap-2;
@@ -2347,18 +2248,6 @@
   .cumquat-tour__actions {
     @apply mt-3 flex items-center justify-between;
   }
-  .cumquat-tour__prev {
-    @apply cursor-pointer rounded-cumquat border border-cumquat-border px-3 py-1 text-xs text-cumquat-text transition-colors;
-  }
-  .cumquat-tour__prev:hover {
-    @apply bg-cumquat-surface-2;
-  }
-  .cumquat-tour__next {
-    @apply cursor-pointer rounded-cumquat bg-cumquat-accent px-3 py-1 text-xs text-cumquat-text-inverse transition-colors;
-  }
-  .cumquat-tour__next:hover {
-    @apply bg-cumquat-accent-hover;
-  }
 
   /* ---------- QRCode ---------- */
   .cumquat-qrcode {
@@ -2447,8 +2336,6 @@
   .cumquat-notification__close,
   .cumquat-tag__close,
   .cumquat-typography__copy,
-  .cumquat-tour__prev,
-  .cumquat-tour__next,
   .cumquat-pagination__prev,
   .cumquat-pagination__next,
   .cumquat-pagination__page,
@@ -2723,12 +2610,6 @@
   .cumquat-virtual-list__state--sentinel {
     @apply absolute inset-x-0 bottom-0 bg-cumquat-surface/80 py-1;
   }
-  .cumquat-virtual-list__retry {
-    @apply cursor-pointer bg-transparent underline underline-offset-2;
-  }
-  .cumquat-virtual-list__retry:hover {
-    @apply opacity-80;
-  }
 
   /* ---------- P4：Watermark 覆层 ---------- */
   .cumquat-watermark {
@@ -2762,8 +2643,5 @@
   }
   .cumquat-tour__close svg {
     @apply size-3.5;
-  }
-  .cumquat-tour__skip {
-    @apply mr-auto cursor-pointer text-xs text-cumquat-text-muted transition-colors hover:text-cumquat-text;
   }
 }

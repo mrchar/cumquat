@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useFetchResource, useResizeObserver, useSubscribe } from '@cumquat/composables';
 import type { Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -169,7 +170,7 @@ defineExpose({ scrollToIndex });
       class="cumquat-virtual-list__state cq-state--error"
     >
       加载失败
-      <button type="button" class="cumquat-virtual-list__retry" @click="retryRemote">重试</button>
+      <CqButton size="sm" type="ghost" class="cumquat-virtual-list__retry" @click="retryRemote">重试</CqButton>
     </p>
     <p
       v-else-if="(fetchEnabled || subscribe) && sourceItems.length === 0"
@@ -200,7 +201,7 @@ defineExpose({ scrollToIndex });
       class="cumquat-virtual-list__state cq-state--error cumquat-virtual-list__state--sentinel"
     >
       加载失败
-      <button type="button" class="cumquat-virtual-list__retry" @click="retryRemote">重试</button>
+      <CqButton size="sm" type="ghost" class="cumquat-virtual-list__retry" @click="retryRemote">重试</CqButton>
     </p>
   </div>
 </template>

@@ -115,15 +115,17 @@ defineExpose({ chat });
   <div class="cumquat-chat" :class="disabled ? 'cumquat-chat--disabled' : ''" :style="{ height }">
     <div ref="bodyRef" class="cumquat-chat__body" @scroll="onScroll">
       <div class="cumquat-chat__older">
-        <button
+        <Button
           v-if="hasMore"
-          type="button"
+          size="sm"
+          type="ghost"
           class="cumquat-chat__older-btn"
           :disabled="loadingOlder"
+          :loading="loadingOlder"
           @click="loadOlder"
         >
           {{ loadingOlder ? '加载中…' : olderText }}
-        </button>
+        </Button>
         <span v-else-if="messages.length" class="cumquat-chat__older-end">没有更早的消息了</span>
       </div>
       <div v-if="!messages.length && !loadingOlder" class="cumquat-chat__empty">暂无消息</div>
@@ -163,7 +165,7 @@ defineExpose({ chat });
     </div>
     <div v-if="historyError" class="cumquat-chat__alert">
       <span>历史加载失败</span>
-      <button type="button" class="cumquat-chat__alert-retry" @click="loadOlder">重试</button>
+      <Button size="sm" type="ghost" class="cumquat-chat__alert-retry" @click="loadOlder">重试</Button>
     </div>
     <div v-if="sendError" class="cumquat-chat__alert">发送失败：{{ sendError }}</div>
     <form class="cumquat-chat__footer" @submit.prevent="doSend">

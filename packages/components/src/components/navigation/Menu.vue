@@ -7,6 +7,7 @@ import {
   useSubscribe,
   useTypeahead,
 } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 import type { Fetch, SubscribeHandler } from '@cumquat/composables';
 
 export interface MenuItem {
@@ -163,14 +164,14 @@ function onNavKeydown(event: KeyboardEvent) {
       class="cumquat-menu__state cq-state--error"
     >
       加载失败
-      <button type="button" class="cumquat-menu__retry" @click="retryRemote">重试</button>
+      <CqButton size="sm" type="ghost" class="cumquat-menu__retry" @click="retryRemote">重试</CqButton>
     </p>
     <p v-else-if="fetchEnabled && sourceItems.length === 0" class="cumquat-menu__state">暂无菜单</p>
     <template v-for="item in sourceItems" :key="item.key">
       <!-- 分组 -->
       <template v-if="item.children && item.children.length > 0">
-        <button
-          type="button"
+        <CqButton
+          type="ghost"
           class="cumquat-menu__group"
           :aria-expanded="isExpanded(item.key)"
           @click="toggleGroup(item)"
@@ -189,12 +190,12 @@ function onNavKeydown(event: KeyboardEvent) {
           >
             <path d="m6 9 6 6 6-6" />
           </svg>
-        </button>
+        </CqButton>
         <div v-if="!collapsed && isExpanded(item.key)" class="cumquat-menu__subgroup">
-          <button
+          <CqButton
             v-for="child in item.children"
             :key="child.key"
-            type="button"
+            type="ghost"
             class="cumquat-menu__item"
             :class="
               child.key === active ? 'cumquat-menu__item--active' : 'cumquat-menu__item--inactive'
@@ -208,13 +209,13 @@ function onNavKeydown(event: KeyboardEvent) {
             @click="pick(child)"
           >
             {{ child.label }}
-          </button>
+          </CqButton>
         </div>
       </template>
       <!-- 叶子项 -->
-      <button
+      <CqButton
         v-else
-        type="button"
+        type="ghost"
         class="cumquat-menu__item"
         :class="item.key === active ? 'cumquat-menu__item--active' : 'cumquat-menu__item--inactive'"
         :disabled="item.disabled"
@@ -225,7 +226,7 @@ function onNavKeydown(event: KeyboardEvent) {
       >
         <span v-if="item.icon" class="cumquat-menu__icon">{{ item.icon }}</span>
         <span class="cumquat-menu__label">{{ item.label }}</span>
-      </button>
+      </CqButton>
     </template>
   </nav>
 </template>

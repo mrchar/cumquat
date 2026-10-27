@@ -7,6 +7,7 @@ import {
   useSubscribe,
 } from '@cumquat/composables';
 import type { AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 import Pagination from './Pagination.vue';
 import { resolveCell } from './cells';
 import type { CellRenderer } from './cells';
@@ -486,14 +487,15 @@ const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColum
             class="cumquat-table__empty"
           >
             <span v-if="remoteLoading" class="cumquat-table__loading cq-state--pending" />
-            <button
+            <CqButton
               v-else-if="remoteError"
-              type="button"
+              size="sm"
+              type="ghost"
               class="cq-state--error cumquat-table__retry"
               @click.stop="remoteState?.retry?.()"
             >
               加载失败，点击重试
-            </button>
+            </CqButton>
             <template v-else>{{ emptyText }}</template>
           </td>
         </tr>
@@ -502,9 +504,9 @@ const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColum
 
     <div v-if="remoteError && pageRows.length > 0" class="cumquat-table__errorbar cq-state--error">
       加载失败
-      <button type="button" class="cumquat-table__retry" @click.stop="remoteState?.retry?.()">
+      <CqButton size="sm" type="ghost" class="cumquat-table__retry" @click.stop="remoteState?.retry?.()">
         点击重试
-      </button>
+      </CqButton>
     </div>
 
     <div v-if="showPager" class="cumquat-table__footer">

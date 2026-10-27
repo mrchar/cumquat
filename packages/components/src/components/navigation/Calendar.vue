@@ -2,6 +2,7 @@
 import { computed, watch } from 'vue';
 import { useDateGrid, useDateModel, useFetchResource, useSubscribe } from '@cumquat/composables';
 import type { Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 import type { DatePanelType } from '@cumquat/composables';
 
 export interface CalendarEvent {
@@ -235,7 +236,7 @@ function onLabeledCell(date: Date, disabled: boolean) {
       class="cumquat-calendar__state cq-state--error"
     >
       日程加载失败
-      <button type="button" class="cumquat-calendar__retry" @click="retryRemote">重试</button>
+      <CqButton size="sm" type="ghost" class="cumquat-calendar__retry" @click="retryRemote">重试</CqButton>
     </p>
 
     <!-- 日期面板 -->

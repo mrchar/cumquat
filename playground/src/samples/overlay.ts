@@ -35,10 +35,14 @@ export const overlaySamples: Sample[] = [
     code: `
   <div class="flex items-center gap-4">
     <Dropdown :items="items" @select="onSelect">
-      <Button>操作菜单</Button>
+      <template #trigger>
+        <Button>操作菜单</Button>
+      </template>
     </Dropdown>
     <Dropdown :items="items" trigger="hover">
-      <Button>悬停展开</Button>
+      <template #trigger>
+        <Button>悬停展开</Button>
+      </template>
     </Dropdown>
     <span class="text-sm text-cumquat-text-muted">最近选择：{{ last }}</span>
   </div>
@@ -64,16 +68,16 @@ export const overlaySamples: Sample[] = [
     code: `
   <div class="flex items-center gap-4">
     <Popover title="卡片标题" trigger="click">
-      <Button>点击展开</Button>
-      <template #content>
-        <p class="max-w-48 text-sm text-cumquat-text-muted">气泡卡片内容，支持富文本。</p>
+      <template #trigger>
+        <Button>点击展开</Button>
       </template>
+      <p class="max-w-48 text-sm text-cumquat-text-muted">气泡卡片内容，支持富文本。</p>
     </Popover>
     <Popover title="悬停触发" trigger="hover">
-      <Button>悬停展开</Button>
-      <template #content>
-        <p class="max-w-48 text-sm text-cumquat-text-muted">鼠标移入展开，移出关闭。</p>
+      <template #trigger>
+        <Button>悬停展开</Button>
       </template>
+      <p class="max-w-48 text-sm text-cumquat-text-muted">鼠标移入展开，移出关闭。</p>
     </Popover>
   </div>
 `,

@@ -10,6 +10,7 @@ import {
   useSubscribe,
 } from '@cumquat/composables';
 import type { ActionLike, Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface CascaderOption {
   label: string;
@@ -356,9 +357,9 @@ function retryColumn(col: Column) {
           <li v-if="col.loading" class="cumquat-cascader__state cq-state--pending">加载中…</li>
           <li v-else-if="col.error" class="cumquat-cascader__state cq-state--error">
             加载失败
-            <button type="button" class="cumquat-cascader__retry" @click.stop="retryColumn(col)">
+            <CqButton size="sm" type="ghost" class="cumquat-cascader__retry" @click.stop="retryColumn(col)">
               重试
-            </button>
+            </CqButton>
           </li>
           <li v-else-if="col.empty" class="cumquat-cascader__state">暂无数据</li>
         </ul>

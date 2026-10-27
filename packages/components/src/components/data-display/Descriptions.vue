@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useFetchResource, useSubscribe } from '@cumquat/composables';
 import type { Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface DescriptionItem {
   label: string;
@@ -81,7 +82,7 @@ function retryRemote() {
       class="cumquat-descriptions__state cq-state--error"
     >
       加载失败
-      <button type="button" class="cumquat-descriptions__retry" @click="retryRemote">重试</button>
+      <CqButton size="sm" type="ghost" class="cumquat-descriptions__retry" @click="retryRemote">重试</CqButton>
     </p>
     <p v-else-if="sourceItems.length === 0" class="cumquat-descriptions__state">暂无数据</p>
     <dl

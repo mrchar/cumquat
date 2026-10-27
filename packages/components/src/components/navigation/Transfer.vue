@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import { useActionValue, useFetchResource } from '@cumquat/composables';
 import type { ActionLike, Fetch } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface TransferItem {
   key: string;
@@ -240,9 +241,9 @@ function moveCheckedLeft() {
           class="cumquat-transfer__state cq-state--error"
         >
           加载失败
-          <button type="button" class="cumquat-transfer__retry" @click.stop="fetchState?.retry?.()">
+          <CqButton size="sm" type="ghost" class="cumquat-transfer__retry" @click.stop="fetchState?.retry?.()">
             重试
-          </button>
+          </CqButton>
         </li>
         <li v-else-if="visibleLeft.length === 0" class="cumquat-transfer__empty">无数据</li>
       </ul>

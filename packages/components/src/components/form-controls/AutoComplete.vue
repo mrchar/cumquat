@@ -8,6 +8,7 @@ import {
   useSubscribe,
 } from '@cumquat/composables';
 import type { Fetch, FetchResult, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -238,13 +239,14 @@ defineExpose({ focus: () => referenceRef.value?.focus() });
         <li v-else-if="loading" class="cumquat-autocomplete__state cq-state--pending">加载中…</li>
         <li v-else-if="loadError" class="cumquat-autocomplete__state cq-state--error">
           加载失败
-          <button
-            type="button"
+          <CqButton
+            size="sm"
+            type="ghost"
             class="cumquat-autocomplete__retry"
             @mousedown.prevent="retryRemote"
           >
             重试
-          </button>
+          </CqButton>
         </li>
         <li v-else class="cumquat-autocomplete__state">无匹配项</li>
       </ul>

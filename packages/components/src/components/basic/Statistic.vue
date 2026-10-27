@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useFetchResource, useIntervalFn, useSubscribe } from '@cumquat/composables';
 import type { Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from './Button.vue';
 
 /** 统计值：数字 / 可解析数字的字符串 / 时间（倒计时） */
 export type StatisticValue = string | number | Date;
@@ -206,9 +207,9 @@ const countdownText = computed(() => {
         class="cumquat-statistic__state cq-state--error"
       >
         加载失败
-        <button type="button" class="cumquat-statistic__retry" @click="fetchState?.retry?.()">
+        <CqButton size="sm" type="ghost" class="cumquat-statistic__retry" @click="fetchState?.retry?.()">
           重试
-        </button>
+        </CqButton>
       </span>
       <span v-else class="cumquat-statistic__number">
         <slot>{{ countdown ? countdownText : displayNumber }}</slot>

@@ -8,6 +8,7 @@ import {
   useSubscribe,
 } from '@cumquat/composables';
 import type { ActionLike, Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface TabItem {
   key: string;
@@ -218,7 +219,7 @@ const panelMounted = computed(() => !props.lazy || visitedKeys.value.size > 0 ||
         class="cumquat-tabs__state cq-state--error"
       >
         加载失败
-        <button type="button" class="cumquat-tabs__retry" @click="retryRemote">重试</button>
+        <CqButton size="sm" type="ghost" class="cumquat-tabs__retry" @click="retryRemote">重试</CqButton>
       </span>
       <span
         v-else-if="(fetchEnabled || subscribe) && sourceTabs.length === 0"

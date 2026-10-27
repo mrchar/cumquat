@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useControllableModel, useFetchResource, useSubscribe } from '@cumquat/composables';
 import type { Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface CollapseItem {
   key: string;
@@ -106,7 +107,7 @@ function retryRemote() {
       class="cumquat-collapse__state cq-state--error"
     >
       加载失败
-      <button type="button" class="cumquat-collapse__retry" @click="retryRemote">重试</button>
+      <CqButton size="sm" type="ghost" class="cumquat-collapse__retry" @click="retryRemote">重试</CqButton>
     </p>
     <p v-else-if="sourceItems.length === 0" class="cumquat-collapse__state">暂无数据</p>
     <div v-for="item in sourceItems" :key="item.key" class="cumquat-collapse__item">

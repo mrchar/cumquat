@@ -12,6 +12,7 @@ import {
   useSubscribe,
 } from '@cumquat/composables';
 import type { ActionLike, AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface SelectOption {
   label: string;
@@ -553,9 +554,9 @@ function clearSelection(event: MouseEvent) {
         <li v-if="remoteLoading" class="cumquat-select__loading cq-state--pending">加载中…</li>
         <li v-else-if="remoteError" class="cumquat-select__error cq-state--error">
           加载失败
-          <button type="button" class="cumquat-select__retry" @click.stop="activeState?.retry?.()">
+          <CqButton size="sm" type="ghost" class="cumquat-select__retry" @click.stop="activeState?.retry?.()">
             重试
-          </button>
+          </CqButton>
         </li>
         <li v-else-if="select.filteredOptions.value.length === 0" class="cumquat-select__empty">
           暂无数据

@@ -10,6 +10,7 @@ import {
   type TreeFlatNode,
 } from '@cumquat/composables';
 import type { ActionLike, Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface TreeNode {
   key: string;
@@ -276,9 +277,9 @@ function onTreeKeydown(event: KeyboardEvent) {
     </li>
     <li v-else-if="rootState?.status === 'error'" class="cumquat-tree__state cq-state--error">
       加载失败
-      <button type="button" class="cumquat-tree__retry" @click.stop="rootState?.retry?.()">
+      <CqButton size="sm" type="ghost" class="cumquat-tree__retry" @click.stop="rootState?.retry?.()">
         重试
-      </button>
+      </CqButton>
     </li>
     <li
       v-else-if="(fetchEnabled || subscribe) && tree.flatNodes.value.length === 0"

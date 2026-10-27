@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useActionState } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface UploadFile {
   /** 内部唯一标识（外部传入数据可缺省） */
@@ -246,15 +247,16 @@ function retry(file: UploadFile) {
         <span v-if="file.status === 'uploading'" class="cumquat-upload__progressing">
           <i class="cumquat-upload__progress-bar" :style="{ width: `${file.percent ?? 0}%` }" />
         </span>
-        <button
+        <CqButton
           v-if="file.status === 'error'"
-          type="button"
+          size="sm"
+          type="ghost"
           aria-label="重试"
           class="cumquat-upload__retry"
           @click="retry(file)"
         >
           重试
-        </button>
+        </CqButton>
         <button
           type="button"
           aria-label="删除文件"

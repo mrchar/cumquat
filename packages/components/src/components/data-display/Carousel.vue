@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { useFetchResource, useIntervalFn, useSubscribe } from '@cumquat/composables';
 import type { Fetch, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -156,7 +157,7 @@ function onMouseLeave() {
         class="cumquat-carousel__state cq-state--error"
       >
         加载失败
-        <button type="button" class="cumquat-carousel__retry" @click="retryRemote">重试</button>
+        <CqButton size="sm" type="ghost" class="cumquat-carousel__retry" @click="retryRemote">重试</CqButton>
       </div>
       <div
         v-else-if="fetchEnabled && sourceItems.length === 0"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
+import CqButton from '../basic/Button.vue';
 import {
   actionErrorText,
   useActionState,
@@ -268,33 +269,35 @@ watch(
             {{ errorText }}
           </p>
           <div class="cumquat-tour__actions">
-            <button
+            <CqButton
               v-if="skippable"
-              type="button"
-              class="cumquat-tour__skip"
+              size="sm"
+              type="ghost"
+              class="cumquat-tour__skip mr-auto"
               :disabled="actionPending"
               @click="skip"
             >
               跳过
-            </button>
-            <button
+            </CqButton>
+            <CqButton
               v-if="current > 0"
-              type="button"
+              size="sm"
               class="cumquat-tour__prev"
               :disabled="actionPending"
               @click="prev"
             >
               上一步
-            </button>
+            </CqButton>
             <span v-else />
-            <button
-              type="button"
+            <CqButton
+              size="sm"
+              type="primary"
               class="cumquat-tour__next"
-              :disabled="actionPending"
+              :loading="actionPending"
               @click="next"
             >
-              {{ isLast ? '完成' : actionPending ? '处理中…' : '下一步' }}
-            </button>
+              {{ isLast ? '完成' : '下一步' }}
+            </CqButton>
           </div>
         </div>
       </div>

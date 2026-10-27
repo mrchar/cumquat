@@ -8,6 +8,7 @@ import {
   useSubscribe,
 } from '@cumquat/composables';
 import type { Fetch, FetchResult, SubscribeHandler } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -235,9 +236,9 @@ function onKeydown(event: KeyboardEvent) {
         <li v-if="loading" class="cumquat-mention__loading cq-state--pending">加载中…</li>
         <li v-else-if="loadError" class="cumquat-mention__error cq-state--error">
           加载失败
-          <button type="button" class="cumquat-mention__retry" @mousedown.prevent="retryRemote">
+          <CqButton size="sm" type="ghost" class="cumquat-mention__retry" @mousedown.prevent="retryRemote">
             重试
-          </button>
+          </CqButton>
         </li>
         <li
           v-for="(member, index) in suggestions"

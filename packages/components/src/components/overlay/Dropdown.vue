@@ -2,6 +2,7 @@
 import { computed, nextTick } from 'vue';
 import { useFloating, useListboxNavigation, usePopoverModel } from '@cumquat/composables';
 import type { Placement, PopoverTrigger } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 export interface DropdownItem {
   key: string;
@@ -106,9 +107,9 @@ defineExpose({ open: setOpen, close, toggle });
             :key="item.divider ? `divider-${index}` : item.key"
           >
             <span v-if="item.divider" class="cumquat-dropdown__divider" />
-            <button
+            <CqButton
               v-else
-              type="button"
+              type="ghost"
               role="menuitem"
               class="cumquat-dropdown__item"
               :class="[
@@ -122,7 +123,7 @@ defineExpose({ open: setOpen, close, toggle });
               @mousemove="nav.setActiveIndex(enabledItems.indexOf(item))"
             >
               {{ item.label }}
-            </button>
+            </CqButton>
           </template>
         </template>
         <slot v-else />
