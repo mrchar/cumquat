@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import CqButton from '../basic/Button.vue';
 import {
   actionErrorText,
   useActionState,
@@ -161,22 +162,10 @@ defineExpose({ open: setOpen, close });
             <slot name="footer" />
           </footer>
           <footer v-else-if="action" class="cumquat-dialog__footer">
-            <button
-              type="button"
-              class="cumquat-dialog__cancel"
-              :disabled="pending"
-              @click="handleCancel"
-            >
-              {{ cancelText }}
-            </button>
-            <button
-              type="button"
-              class="cumquat-dialog__confirm cumquat-button cumquat-button--primary"
-              :disabled="pending"
-              @click="handleConfirm"
-            >
-              {{ pending ? '处理中…' : confirmText }}
-            </button>
+            <CqButton :disabled="pending" @click="handleCancel">{{ cancelText }}</CqButton>
+            <CqButton type="primary" :loading="pending" @click="handleConfirm">
+              {{ confirmText }}
+            </CqButton>
           </footer>
         </div>
       </div>

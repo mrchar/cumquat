@@ -187,8 +187,10 @@ const { isOpen, open, close, toggle } = useOpen();
 watch(isOpen, (next) => {
   if (next) {
     nav.reset();
+    // 触发器宽度在同步段测量：浮层首帧渲染时 inline width 即就位，
+    // 避免 fixed 浮层在 JS 宽度未写入前以视口宽参与 shift 定位而贴到屏幕左缘
+    dropdownWidth.value = referenceRef.value?.getBoundingClientRect().width ?? 0;
     void nextTick().then(() => {
-      dropdownWidth.value = referenceRef.value?.getBoundingClientRect().width ?? 0;
       viewportHeight.value = floatingRef.value?.clientHeight ?? 0;
       scrollTop.value = 0;
       update();

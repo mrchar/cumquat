@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useActionState, useFloating, usePopoverModel } from '@cumquat/composables';
 import type { ActionLike, Placement } from '@cumquat/composables';
+import CqButton from '../basic/Button.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -84,23 +85,23 @@ defineExpose({ open: setOpen, close, toggle });
         <span class="cumquat-popconfirm__arrow" />
         <p class="cumquat-popconfirm__text">{{ text }}</p>
         <div class="cumquat-popconfirm__actions">
-          <button
-            type="button"
+          <CqButton
+            size="sm"
             class="cumquat-popconfirm__cancel"
-            :disabled="pending.value"
+            :disabled="pending"
             @click="cancel"
           >
             {{ cancelText }}
-          </button>
-          <button
-            type="button"
+          </CqButton>
+          <CqButton
+            size="sm"
+            type="primary"
             class="cumquat-popconfirm__ok"
-            :disabled="pending.value"
+            :loading="pending"
             @click="confirm"
           >
-            <span v-if="pending.value" class="cumquat-popconfirm__loading" />
             {{ confirmText }}
-          </button>
+          </CqButton>
         </div>
       </div>
     </Transition>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
   isPagedResult,
   useAsyncSuggest,
@@ -60,6 +60,17 @@ const { referenceRef, floatingRef, floatingStyles } = useFloating({
   gap: 6,
   open,
 });
+
+/** 浮层宽度跟随触发器：inline width 在浮层首帧渲染前写入，
+ *  避免 fixed 浮层以视口基准的 100% 宽度参与 shift 定位而贴到屏幕左缘 */
+const dropdownWidth = ref(0);
+watch(open, (next) => {
+  if (next) dropdownWidth.value = referenceRef.value?.getBoundingClientRect().width ?? 0;
+});
+const dropdownStyle = computed(() => ({
+  ...floatingStyles.value,
+  width: dropdownWidth.value ? `${dropdownWidth.value}px` : undefined,
+}));
 
 /** 归一 fetch 返回：数组直出，分页取 list，单值包成单元素数组 */
 function toSuggestions(raw: FetchResult<string>): string[] {
@@ -203,7 +214,7 @@ defineExpose({ focus: () => referenceRef.value?.focus() });
         v-if="showDropdown"
         ref="floatingRef"
         class="cumquat-autocomplete__dropdown"
-        :style="floatingStyles"
+        :style="dropdownStyle"
       >
         <template v-if="suggestions.length">
           <li

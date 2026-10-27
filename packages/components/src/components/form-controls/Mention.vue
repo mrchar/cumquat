@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import {
   isPagedResult,
   useAsyncSuggest,
@@ -152,6 +152,17 @@ const { referenceRef, floatingRef, floatingStyles } = useFloating({
   open,
 });
 
+/** 浮层宽度跟随触发器：inline width 在浮层首帧渲染前写入，
+ *  避免 fixed 浮层以视口基准的 100% 宽度参与 shift 定位而贴到屏幕左缘 */
+const dropdownWidth = ref(0);
+watch(open, (next) => {
+  if (next) dropdownWidth.value = referenceRef.value?.getBoundingClientRect().width ?? 0;
+});
+const dropdownStyle = computed(() => ({
+  ...floatingStyles.value,
+  width: dropdownWidth.value ? `${dropdownWidth.value}px` : undefined,
+}));
+
 function bindReference(el: Element | { $el?: unknown }) {
   referenceRef.value = (el as HTMLElement) ?? null;
 }
@@ -219,7 +230,7 @@ function onKeydown(event: KeyboardEvent) {
         v-if="open && (suggestions.length > 0 || loading || loadError)"
         ref="floatingRef"
         class="cumquat-mention__dropdown"
-        :style="floatingStyles"
+        :style="dropdownStyle"
       >
         <li v-if="loading" class="cumquat-mention__loading cq-state--pending">加载中…</li>
         <li v-else-if="loadError" class="cumquat-mention__error cq-state--error">

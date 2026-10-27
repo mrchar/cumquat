@@ -420,7 +420,7 @@
     @apply rotate-180;
   }
   .cumquat-select__dropdown {
-    @apply absolute z-20 mt-1.5 max-h-60 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
+    @apply absolute z-20 mt-1.5 max-h-60 overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
   }
   /* 虚拟滚动占位行：仅用于撑高，不参与交互 */
   .cumquat-select__spacer {
@@ -556,7 +556,7 @@
     @apply bg-cumquat-surface-2 text-cumquat-text;
   }
   .cumquat-input-number__input {
-    @apply w-14 border-x border-cumquat-border bg-transparent text-center text-sm text-cumquat-text;
+    @apply w-14 flex-1 border-x border-cumquat-border bg-transparent text-center text-sm text-cumquat-text;
     @apply focus:outline-none disabled:cursor-not-allowed;
   }
   .cumquat-input-number__icon {
@@ -610,7 +610,7 @@
     @apply placeholder:text-cumquat-text-muted focus:border-cumquat-accent focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20;
   }
   .cumquat-autocomplete__dropdown {
-    @apply absolute z-20 mt-1.5 max-h-52 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
+    @apply absolute z-20 mt-1.5 max-h-52 overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
   }
   .cumquat-autocomplete__option {
     @apply cursor-pointer px-3 py-2 text-sm text-cumquat-text transition-colors;
@@ -640,7 +640,7 @@
     @apply placeholder:text-cumquat-text-muted focus:border-cumquat-accent focus:outline-none focus:ring-2 focus:ring-cumquat-accent/20;
   }
   .cumquat-mention__dropdown {
-    @apply absolute z-20 mt-1.5 max-h-44 w-full overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
+    @apply absolute z-20 mt-1.5 max-h-44 overflow-auto rounded-cumquat border border-cumquat-border bg-cumquat-surface py-1 shadow-cumquat-overlay;
   }
   .cumquat-mention__option {
     @apply cursor-pointer px-3 py-2 text-sm text-cumquat-text transition-colors;
@@ -913,18 +913,6 @@
   }
   .cumquat-popconfirm__actions {
     @apply mt-2.5 flex justify-end gap-2;
-  }
-  .cumquat-popconfirm__cancel {
-    @apply cursor-pointer rounded-cumquat border border-cumquat-border px-2.5 py-1 text-xs text-cumquat-text transition-colors;
-  }
-  .cumquat-popconfirm__cancel:hover {
-    @apply bg-cumquat-surface-2;
-  }
-  .cumquat-popconfirm__ok {
-    @apply cursor-pointer rounded-cumquat bg-cumquat-accent px-2.5 py-1 text-xs text-cumquat-text-inverse transition-colors;
-  }
-  .cumquat-popconfirm__ok:hover {
-    @apply bg-cumquat-accent-hover;
   }
 
   /* ---------- Tooltip ---------- */
@@ -2459,8 +2447,6 @@
   .cumquat-notification__close,
   .cumquat-tag__close,
   .cumquat-typography__copy,
-  .cumquat-popconfirm__cancel,
-  .cumquat-popconfirm__ok,
   .cumquat-tour__prev,
   .cumquat-tour__next,
   .cumquat-pagination__prev,
