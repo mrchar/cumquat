@@ -7,21 +7,52 @@ export const dataSamples: Sample[] = [
     key: 'table',
     title: 'Table 远程数据',
     code: `
-  <Table :columns="columns" :fetch="loadRows" />
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <p class="text-sm font-medium text-cumquat-text">宽屏表格形态</p>
+      <Table :columns="columns" :rows="rows" selectable expandable pagination :page-size="4" :actions="actions">
+        <template #expanded="{ row }">
+          <p class="text-sm text-cumquat-text-muted">{{ row.name }}：年龄 {{ row.age }} 岁</p>
+        </template>
+      </Table>
+    </div>
+    <div class="flex flex-col gap-2">
+      <p class="text-sm font-medium text-cumquat-text">小屏卡片形态（断点强制 9999px 预览，实际按视口自动切换）</p>
+      <Table :columns="columns" :rows="rows" responsive card-breakpoint="9999px" selectable pagination :page-size="3" :actions="actions" :visible-actions="1">
+      </Table>
+    </div>
+    <p class="text-xs text-cumquat-text-muted">最近操作：{{ ops.join('、') || '暂无' }}</p>
+  </div>
 `,
-    scope: () => ({
-      columns: [
-        { key: 'name', title: '名称' },
-        { key: 'age', title: '年龄', align: 'center' },
-      ],
-      loadRows: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        return {
-          list: Array.from({ length: 8 }, (_, i) => ({ name: `用户 ${i + 1}`, age: 18 + i })),
-          total: 8,
-        };
-      },
-    }),
+    scope: () => {
+      const ops = ref<string[]>([]);
+      return {
+        columns: [
+          { key: 'name', title: '名称' },
+          { key: 'age', title: '年龄', align: 'center' },
+        ],
+        rows: Array.from({ length: 8 }, (_, i) => ({ name: `用户 ${i + 1}`, age: 18 + i })),
+        ops,
+        actions: [
+          {
+            key: 'edit',
+            label: '编辑',
+            onClick: (row: { name: string }) => ops.value.unshift(`编辑「${row.name}」`),
+          },
+          {
+            key: 'copy',
+            label: '复制',
+            onClick: (row: { name: string }) => ops.value.unshift(`复制「${row.name}」`),
+          },
+          {
+            key: 'delete',
+            label: '删除',
+            danger: true,
+            onClick: (row: { name: string }) => ops.value.unshift(`删除「${row.name}」`),
+          },
+        ],
+      };
+    },
   },
   {
     key: 'pagination',

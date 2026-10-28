@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { CodeCard, LiveDemo } from '@cumquat/components';
+import { computed, ref, watch } from 'vue';
+import { CodeCard, Drawer, LiveDemo } from '@cumquat/components';
+import { useMediaQuery } from '@cumquat/composables';
 import { samples } from './samples';
+import MenuPanel from './MenuPanel.vue';
 
 type ThemeKey = 'light' | 'dark' | 'high-contrast' | 'glass';
-
-const themes: { key: ThemeKey; label: string }[] = [
-  { key: 'light', label: '亮色' },
-  { key: 'dark', label: '暗色' },
-  { key: 'high-contrast', label: '高对比' },
-  { key: 'glass', label: '玻璃' },
-];
 
 const theme = ref<ThemeKey>('light');
 
@@ -41,58 +36,61 @@ watch(activeKey, () => {
   code.value = sample.code;
   scope.value = sample.scope?.() ?? {};
 });
+
+/** 菜单响应式形态：窄屏为浮层抽屉，宽屏为与内容分配宽度的可收起侧栏 */
+const isNarrow = useMediaQuery('(max-width: 768px)');
+const drawerOpen = ref(false);
+const sidebarCollapsed = ref(false);
+const docked = computed(() => !isNarrow.value && !sidebarCollapsed.value);
+
+const toggleMenu = () => {
+  if (isNarrow.value) {
+    drawerOpen.value = true;
+  } else {
+    sidebarCollapsed.value = !sidebarCollapsed.value;
+  }
+};
+
+const selectSample = (key: string) => {
+  activeKey.value = key;
+  drawerOpen.value = false;
+};
 </script>
 
 <template>
   <div class="min-h-screen">
+    <!-- 窄屏：浮层抽屉 -->
+    <Drawer v-if="isNarrow" v-model:open="drawerOpen" direction="left" size="15rem" title="Cumquat">
+      <MenuPanel :active-key="activeKey" v-model:theme="theme" @select="selectSample" />
+    </Drawer>
+
+    <!-- 宽屏：停靠侧栏，可收起让内容占满屏幕 -->
     <aside
+      v-if="docked"
       class="fixed inset-y-0 left-0 z-30 flex w-60 flex-col overflow-y-auto border-r border-cumquat-border bg-cumquat-surface px-4 py-6"
     >
-      <p class="mb-1 px-2 text-lg font-semibold tracking-tight text-cumquat-text">Cumquat</p>
-      <p class="mb-5 px-2 text-xs text-cumquat-text-muted">组件调试沙盒</p>
-
-      <nav class="flex flex-1 flex-col gap-1">
-        <button
-          v-for="sample in samples"
-          :key="sample.key"
-          type="button"
-          class="cursor-pointer rounded px-2 py-1 text-left text-sm transition-colors"
-          :class="
-            activeKey === sample.key
-              ? 'bg-cumquat-surface-2 font-medium text-cumquat-text'
-              : 'text-cumquat-text-muted hover:bg-cumquat-surface-2 hover:text-cumquat-text'
-          "
-          @click="activeKey = sample.key"
-        >
-          {{ sample.title }}
-        </button>
-      </nav>
-
-      <div class="flex flex-col gap-1 border-t border-cumquat-border pt-4">
-        <p class="mb-1 px-2 text-xs font-semibold tracking-wide text-cumquat-text-muted">主题</p>
-        <button
-          v-for="item in themes"
-          :key="item.key"
-          type="button"
-          class="cursor-pointer rounded px-2 py-1 text-left text-sm transition-colors"
-          :class="
-            theme === item.key
-              ? 'bg-cumquat-surface-2 font-medium text-cumquat-text'
-              : 'text-cumquat-text-muted hover:bg-cumquat-surface-2 hover:text-cumquat-text'
-          "
-          @click="theme = item.key"
-        >
-          {{ item.label }}
-        </button>
-      </div>
+      <p class="mb-5 px-2 text-lg font-semibold tracking-tight text-cumquat-text">Cumquat</p>
+      <MenuPanel :active-key="activeKey" v-model:theme="theme" @select="selectSample" />
     </aside>
 
-    <main class="ml-60 px-8 py-6">
-      <header class="mb-6">
-        <h1 class="text-xl font-semibold text-cumquat-text">组件调试沙盒</h1>
-        <p class="mt-1 text-sm text-cumquat-text-muted">
-          选择左侧片段，直接编辑代码即可实时预览；调试新组件时把模板贴入编辑区。
-        </p>
+    <main class="px-8 py-6" :class="docked ? 'ml-60' : ''">
+      <header class="mb-6 flex items-start gap-3">
+        <button
+          type="button"
+          :aria-label="docked ? '收起菜单' : '打开菜单'"
+          class="cursor-pointer rounded p-2 text-cumquat-text-muted transition-colors hover:bg-cumquat-surface-2 hover:text-cumquat-text"
+          @click="toggleMenu"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-5">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-xl font-semibold text-cumquat-text">组件调试沙盒</h1>
+          <p class="mt-1 text-sm text-cumquat-text-muted">
+            通过左上角按钮切换片段菜单，直接编辑代码即可实时预览；调试新组件时把模板贴入编辑区。
+          </p>
+        </div>
       </header>
 
       <CodeCard v-model:code="code" editable default-expand :title="activeSample().title">

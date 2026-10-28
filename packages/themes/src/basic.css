@@ -807,7 +807,48 @@
     @apply absolute inset-0 bg-black/40;
   }
   .cumquat-drawer__panel {
-    @apply absolute inset-y-0 right-0 flex w-80 max-w-full flex-col border-l border-cumquat-border bg-cumquat-surface shadow-cumquat-overlay;
+    @apply absolute flex max-h-full max-w-full flex-col bg-cumquat-surface shadow-cumquat-overlay;
+  }
+  .cumquat-drawer--right .cumquat-drawer__panel {
+    @apply inset-y-0 right-0 w-80 border-l border-cumquat-border;
+  }
+  .cumquat-drawer--left .cumquat-drawer__panel {
+    @apply inset-y-0 left-0 w-80 border-r border-cumquat-border;
+  }
+  .cumquat-drawer--top .cumquat-drawer__panel {
+    @apply inset-x-0 top-0 h-40 w-full border-b border-cumquat-border;
+  }
+  .cumquat-drawer--bottom .cumquat-drawer__panel {
+    @apply inset-x-0 bottom-0 h-40 w-full border-t border-cumquat-border;
+  }
+  /* Drawer 滑入滑出过渡：<Transition name="cumquat-drawer"> */
+  .cumquat-drawer-enter-active,
+  .cumquat-drawer-leave-active {
+    @apply transition-opacity duration-200;
+  }
+  .cumquat-drawer-enter-from,
+  .cumquat-drawer-leave-to {
+    @apply opacity-0;
+  }
+  .cumquat-drawer-enter-active .cumquat-drawer__panel,
+  .cumquat-drawer-leave-active .cumquat-drawer__panel {
+    @apply transition-transform duration-200;
+  }
+  .cumquat-drawer--right.cumquat-drawer-enter-from .cumquat-drawer__panel,
+  .cumquat-drawer--right.cumquat-drawer-leave-to .cumquat-drawer__panel {
+    @apply translate-x-full;
+  }
+  .cumquat-drawer--left.cumquat-drawer-enter-from .cumquat-drawer__panel,
+  .cumquat-drawer--left.cumquat-drawer-leave-to .cumquat-drawer__panel {
+    @apply -translate-x-full;
+  }
+  .cumquat-drawer--top.cumquat-drawer-enter-from .cumquat-drawer__panel,
+  .cumquat-drawer--top.cumquat-drawer-leave-to .cumquat-drawer__panel {
+    @apply -translate-y-full;
+  }
+  .cumquat-drawer--bottom.cumquat-drawer-enter-from .cumquat-drawer__panel,
+  .cumquat-drawer--bottom.cumquat-drawer-leave-to .cumquat-drawer__panel {
+    @apply translate-y-full;
   }
   .cumquat-drawer__header {
     @apply flex items-center justify-between border-b border-cumquat-border px-5 py-4;
@@ -957,11 +998,66 @@
   .cumquat-table__loading {
     @apply inline-block size-5 animate-spin rounded-full border-2 border-cumquat-border border-t-cumquat-accent;
   }
-  .cumquat-table--stale .cumquat-table__table {
+  .cumquat-table--stale .cumquat-table__table,
+  .cumquat-table--stale .cumquat-table__cards {
     @apply opacity-60 transition-opacity;
   }
   .cumquat-table__errorbar {
     @apply flex items-center gap-2 border-b border-cumquat-border px-4 py-2 text-sm text-cumquat-danger;
+  }
+  .cumquat-table__checkbox {
+    @apply size-4 cursor-pointer accent-cumquat-accent;
+  }
+  .cumquat-table__expander {
+    @apply flex size-6 cursor-pointer items-center justify-center rounded text-cumquat-text-muted transition-colors;
+    @apply hover:bg-cumquat-surface-2 hover:text-cumquat-text;
+  }
+  .cumquat-table__expander svg {
+    @apply size-4;
+  }
+  .cumquat-table__expander--open svg {
+    @apply rotate-90;
+  }
+  .cumquat-table__td--actions {
+    @apply text-right;
+  }
+  .cumquat-table__actions {
+    @apply flex items-center justify-end gap-1;
+  }
+  .cumquat-table__action--danger {
+    @apply text-cumquat-danger;
+  }
+  /* Table 小屏卡片模式（responsive 开启且视口小于断点时） */
+  .cumquat-table--card {
+    @apply border-transparent p-2;
+  }
+  .cumquat-table__cards {
+    @apply flex flex-col gap-2;
+  }
+  .cumquat-table-card {
+    @apply rounded-cumquat border border-cumquat-border bg-cumquat-surface p-3 text-sm text-cumquat-text;
+    @apply shadow-cumquat-overlay;
+  }
+  .cumquat-table-card--selected {
+    @apply border-cumquat-accent;
+  }
+  .cumquat-table-card__bar {
+    @apply mb-2 flex items-center;
+  }
+  .cumquat-table-card__fields {
+    @apply flex flex-col gap-1.5;
+  }
+  .cumquat-table-card__field {
+    @apply flex items-baseline justify-between gap-3;
+  }
+  .cumquat-table-card__label {
+    @apply shrink-0 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-table-card__value {
+    @apply min-w-0 flex-1 break-words text-right;
+  }
+  .cumquat-table-card__footer {
+    @apply mt-2 flex items-center justify-end gap-1 border-t border-cumquat-border pt-2;
   }
 
   /* ---------- 单元格竞选渲染器 ---------- */
@@ -2365,6 +2461,14 @@
   }
   .cumquat-card--hoverable:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  }
+  /* Table 卡片仅阴影加深：卡片内含浮层组件，hover translateY 会创建 containing block 使 fixed 下拉错位 */
+  .cumquat-table-card {
+    @apply transition-[box-shadow] duration-200;
+    transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .cumquat-table-card:hover {
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
   }
 

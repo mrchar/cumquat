@@ -122,7 +122,7 @@ defineExpose({ open: setOpen, close });
 
 <template>
   <Teleport :to="teleportTarget">
-    <Transition name="cumquat-fade" @after-leave="onAfterLeave">
+    <Transition name="cumquat-drawer" @after-leave="onAfterLeave">
       <div
         v-if="rendered"
         v-show="isOpen"

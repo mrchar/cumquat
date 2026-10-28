@@ -26,26 +26,52 @@ interface TableColumn {
 }
 ```
 
-| Prop        | 类型                                              | 默认值         | 说明                                                                                                |
-| ----------- | ------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
-| columns     | `TableColumn[]`                                   | -              | 列配置（必填）                                                                                      |
-| rows        | `Row[]`                                           | `[]`           | 本地数据                                                                                            |
-| striped     | `boolean`                                         | `false`        | 斑马纹                                                                                              |
-| loading     | `boolean`                                         | `false`        | 外部加载态                                                                                          |
-| emptyText   | `string`                                          | `'暂无数据'`   | 空态文案                                                                                            |
-| data        | `AsyncStateLike<Row[]>`                           | -              | 远程数据状态：传入后 rows/loading 由其派生                                                          |
-| total       | `number`                                          | -              | 远程数据总条数（本地默认取 rows 长度）                                                              |
-| rowKey      | `(row: Row, index: number) => string \| number`   | 取行索引       | 行唯一键                                                                                            |
-| selectable  | `boolean`                                         | `false`        | 显示行选择列                                                                                        |
-| expandable  | `boolean`                                         | `false`        | 显示展开列                                                                                          |
-| pagination  | `boolean`                                         | `false`        | 内置分页条；绑定 `v-model:current-page` 时自动开启                                                  |
-| currentPage | `number`                                          | -              | 当前页（受控，`v-model:current-page`）；不传为组件内部状态                                          |
-| pageSize    | `number`                                          | `10`           | 每页条数；挂 `@update:page-size` 监听即受控（`v-model:page-size`）                                  |
-| pageSizes   | `number[]`                                        | `[10, 20, 50]` | 每页条数选项                                                                                        |
-| sorter      | `{ key: string; order: 'asc' \| 'desc' \| null }` | -              | 排序状态（受控，`v-model:sorter`）；不传为组件内部状态                                              |
-| defaultSort | `{ key: string; order: 'asc' \| 'desc' }`         | -              | 初始排序（非受控）                                                                                  |
-| fetch       | `Fetch<Row>`                                      | -              | 远程数据源：自动注入 pagination/sorter/filters；返回 `{ list, total }` 自动分页，返回数组按全量渲染 |
-| cells       | `CellRenderer[]`                                  | -              | 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先                              |
+| Prop           | 类型                                              | 默认值         | 说明                                                                                                |
+| -------------- | ------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| columns        | `TableColumn[]`                                   | -              | 列配置（必填）                                                                                      |
+| rows           | `Row[]`                                           | `[]`           | 本地数据                                                                                            |
+| striped        | `boolean`                                         | `false`        | 斑马纹                                                                                              |
+| loading        | `boolean`                                         | `false`        | 外部加载态                                                                                          |
+| emptyText      | `string`                                          | `'暂无数据'`   | 空态文案                                                                                            |
+| data           | `AsyncStateLike<Row[]>`                           | -              | 远程数据状态：传入后 rows/loading 由其派生                                                          |
+| total          | `number`                                          | -              | 远程数据总条数（本地默认取 rows 长度）                                                              |
+| rowKey         | `(row: Row, index: number) => string \| number`   | 取行索引       | 行唯一键                                                                                            |
+| selectable     | `boolean`                                         | `false`        | 显示行选择列                                                                                        |
+| expandable     | `boolean`                                         | `false`        | 显示展开列（仅表格形态；卡片形态不提供展开，额外内容直接并入卡片）                                  |
+| pagination     | `boolean`                                         | `false`        | 内置分页条；绑定 `v-model:current-page` 时自动开启                                                  |
+| currentPage    | `number`                                          | -              | 当前页（受控，`v-model:current-page`）；不传为组件内部状态                                          |
+| pageSize       | `number`                                          | `10`           | 每页条数；挂 `@update:page-size` 监听即受控（`v-model:page-size`）                                  |
+| pageSizes      | `number[]`                                        | `[10, 20, 50]` | 每页条数选项                                                                                        |
+| sorter         | `{ key: string; order: 'asc' \| 'desc' \| null }` | -              | 排序状态（受控，`v-model:sorter`）；不传为组件内部状态                                              |
+| defaultSort    | `{ key: string; order: 'asc' \| 'desc' }`         | -              | 初始排序（非受控）                                                                                  |
+| fetch          | `Fetch<Row>`                                      | -              | 远程数据源：自动注入 pagination/sorter/filters；返回 `{ list, total }` 自动分页，返回数组按全量渲染 |
+| cells          | `CellRenderer[]`                                  | -              | 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先                              |
+| responsive     | `boolean`                                         | `false`        | 小屏卡片模式：视口宽度小于 `cardBreakpoint` 时以卡片列表代替表格                                    |
+| cardBreakpoint | `string`                                          | `'768px'`      | 卡片模式触发的视口断点（max-width）                                                                 |
+| actions        | `TableAction[]`                                   | `[]`           | 行操作：约定渲染在最后一列（表格）/ 卡片操作区（卡片），溢出合并进「更多」                          |
+| visibleActions | `number`                                          | `2`            | 内联操作数上限，超出部分收进「更多」下拉                                                            |
+
+`TableAction` 定义：
+
+```ts
+interface TableAction<Row = Record<string, unknown>> {
+  key: string;
+  label: string;
+  danger?: boolean; // 危险操作，强调色文本
+  disabled?: boolean | ((row: Row, index: number) => boolean);
+  hidden?: (row: Row, index: number) => boolean; // 按行隐藏
+  onClick?: (row: Row, index: number) => void;
+}
+```
+
+行操作约定：表格形态在末尾追加「操作」列（右对齐），卡片形态在卡片底部 footer（分隔线之上的按钮集合，右对齐）展示；超过 `visibleActions` 的操作自动合并进「更多」下拉菜单。
+
+```ts
+const actions: TableAction[] = [
+  { key: 'edit', label: '编辑', onClick: (row) => openEditor(row) },
+  { key: 'delete', label: '删除', danger: true, onClick: (row) => remove(row) },
+];
+```
 
 | 事件                | 参数                                                                                            | 说明                                     |
 | ------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------- |
@@ -56,10 +82,11 @@ interface TableColumn {
 | change              | `{ pagination: { currentPage, pageSize }, sorter: { key, order }, filters: Record<string, …> }` | 分页/排序/筛选统一变化（外层据此发请求） |
 | rowExpand           | `{ row, expanded: boolean, key }`                                                               | 行展开/收起                              |
 
-| 插槽              | 说明                                       |
-| ----------------- | ------------------------------------------ |
-| `cell-${col.key}` | 自定义单元格，slot props：`{ row, value }` |
-| expanded          | 展开行内容，slot props：`{ row, index }`   |
+| 插槽              | 说明                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| `cell-${col.key}` | 自定义单元格，slot props：`{ row, value }`                                                |
+| expanded          | 展开行内容（仅表格形态），slot props：`{ row, index }`                                    |
+| card              | 小屏卡片模式下整卡自定义渲染，slot props：`{ row, index }`；不传渲染「列名 + 值」字段列表 |
 
 ```vue
 <Table :columns="columns" :fetch="fetchUsers" selectable pagination :page-size="20">
@@ -152,6 +179,26 @@ registerCell({
 
 机制设计、评分约定与扩展契约详见[单元格竞选](/cell)。
 
+## 小屏卡片模式
+
+开启 `responsive` 后，视口宽度小于 `cardBreakpoint`（默认 768px）时表格自动切换为卡片列表：每行渲染为一张卡片，字段按「列名 + 值」纵向排列，值仍走单元格竞选与 `cell-${col.key}` 插槽；选择列与展开列变为卡片顶部的复选框与展开按钮，分页、加载中、空态与错误重试行为与表格形态一致。
+
+排序与筛选入口依附列头，卡片形态下不展示；远程排序/筛选仍可通过 `v-model:sorter` 与 `change` 事件在外层驱动。服务端渲染时视口断点首帧不可知，水合前以表格形态渲染、小屏设备水合后切换为卡片；对跳变敏感的场景可用 `cardBreakpoint` 固定形态（如 `'0px'` 恒为表格、`'9999px'` 恒为卡片）。整卡自定义渲染使用 `card` 插槽：
+
+```vue
+<Table :columns="columns" :rows="rows" responsive />
+<Table :columns="columns" :rows="rows" responsive card-breakpoint="480px" />
+
+<Table :columns="columns" :rows="rows" responsive>
+  <template #card="{ row }">
+    <div class="flex items-center justify-between">
+      <span class="font-medium">{{ row.name }}</span>
+      <span class="text-cumquat-text-muted">{{ row.role }}</span>
+    </div>
+  </template>
+</Table>
+```
+
 ## 交互演示
 
 ### 基础表格
@@ -170,6 +217,12 @@ registerCell({
 
 <CodeCard v-model:code="remoteTableCode" editable title="分页 / 排序 / 筛选自动重取（fetch）">
   <LiveDemo :code="remoteTableCode" :scope="demoScope" />
+</CodeCard>
+
+### 小屏卡片模式
+
+<CodeCard v-model:code="responsiveTableCode" editable title="小屏卡片模式">
+  <LiveDemo :code="responsiveTableCode" :scope="demoScope" />
 </CodeCard>
 
 <script setup lang="ts">
@@ -311,6 +364,26 @@ const remoteTableCode = ref(`
   </div>
 `);
 
+/** 小屏卡片模式演示：断点设为 9999px 以便在桌面视口预览卡片形态 */
+const responsiveTableCode = ref(`
+  <Table
+    :columns="columns"
+    :rows="rows"
+    responsive
+    card-breakpoint="9999px"
+    selectable
+    pagination
+    :page-size="2"
+    :actions="actions"
+  />
+`);
+
+/** 行操作演示 */
+const actions = [
+  { key: 'edit', label: '编辑', onClick: () => {} },
+  { key: 'delete', label: '删除', danger: true, onClick: () => {} },
+];
+
 /** LiveDemo 渲染作用域 */
-const demoScope = { page, columns, rows, tableCode, cellColumns, cellRows, cellTableCode, delay, remoteColumns, allRemoteUsers, failNextFetch, fetchUsers, remoteTableCode };
+const demoScope = { page, columns, rows, tableCode, cellColumns, cellRows, cellTableCode, delay, remoteColumns, allRemoteUsers, failNextFetch, fetchUsers, remoteTableCode, responsiveTableCode, actions };
 </script>

@@ -3,12 +3,14 @@ import { computed, getCurrentInstance, ref, watch } from 'vue';
 import {
   useControllableModel,
   useFetchResource,
+  useMediaQuery,
   usePagination,
   useSubscribe,
 } from '@cumquat/composables';
 import type { AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composables';
 import CqButton from '../basic/Button.vue';
 import Pagination from './Pagination.vue';
+import Dropdown from '../overlay/Dropdown.vue';
 import { resolveCell } from './cells';
 import type { CellRenderer } from './cells';
 
@@ -38,6 +40,18 @@ export interface TableColumn {
 }
 
 type Row = Record<string, unknown>;
+
+/** 行操作：约定渲染在表格最后一列 / 卡片操作区，溢出项自动合并进「更多」下拉 */
+export interface TableAction<Row = Record<string, unknown>> {
+  key: string;
+  label: string;
+  /** 危险操作，以强调色文本展示 */
+  danger?: boolean;
+  disabled?: boolean | ((row: Row, index: number) => boolean);
+  /** 按行隐藏该操作 */
+  hidden?: (row: Row, index: number) => boolean;
+  onClick?: (row: Row, index: number) => void;
+}
 
 const props = withDefaults(
   defineProps<{
@@ -76,6 +90,14 @@ const props = withDefaults(
     defaultSort?: { key: string; order: 'asc' | 'desc' };
     /** 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先 */
     cells?: CellRenderer[];
+    /** 小屏卡片模式：视口宽度小于 cardBreakpoint 时以卡片列表代替表格 */
+    responsive?: boolean;
+    /** 卡片模式触发的视口断点（max-width） */
+    cardBreakpoint?: string;
+    /** 行操作列表：约定渲染在最后一列（表格）/ 卡片操作区（卡片），溢出合并进「更多」 */
+    actions?: TableAction<Row>[];
+    /** 内联操作数上限，超出部分收进「更多」下拉 */
+    visibleActions?: number;
   }>(),
   {
     rows: () => [],
@@ -94,7 +116,43 @@ const props = withDefaults(
     pageSizes: () => [10, 20, 50],
     defaultSort: undefined,
     cells: undefined,
+    responsive: false,
+    cardBreakpoint: '768px',
+    actions: () => [],
+    visibleActions: 2,
   },
+);
+
+const hasActions = computed(() => props.actions.length > 0);
+
+const actionDisabled = (action: TableAction<Row>, row: Row, index: number) =>
+  typeof action.disabled === 'function' ? action.disabled(row, index) : (action.disabled ?? false);
+
+/** 按行解析操作视图：内联 + 溢出「更多」 */
+const rowActionView = (row: Row, index: number) => {
+  const list = props.actions.filter((action) => !action.hidden?.(row, index));
+  const limit = Math.max(0, props.visibleActions);
+  return {
+    inline: list.slice(0, limit),
+    more: list.slice(limit).map((action) => ({
+      key: action.key,
+      label: action.label,
+      disabled: actionDisabled(action, row, index),
+    })),
+  };
+};
+
+const runAction = (action: TableAction<Row>, row: Row, index: number) => {
+  if (actionDisabled(action, row, index)) return;
+  action.onClick?.(row, index);
+};
+
+const colspan = computed(
+  () =>
+    props.columns.length +
+    (props.selectable ? 1 : 0) +
+    (props.expandable ? 1 : 0) +
+    (hasActions.value ? 1 : 0),
 );
 
 const emit = defineEmits<{
@@ -347,6 +405,10 @@ const columnCells = computed(() => {
   return plan;
 });
 
+/* ---------------- 小屏卡片模式 ---------------- */
+const isMobileViewport = useMediaQuery(() => `(max-width: ${props.cardBreakpoint})`);
+const cardMode = computed(() => props.responsive === true && isMobileViewport.value);
+
 /** 默认文本渲染：与竞选 Cell 输出同形，nullish 显示为空 */
 const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColumn }) => {
   const value = cellProps.row[cellProps.column.key];
@@ -356,8 +418,12 @@ const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColum
 </script>
 
 <template>
-  <div class="cumquat-table" :class="remoteStale ? 'cumquat-table--stale' : ''" @click="bodyClick">
-    <table class="cumquat-table__table">
+  <div
+    class="cumquat-table"
+    :class="[remoteStale ? 'cumquat-table--stale' : '', cardMode ? 'cumquat-table--card' : '']"
+    @click="bodyClick"
+  >
+    <table v-if="!cardMode" class="cumquat-table__table">
       <thead>
         <tr class="cumquat-table__head-row">
           <th
@@ -431,6 +497,11 @@ const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColum
               </span>
             </span>
           </th>
+          <th v-if="hasActions" class="cumquat-table__th cumquat-table__th--right">
+            <span class="cumquat-table__th-title">
+              <span class="cumquat-table__th-text" title="操作">操作</span>
+            </span>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -473,19 +544,46 @@ const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColum
                 </svg>
               </button>
             </td>
+            <td v-if="hasActions" class="cumquat-table__td cumquat-table__td--actions">
+              <div class="cumquat-table__actions">
+                <CqButton
+                  v-for="action in rowActionView(row, index).inline"
+                  :key="action.key"
+                  type="ghost"
+                  size="sm"
+                  :class="action.danger ? 'cumquat-table__action--danger' : ''"
+                  :disabled="actionDisabled(action, row, index)"
+                  @click="runAction(action, row, index)"
+                >
+                  {{ action.label }}
+                </CqButton>
+                <Dropdown
+                  v-if="rowActionView(row, index).more.length"
+                  placement="bottom-end"
+                  :items="rowActionView(row, index).more"
+                  @select="
+                    (item) => {
+                      const action = props.actions.find((a) => a.key === item.key);
+                      if (action) runAction(action, row, index);
+                    }
+                  "
+                >
+                  <template #trigger>
+                    <CqButton type="ghost" size="sm">更多</CqButton>
+                  </template>
+                </Dropdown>
+              </div>
+            </td>
           </tr>
           <tr v-if="expandable && isRowExpanded(row, index)" class="cumquat-table__expanded-row">
-            <td :colspan="columns.length + 2">
+            <td :colspan="colspan">
               <slot name="expanded" :row="row" :index="index" />
             </td>
           </tr>
         </template>
 
         <tr v-if="pageRows.length === 0">
-          <td
-            :colspan="columns.length + (selectable ? 1 : 0) + (expandable ? 1 : 0)"
-            class="cumquat-table__empty"
-          >
+          <td :colspan="colspan" class="cumquat-table__empty">
             <span v-if="remoteLoading" class="cumquat-table__loading cq-state--pending" />
             <CqButton
               v-else-if="remoteError"
@@ -502,9 +600,89 @@ const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColum
       </tbody>
     </table>
 
+    <!-- 小屏卡片模式：每行渲染为一张卡片，字段 = 列名 + 单元格值（复用 cell 插槽与竞选） -->
+    <div v-else class="cumquat-table__cards" role="list">
+      <template v-for="(row, index) in pageRows" :key="props.rowKey(row, index)">
+        <div
+          class="cumquat-table-card"
+          :class="isRowChecked(row, index) ? 'cumquat-table-card--selected' : ''"
+          role="listitem"
+        >
+          <div v-if="selectable" class="cumquat-table-card__bar">
+            <input
+              v-if="selectable"
+              type="checkbox"
+              class="cumquat-table__checkbox"
+              :checked="isRowChecked(row, index)"
+              @change="toggleRow(row, index)"
+            />
+          </div>
+          <slot name="card" :row="row" :index="index">
+            <div class="cumquat-table-card__fields">
+              <div v-for="col in columns" :key="col.key" class="cumquat-table-card__field">
+                <span class="cumquat-table-card__label" :title="col.title">{{ col.title }}</span>
+                <span class="cumquat-table-card__value">
+                  <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
+                    <CellView :cell="columnCells.get(col.key)" :row="row" :column="col" />
+                  </slot>
+                </span>
+              </div>
+            </div>
+          </slot>
+          <div v-if="hasActions" class="cumquat-table-card__footer">
+            <CqButton
+              v-for="action in rowActionView(row, index).inline"
+              :key="action.key"
+              type="ghost"
+              size="sm"
+              :class="action.danger ? 'cumquat-table__action--danger' : ''"
+              :disabled="actionDisabled(action, row, index)"
+              @click="runAction(action, row, index)"
+            >
+              {{ action.label }}
+            </CqButton>
+            <Dropdown
+              v-if="rowActionView(row, index).more.length"
+              placement="bottom-end"
+              :items="rowActionView(row, index).more"
+              @select="
+                (item) => {
+                  const action = props.actions.find((a) => a.key === item.key);
+                  if (action) runAction(action, row, index);
+                }
+              "
+            >
+              <template #trigger>
+                <CqButton type="ghost" size="sm">更多</CqButton>
+              </template>
+            </Dropdown>
+          </div>
+        </div>
+      </template>
+
+      <div v-if="pageRows.length === 0" class="cumquat-table__empty">
+        <span v-if="remoteLoading" class="cumquat-table__loading cq-state--pending" />
+        <CqButton
+          v-else-if="remoteError"
+          size="sm"
+          type="ghost"
+          class="cq-state--error cumquat-table__retry"
+          @click.stop="remoteState?.retry?.()"
+        >
+          加载失败，点击重试
+        </CqButton>
+        <template v-else>{{ emptyText }}</template>
+      </div>
+    </div>
+
     <div v-if="remoteError && pageRows.length > 0" class="cumquat-table__errorbar cq-state--error">
       加载失败
-      <CqButton size="sm" type="ghost" class="cumquat-table__retry" @click.stop="remoteState?.retry?.()">
+      <CqButton
+        size="sm"
+        type="ghost"
+        class="cumquat-table__retry"
+        @click.stop="remoteState?.retry?.()"
+      >
         点击重试
       </CqButton>
     </div>
