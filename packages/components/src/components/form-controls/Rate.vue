@@ -134,7 +134,7 @@ function onKeydown(event: KeyboardEvent) {
       class="cumquat-rate__star"
       :class="[
         locked ? 'cumquat-rate__star--disabled' : '',
-        starState(star) === 'full' ? 'cumquat-rate__star--active' : '',
+        starState(star) !== 'empty' ? 'cumquat-rate__star--active' : '',
         starState(star) === 'half' ? 'cumquat-rate__star--half' : '',
       ]"
       @mouseenter="preview(star, false)"

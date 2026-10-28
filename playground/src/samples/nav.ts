@@ -53,9 +53,9 @@ export const navSamples: Sample[] = [
     key: 'back-top',
     title: 'BackTop 回到顶部',
     code: `
-  <div class="text-sm text-cumquat-text-muted">
-    <p>向下滚动页面，右下角会出现回到顶部按钮。</p>
-    <BackTop visible />
+  <div class="relative h-64 overflow-hidden rounded-cumquat border border-cumquat-border">
+    <BackTop mount visible :right="16" :bottom="16" />
+    <p class="absolute inset-x-0 bottom-3 text-center text-xs text-cumquat-text-muted">mount 挂载：按钮悬停于本演示区域右下角</p>
   </div>
 `,
   },
@@ -72,7 +72,15 @@ export const navSamples: Sample[] = [
     key: 'float-button',
     title: 'FloatButton 悬浮按钮',
     code: `
-  <FloatButton :actions="actions" />
+  <div class="relative h-64 overflow-hidden rounded-cumquat border border-cumquat-border">
+    <FloatButton mount :actions="actions" />
+    <FloatButton mount :actions="actions" :style="{ bottom: '96px' }">
+      <span class="text-xs font-semibold">客服</span>
+      <template #icon-edit><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></template>
+      <template #icon-top><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></template>
+    </FloatButton>
+    <p class="absolute inset-x-0 bottom-3 text-center text-xs text-cumquat-text-muted">下：默认加号 + 动作组；上：默认插槽自定义「客服」触发按钮</p>
+  </div>
 `,
     scope: () => ({
       actions: [

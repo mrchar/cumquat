@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useSlots } from 'vue';
 import { useOpen, useToggle } from '@cumquat/composables';
 
 export interface FloatAction {
@@ -15,8 +15,10 @@ const props = withDefaults(
     open?: boolean;
     /** 展开方向 */
     placement?: 'top' | 'left';
+    /** 挂载到最近定位祖先（absolute 定位）而非视口，用于局部容器演示 */
+    mount?: boolean;
   }>(),
-  { actions: () => [], open: undefined, placement: 'top' },
+  { actions: () => [], open: undefined, placement: 'top', mount: false },
 );
 
 const emit = defineEmits<{
@@ -37,6 +39,9 @@ const { isOpen, toggle, close } = useOpen({
   },
 });
 
+const slots = useSlots();
+const hasCustomTrigger = computed(() => !!slots.default);
+
 function select(action: FloatAction) {
   if (action.disabled) return;
   emit('select', action.key);
@@ -47,7 +52,10 @@ function select(action: FloatAction) {
 <template>
   <div
     class="cumquat-float-button"
-    :class="placement === 'left' ? 'cumquat-float-button--left' : ''"
+    :class="[
+      placement === 'left' ? 'cumquat-float-button--left' : '',
+      mount ? 'cumquat-float-button--mounted' : '',
+    ]"
   >
     <Transition name="cumquat-fade">
       <div v-if="isOpen && actions.length > 0" class="cumquat-float-button__actions">
@@ -56,10 +64,14 @@ function select(action: FloatAction) {
           :key="action.key"
           type="button"
           :disabled="action.disabled"
+          :aria-label="action.label"
           class="cumquat-float-button__action"
           @click="select(action)"
         >
-          {{ action.label }}
+          <!-- icon-${key} 具名插槽：自定义动作图标；不传渲染文字 label -->
+          <slot :name="`icon-${action.key}`">
+            <span class="cumquat-float-button__action-text">{{ action.label }}</span>
+          </slot>
         </button>
       </div>
     </Transition>
@@ -69,19 +81,23 @@ function select(action: FloatAction) {
       :aria-expanded="isOpen"
       :aria-label="isOpen ? '收起操作' : '展开操作'"
       class="cumquat-float-button__trigger"
+      :class="hasCustomTrigger ? 'cumquat-float-button__trigger--custom' : ''"
       @click="toggle()"
     >
-      <svg
-        class="cumquat-float-button__icon"
-        :class="isOpen ? 'cumquat-float-button__icon--expanded' : ''"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-      >
-        <path d="M12 5v14M5 12h14" />
-      </svg>
+      <!-- 默认插槽：自定义触发按钮内容（图标/文字/图片），不传渲染默认加号 -->
+      <slot>
+        <svg
+          class="cumquat-float-button__icon"
+          :class="isOpen ? 'cumquat-float-button__icon--expanded' : ''"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        >
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </slot>
     </button>
   </div>
 </template>

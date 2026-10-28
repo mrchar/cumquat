@@ -40,13 +40,23 @@ function toggle() {
     :aria-checked="field.value.value"
     :disabled="disabled"
     class="cumquat-switch"
-    :class="field.value.value ? 'cumquat-switch--checked' : ''"
+    :class="[
+      field.value.value ? 'cumquat-switch--checked' : '',
+      label ? 'cumquat-switch--labeled' : '',
+    ]"
     @click="toggle"
   >
     <span
-      class="cumquat-switch__thumb"
-      :class="field.value.value ? 'cumquat-switch__thumb--checked' : ''"
-    />
+      v-if="label"
+      class="cumquat-switch__track"
+      :class="field.value.value ? 'cumquat-switch__track--checked' : ''"
+    >
+      <span
+        class="cumquat-switch__thumb"
+        :class="field.value.value ? 'cumquat-switch__thumb--checked' : ''"
+      />
+    </span>
+    <span v-else class="cumquat-switch__thumb" :class="field.value.value ? 'cumquat-switch__thumb--checked' : ''" />
     <span v-if="label" class="cumquat-switch__label">{{ label }}</span>
   </button>
 </template>

@@ -520,6 +520,19 @@
   .cumquat-switch__label {
     @apply ml-2 text-sm text-cumquat-text select-none;
   }
+  /* labeled 模式：轨道独立承载，button 透明化，文字排在轨道外侧 */
+  .cumquat-switch.cumquat-switch--labeled {
+    @apply h-auto w-auto gap-0 rounded-full border-0 bg-transparent p-0;
+  }
+  .cumquat-switch.cumquat-switch--labeled.cumquat-switch--checked {
+    @apply bg-transparent;
+  }
+  .cumquat-switch__track {
+    @apply relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent bg-cumquat-border-strong transition-colors;
+  }
+  .cumquat-switch__track--checked {
+    @apply bg-cumquat-accent;
+  }
 
   /* ---------- InputNumber ---------- */
   .cumquat-input-number {
@@ -556,7 +569,7 @@
     @apply inline-flex items-center gap-1;
   }
   .cumquat-rate__star {
-    @apply cursor-pointer text-cumquat-border-strong transition-transform;
+    @apply relative size-6 cursor-pointer bg-transparent border-0 p-0 text-cumquat-border-strong transition-transform;
   }
   .cumquat-rate__star:not(.cumquat-rate__star--disabled):hover {
     @apply scale-110;
@@ -576,7 +589,7 @@
 
   /* ---------- Segmented ---------- */
   .cumquat-segmented {
-    @apply inline-flex gap-1 rounded-cumquat bg-cumquat-surface-3 p-1;
+    @apply inline-flex w-fit gap-1 rounded-cumquat bg-cumquat-surface-3 p-1;
   }
   .cumquat-segmented__item {
     @apply cursor-pointer rounded px-4 py-1.5 text-sm font-medium text-cumquat-text-muted transition-all;
@@ -1920,7 +1933,12 @@
   }
 
   /* ---------- BackTop ---------- */
-  .cumquat-back-top {
+  /* mount 模式：挂载到最近定位祖先而非视口 */
+.cumquat-back-top.cumquat-back-top--mounted {
+  position: absolute;
+}
+
+.cumquat-back-top {
     @apply fixed z-40 flex size-11 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-cumquat-text shadow-cumquat-overlay transition-colors;
   }
   .cumquat-back-top:hover {
@@ -1931,14 +1949,26 @@
   }
 
   /* ---------- FloatButton ---------- */
-  .cumquat-float-button {
+  /* mount 模式：挂载到最近定位祖先而非视口 */
+.cumquat-float-button.cumquat-float-button--mounted {
+  position: absolute;
+}
+
+.cumquat-float-button {
     @apply fixed right-6 bottom-6 z-40 flex flex-col items-center gap-2.5;
   }
   .cumquat-float-button__actions {
-    @apply flex flex-col items-center gap-2.5;
+    @apply flex flex-col items-center gap-2;
   }
   .cumquat-float-button__action {
-    @apply flex size-10 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-xs text-cumquat-text shadow-cumquat-overlay transition-transform;
+    @apply flex size-12 cursor-pointer items-center justify-center rounded-full border border-cumquat-border bg-cumquat-surface text-xs text-cumquat-text shadow-cumquat-overlay transition-transform;
+  }
+  .cumquat-float-button__action > svg,
+  .cumquat-float-button__action > img {
+    @apply size-5;
+  }
+  .cumquat-float-button__action-text {
+    @apply text-xs;
   }
   .cumquat-float-button__action:hover {
     @apply scale-105;
@@ -1954,6 +1984,14 @@
   }
   .cumquat-float-button__icon--expanded {
     @apply rotate-45;
+  }
+  /* 自定义触发内容：完整继承 trigger 的白字与居中布局，尺寸由内容决定 */
+  .cumquat-float-button__trigger--custom {
+    @apply p-0;
+  }
+  .cumquat-float-button__trigger--custom > img,
+  .cumquat-float-button__trigger--custom > svg {
+    @apply size-6;
   }
 
   /* ---------- DatePicker ---------- */
@@ -2549,9 +2587,8 @@
   }
   .cumquat-rate__icon--half {
     position: absolute;
-    inset: 0 auto 0 0;
-    width: 50%;
-    overflow: hidden;
+    inset: 0;
+    clip-path: inset(0 50% 0 0);
   }
 
   /* ---------- Transfer 增强 ---------- */

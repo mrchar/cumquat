@@ -14,8 +14,10 @@ const props = withDefaults(
     bottom?: number;
     /** 回到顶部的动画时长（ms），0 为瞬时 */
     duration?: number;
+    /** 挂载到最近定位祖先（absolute 定位）而非视口，用于局部容器演示 */
+    mount?: boolean;
   }>(),
-  { visible: true, visibilityHeight: 0, right: 32, bottom: 32, duration: 300 },
+  { visible: true, visibilityHeight: 0, right: 32, bottom: 32, duration: 300, mount: false },
 );
 
 const emit = defineEmits<{
@@ -41,6 +43,7 @@ function scrollToTop() {
       type="button"
       aria-label="回到顶部"
       class="cumquat-back-top"
+      :class="mount ? 'cumquat-back-top--mounted' : ''"
       :style="{ right: `${right}px`, bottom: `${bottom}px` }"
       @click="scrollToTop"
     >
