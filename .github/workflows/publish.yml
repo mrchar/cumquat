@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
 
+# Trusted Publishing：npm 通过 OIDC 免 token 验证发布身份
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -13,12 +18,11 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 12
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Install dependencies
@@ -35,7 +39,16 @@ jobs:
       - name: Build all packages
         run: pnpm -r build
 
-      - name: Publish to npm
-        run: pnpm --filter @mrchar/cumquat publish --no-git-checks --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # pnpm pack 会把 workspace:* 依赖替换为真实版本号（npm 做不到）
+      - name: Pack aggregate package
+        run: pnpm --filter @mrchar/cumquat pack --pack-destination ./dist-pkg
+
+      # npm >= 11.5.1 支持 Trusted Publishing（Node 24 内置 npm 11）
+      - name: Setup Node 24 for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Stage package on npm (tokenless, deferred 2FA)
+        run: npm stage publish ./dist-pkg/mrchar-cumquat-*.tgz --provenance --access public
