@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 import { CodeCard, Drawer, LiveDemo } from '@cumquat/components';
 import { useMediaQuery } from '@cumquat/composables';
 import { samples } from './samples';
@@ -29,7 +29,8 @@ watch(
 const activeKey = ref(samples[0].key);
 const activeSample = () => samples.find((sample) => sample.key === activeKey.value) ?? samples[0];
 const code = ref(samples[0].code);
-const scope = ref(samples[0].scope?.() ?? {});
+/** shallowRef 避免深度代理：scope 内演示数据自持的 ref（如识别器 transcript）保持原样 */
+const scope = shallowRef(samples[0].scope?.() ?? {});
 
 watch(activeKey, () => {
   const sample = activeSample();

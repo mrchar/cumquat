@@ -100,6 +100,16 @@ export type {
   UseVoiceLevelOptions,
   UseVoiceLevelReturn,
 } from './behavior/useVoiceLevel';
+export { useChatInput } from './behavior/useChatInput';
+export type {
+  ChatInputAttachment,
+  ChatInputPayload,
+  ChatInputMode,
+  VoiceRecognizer,
+  UseChatInputOptions,
+  UseChatInputReturn,
+  FieldPointerLike,
+} from './behavior/useChatInput';
 export { useToastQueue } from './behavior/useToastQueue';
 export type {
   PushToastOptions,

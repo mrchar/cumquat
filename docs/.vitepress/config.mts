@@ -85,6 +85,7 @@ const groups: Array<{ text: string; items: Array<[string, string, string]> }> = 
       ['result', 'Result 结果页'],
       ['upload', 'Upload 上传'],
       ['chat', 'Chat 聊天框'],
+      ['chat-input', 'ChatInput 聊天输入条'],
     ],
   },
   {
@@ -151,6 +152,7 @@ const composableGroups: Array<{ text: string; items: Array<[string, string]> }> 
     items: [
       ['message', '消息服务'],
       ['overlay', '浮层模型'],
+      ['chat-input', '聊天输入 useChatInput'],
     ],
   },
   {

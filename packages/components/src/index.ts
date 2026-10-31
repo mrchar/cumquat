@@ -64,6 +64,7 @@ import Skeleton from './components/feedback/Skeleton.vue';
 import Result from './components/feedback/Result.vue';
 import Upload from './components/feedback/Upload.vue';
 import Chat from './components/feedback/Chat.vue';
+import ChatInput from './components/feedback/ChatInput.vue';
 // 导航与布局
 import Breadcrumb from './components/navigation/Breadcrumb.vue';
 import Menu from './components/navigation/Menu.vue';
@@ -123,6 +124,7 @@ export {
   TimePicker,
   Upload,
   Chat,
+  ChatInput,
   VoiceButton,
   InputNumber,
   AutoComplete,
@@ -213,6 +215,7 @@ const registry: Record<string, unknown> = {
   CTimePicker: TimePicker,
   CUpload: Upload,
   CChat: Chat,
+  CChatInput: ChatInput,
   CVoiceButton: VoiceButton,
   CInputNumber: InputNumber,
   CAutoComplete: AutoComplete,
@@ -280,6 +283,10 @@ export type {
   VoiceButtonAction,
   VoiceGesture,
   VoiceReleasePayload,
+  ChatInputAttachment,
+  ChatInputPayload,
+  ChatInputMode,
+  VoiceRecognizer,
 } from '@cumquat/composables';
 
 export default Cumquat;

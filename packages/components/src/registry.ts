@@ -69,6 +69,7 @@ import Skeleton from './components/feedback/Skeleton.vue';
 import Result from './components/feedback/Result.vue';
 import Upload from './components/feedback/Upload.vue';
 import Chat from './components/feedback/Chat.vue';
+import ChatInput from './components/feedback/ChatInput.vue';
 // 导航与布局
 import Breadcrumb from './components/navigation/Breadcrumb.vue';
 import Menu from './components/navigation/Menu.vue';
@@ -125,6 +126,7 @@ export const components = {
   TimePicker,
   Upload,
   Chat,
+  ChatInput,
   InputNumber,
   AutoComplete,
   Breadcrumb,

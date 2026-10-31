@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { reactive } from 'vue';
+import { nextTick, reactive, ref } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
-import { Message, Alert, Notification, Loading, Skeleton, Result, Upload, Chat } from '../../index';
-import type { ChatMessage } from '@cumquat/composables';
+import { Message, Alert, Notification, Loading, Skeleton, Result, Upload, Chat, ChatInput } from '../../index';
+import type { ChatInputAttachment, ChatMessage } from '@cumquat/composables';
 import type { UploadFile } from '../feedback/Upload.vue';
 
 describe('Message', () => {
@@ -148,5 +148,119 @@ describe('Chat', () => {
     expect(wrapper.find('.cumquat-chat__empty').text()).toBe('暂无消息');
     expect(wrapper.find('input').attributes('disabled')).toBeDefined();
     expect(wrapper.find('.cumquat-chat__footer button').attributes('disabled')).toBeDefined();
+  });
+});
+
+describe('ChatInput', () => {
+  /** 识别器桩件：transcript/level 可控，启停调用可断言 */
+  function createRecognizer() {
+    const transcript = ref('');
+    const level = ref(0);
+    return { transcript, level, start: vi.fn(), stop: vi.fn(), reset: vi.fn() };
+  }
+
+  /** jsdom 的 MouseEvent clientX 为只读 getter，trigger 赋值会抛错，需原生构造分发 */
+  function pointer(el: Element, type: string, x = 0, y = 0) {
+    el.dispatchEvent(new MouseEvent(type, { clientX: x, clientY: y, bubbles: true }));
+  }
+
+  it('未注入识别器时不渲染语音键，仅保留附件按钮与输入框', () => {
+    const wrapper = mount(ChatInput);
+    expect(wrapper.find('.cumquat-chat-input__attach').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-chat-input__input').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-chat-input__voice').exists()).toBe(false);
+  });
+
+  it('输入文字后语音键替换为发送键，发送成功清空并回发 send', async () => {
+    const action = vi.fn(async () => undefined);
+    const wrapper = mount(ChatInput, { props: { voice: createRecognizer(), action } });
+    expect(wrapper.find('.cumquat-chat-input__voice').exists()).toBe(true);
+    await wrapper.find('.cumquat-chat-input__input').setValue('你好');
+    expect(wrapper.find('.cumquat-chat-input__send').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-chat-input__voice').exists()).toBe(false);
+    await wrapper.find('.cumquat-chat-input__send').trigger('click');
+    await flushPromises();
+    expect(action).toHaveBeenCalledWith({ text: '你好', attachments: [] });
+    expect(wrapper.emitted('send')).toHaveLength(1);
+    expect((wrapper.find('.cumquat-chat-input__input').element as HTMLInputElement).value).toBe('');
+    expect(wrapper.find('.cumquat-chat-input__voice').exists()).toBe(true);
+  });
+
+  it('发送失败展示错误条并保留草稿', async () => {
+    const action = vi.fn().mockRejectedValueOnce(new Error('网络超时'));
+    const wrapper = mount(ChatInput, { props: { voice: createRecognizer(), action } });
+    await wrapper.find('.cumquat-chat-input__input').setValue('hi');
+    await wrapper.find('.cumquat-chat-input__send').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.cumquat-chat-input__error').text()).toContain('网络超时');
+    expect((wrapper.find('.cumquat-chat-input__input').element as HTMLInputElement).value).toBe('hi');
+  });
+
+  it('附件气泡：图片渲染缩略图、其余展示文件名，移除派发 update:attachments', async () => {
+    const attachments: ChatInputAttachment[] = [
+      { id: '1', name: '截图.png', previewUrl: 'blob:preview' },
+      { id: '2', name: '报告.pdf' },
+    ];
+    const wrapper = mount(ChatInput, { props: { attachments } });
+    expect(wrapper.find('.cumquat-chat-input__thumb').attributes('src')).toBe('blob:preview');
+    expect(wrapper.find('.cumquat-chat-input__file').text()).toBe('报告.pdf');
+    await wrapper.find('.cumquat-chat-input__remove').trigger('click');
+    expect(wrapper.emitted('update:attachments')?.[0]).toEqual([[attachments[1]]]);
+  });
+
+  it('长按输入框进入录音展示浮层，松手转录写入输入框且不自动发送', async () => {
+    vi.useFakeTimers();
+    const action = vi.fn(async () => undefined);
+    const voice = createRecognizer();
+    const wrapper = mount(ChatInput, { props: { voice, action } });
+    const field = wrapper.find('.cumquat-chat-input__field').element;
+    pointer(field, 'pointerdown', 100, 100);
+    vi.advanceTimersByTime(300);
+    await nextTick();
+    expect(wrapper.find('.cumquat-chat-input__recording').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-chat-input__meter').exists()).toBe(true);
+    voice.transcript.value = '会议纪要';
+    pointer(field, 'pointerup', 100, 100);
+    vi.useRealTimers();
+    await flushPromises();
+    expect((wrapper.find('.cumquat-chat-input__input').element as HTMLInputElement).value).toBe('会议纪要');
+    expect(action).not.toHaveBeenCalled();
+    expect(wrapper.emitted('send')).toBeUndefined();
+  });
+
+  it('录音中上滑提示取消，松手丢弃转录', async () => {
+    vi.useFakeTimers();
+    const voice = createRecognizer();
+    const wrapper = mount(ChatInput, { props: { voice } });
+    const field = wrapper.find('.cumquat-chat-input__field').element;
+    pointer(field, 'pointerdown', 100, 100);
+    vi.advanceTimersByTime(300);
+    await nextTick();
+    pointer(field, 'pointermove', 100, 50);
+    await nextTick();
+    expect(wrapper.find('.cumquat-chat-input__recording-hint').text()).toBe('松开取消');
+    pointer(field, 'pointerup', 100, 50);
+    vi.useRealTimers();
+    await flushPromises();
+    expect((wrapper.find('.cumquat-chat-input__input').element as HTMLInputElement).value).toBe('');
+    expect(wrapper.find('.cumquat-chat-input__recording').exists()).toBe(false);
+  });
+
+  it('输入框左滑进入纯语音模式，语音键全宽', async () => {
+    const wrapper = mount(ChatInput, { props: { voice: createRecognizer() } });
+    const field = wrapper.find('.cumquat-chat-input__field').element;
+    pointer(field, 'pointerdown', 200, 100);
+    pointer(field, 'pointermove', 150, 100);
+    await nextTick();
+    expect(wrapper.find('.cumquat-chat-input').classes()).toContain('cumquat-chat-input--voice');
+    expect(wrapper.find('.cumquat-chat-input__voice-full').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-chat-input__input').exists()).toBe(false);
+  });
+
+  it('disabled 禁用整条输入', () => {
+    const wrapper = mount(ChatInput, { props: { disabled: true, voice: createRecognizer() } });
+    expect(wrapper.find('.cumquat-chat-input--disabled').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-chat-input__input').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('.cumquat-chat-input__attach').attributes('disabled')).toBeDefined();
   });
 });

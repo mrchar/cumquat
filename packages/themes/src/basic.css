@@ -1982,6 +1982,114 @@
   .cumquat-chat--disabled {
     @apply pointer-events-none opacity-60;
   }
+
+  /* ---------- ChatInput 聊天输入条 ---------- */
+  .cumquat-chat-input {
+    @apply flex w-full flex-col gap-2;
+  }
+  .cumquat-chat-input--disabled {
+    @apply pointer-events-none opacity-60;
+  }
+  /* 附件气泡：图片缩略图 / 文件名 */
+  .cumquat-chat-input__attachments {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .cumquat-chat-input__attachment {
+    @apply relative;
+  }
+  .cumquat-chat-input__thumb {
+    @apply size-16 rounded-cumquat border border-cumquat-border object-cover;
+  }
+  .cumquat-chat-input__file {
+    @apply inline-block max-w-40 truncate rounded-cumquat bg-cumquat-surface-2 px-2.5 py-1.5 text-xs text-cumquat-text;
+  }
+  .cumquat-chat-input__remove {
+    @apply absolute -right-1.5 -top-1.5 grid size-5 cursor-pointer place-items-center rounded-full bg-black/60 text-cumquat-text-inverse;
+    @apply transition-colors duration-200;
+    transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .cumquat-chat-input__remove:hover {
+    @apply bg-black/80;
+  }
+  .cumquat-chat-input__remove svg {
+    @apply size-3;
+  }
+  /* 发送失败错误条 */
+  .cumquat-chat-input__error {
+    @apply rounded-cumquat bg-cumquat-danger-soft px-3 py-1.5 text-xs text-cumquat-danger;
+  }
+  /* 主栏：附件按钮 + 输入框 + 语音/发送键 */
+  .cumquat-chat-input__bar {
+    @apply flex items-center gap-1.5 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-1.5;
+  }
+  .cumquat-chat-input__attach,
+  .cumquat-chat-input__voice {
+    @apply grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-cumquat-text-muted;
+    @apply transition-all duration-200;
+    transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .cumquat-chat-input__attach:hover,
+  .cumquat-chat-input__voice:hover:not(.cumquat-chat-input__voice--holding) {
+    @apply bg-cumquat-surface-2 text-cumquat-accent;
+  }
+  .cumquat-chat-input__attach:disabled,
+  .cumquat-chat-input__voice:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  /* 按住态：反色填充，提示由输入框录音浮层承担 */
+  .cumquat-chat-input__voice--holding {
+    @apply scale-95 bg-cumquat-accent text-cumquat-text-inverse;
+  }
+  .cumquat-chat-input__attach svg,
+  .cumquat-chat-input__voice svg {
+    @apply size-5;
+  }
+  .cumquat-chat-input__picker {
+    @apply sr-only;
+  }
+  .cumquat-chat-input__field {
+    @apply relative min-w-0 flex-1;
+    touch-action: none;
+  }
+  .cumquat-chat-input__input {
+    @apply h-8 w-full bg-transparent px-2 text-sm text-cumquat-text outline-none;
+  }
+  .cumquat-chat-input__input::placeholder {
+    @apply text-cumquat-text-muted;
+  }
+  .cumquat-chat-input__input:disabled {
+    @apply cursor-not-allowed;
+  }
+  /* 录音浮层：覆盖输入框，展示实时转录与手势提示 */
+  .cumquat-chat-input__recording {
+    @apply absolute inset-0 flex items-center gap-2 overflow-hidden rounded-cumquat bg-cumquat-surface px-2;
+  }
+  .cumquat-chat-input__meter {
+    @apply flex h-5 items-center gap-0.5;
+  }
+  .cumquat-chat-input__meter-bar {
+    @apply w-0.5 rounded-full bg-cumquat-accent;
+  }
+  .cumquat-chat-input__recording-text {
+    @apply min-w-0 flex-1 truncate text-sm text-cumquat-text;
+  }
+  .cumquat-chat-input__recording-hint {
+    @apply shrink-0 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-chat-input__send {
+    @apply shrink-0;
+  }
+  /* 纯语音模式：语音键全宽 */
+  .cumquat-chat-input__voice-full {
+    @apply min-w-0 flex-1;
+  }
+  .cumquat-chat-input--voice .cumquat-voice-button__trigger {
+    @apply w-full justify-center;
+  }
 }
 
 /*

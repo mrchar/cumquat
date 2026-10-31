@@ -138,4 +138,68 @@ export const feedbackSamples: Sample[] = [
       },
     }),
   },
+  {
+    key: 'chat-input',
+    title: 'ChatInput 聊天输入条',
+    code: `
+  <div class="max-w-md">
+    <ChatInput
+      :voice="recognizer"
+      :action="sendMessage"
+      placeholder="长按说话，或输入消息…"
+      @send="onSend"
+    />
+    <p class="mt-2 text-sm text-cumquat-text-muted">
+      {{ lastSent ? \`已发送：\${lastSent.text || '（仅附件）'}，附件 \${lastSent.attachments.length} 个\` : '长按输入框或语音键说话；左滑输入框进入纯语音模式' }}
+    </p>
+  </div>
+`,
+    scope: () => {
+      /** 模拟识别器：会话期间定时吐字，音量为正弦波 */
+      const transcript = ref('');
+      const level = ref(0);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let t = 0;
+      let idx = 0;
+      const words = ['今天下午三点', '的产品评审', '记得同步给设计组'];
+      const tick = () => {
+        level.value = Math.abs(Math.sin((t += 1) / 3));
+        timer = setTimeout(() => {
+          if (idx < words.length) transcript.value = words.slice(0, (idx += 1)).join('');
+          tick();
+        }, 700);
+      };
+      const recognizer = {
+        transcript,
+        level,
+        start: () => {
+          t = 0;
+          idx = 0;
+          transcript.value = '';
+          tick();
+        },
+        stop: () => {
+          clearTimeout(timer);
+          level.value = 0;
+        },
+        reset: () => {
+          transcript.value = '';
+          idx = 0;
+        },
+      };
+      const lastSent = ref<{ text: string; attachments: unknown[] }>();
+      return {
+        recognizer,
+        lastSent,
+        sendMessage: async (payload: { text: string }) => {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          if (payload.text.includes('失败')) throw new Error('演示：模拟发送失败');
+          return { status: 'success' };
+        },
+        onSend: (payload: { text: string; attachments: unknown[] }) => {
+          lastSent.value = payload;
+        },
+      };
+    },
+  },
 ];
