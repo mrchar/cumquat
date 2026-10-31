@@ -34,6 +34,7 @@ import Form from './components/form-controls/Form.vue';
 import FormItem from './components/form-controls/FormItem.vue';
 import TreeSelect from './components/form-controls/TreeSelect.vue';
 import Slider from './components/form-controls/Slider.vue';
+import VoiceButton from './components/form-controls/VoiceButton.vue';
 // 浮层
 import Dialog from './components/overlay/Dialog.vue';
 import Drawer from './components/overlay/Drawer.vue';
@@ -51,6 +52,9 @@ import Cascader from './components/data-display/Cascader.vue';
 import Timeline from './components/data-display/Timeline.vue';
 import Steps from './components/data-display/Steps.vue';
 import Descriptions from './components/data-display/Descriptions.vue';
+import List from './components/data-display/List.vue';
+import ListItem from './components/data-display/ListItem.vue';
+import ListItemMeta from './components/data-display/ListItemMeta.vue';
 import Carousel from './components/data-display/Carousel.vue';
 import Progress from './components/data-display/Progress.vue';
 import Image from './components/data-display/Image.vue';
@@ -131,6 +135,12 @@ export const components = {
   TreeSelect,
   Collapse,
   Descriptions,
+  List,
+  ListItem,
+  ListItemMeta,
+  // List 三件套的点号访问形态：运行时模板中 <List.Item> 按字面量组件名解析
+  'List.Item': ListItem,
+  'List.Item.Meta': ListItemMeta,
   Avatar,
   Badge,
   Empty,
@@ -141,6 +151,7 @@ export const components = {
   Space,
   Divider,
   Slider,
+  VoiceButton,
   Rate,
   Transfer,
   Timeline,

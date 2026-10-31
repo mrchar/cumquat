@@ -88,6 +88,18 @@ export { useActionState, extractActionFailure, actionErrorText } from './behavio
 export type { UseActionStateOptions, UseActionStateReturn } from './behavior/useActionState';
 export { useActionValue } from './behavior/useActionValue';
 export type { UseActionValueReturn } from './behavior/useActionValue';
+export { useVoiceButton } from './behavior/useVoiceButton';
+export type {
+  VoiceButtonAction,
+  VoiceGesture,
+  VoiceReleasePayload,
+  UseVoiceButtonOptions,
+} from './behavior/useVoiceButton';
+export { useVoiceLevel } from './behavior/useVoiceLevel';
+export type {
+  UseVoiceLevelOptions,
+  UseVoiceLevelReturn,
+} from './behavior/useVoiceLevel';
 export { useToastQueue } from './behavior/useToastQueue';
 export type {
   PushToastOptions,

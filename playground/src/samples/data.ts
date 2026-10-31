@@ -171,14 +171,49 @@ export const dataSamples: Sample[] = [
     key: 'descriptions',
     title: 'Descriptions 描述列表',
     code: `
-  <Descriptions title="用户信息" :items="items" bordered :column="2" class="max-w-2xl" />
+  <Descriptions title="用户信息" :data="user" :properties="properties" bordered :column="2" class="max-w-2xl" />
 `,
     scope: () => ({
-      items: [
-        { label: '姓名', value: '金橘' },
-        { label: '角色', value: '开发者' },
-        { label: '城市', value: '杭州' },
-        { label: '注册时间', value: '2026-01-01' },
+      user: {
+        name: '金橘',
+        role: '开发者',
+        city: '杭州',
+        createdAt: '2026-01-01',
+        website: 'https://cumquat.dev',
+      },
+      properties: [
+        { key: 'name', label: '姓名' },
+        { key: 'role', label: '角色' },
+        { key: 'city', label: '城市' },
+        { key: 'createdAt', label: '注册时间', type: 'date' },
+        { key: 'website', label: '主页', format: 'uri' },
+      ],
+    }),
+  },
+  {
+    key: 'list',
+    title: 'List 列表',
+    code: `
+  <List
+    :items="departments"
+    :title="(item) => item.name"
+    :description="(item) => item.sign"
+    header="部门"
+    class="max-w-xl"
+  />
+`,
+    scope: () => ({
+      departments: [
+        {
+          id: 1,
+          name: '研发部',
+          sign: '12 人',
+          children: [
+            { id: 11, name: '前端组', sign: '4 人' },
+            { id: 12, name: '后端组', sign: '5 人' },
+          ],
+        },
+        { id: 2, name: '设计部', sign: '6 人' },
       ],
     }),
   },

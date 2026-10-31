@@ -29,6 +29,7 @@ import Form from './components/form-controls/Form.vue';
 import FormItem from './components/form-controls/FormItem.vue';
 import TreeSelect from './components/form-controls/TreeSelect.vue';
 import Slider from './components/form-controls/Slider.vue';
+import VoiceButton from './components/form-controls/VoiceButton.vue';
 // 浮层
 import Dialog from './components/overlay/Dialog.vue';
 import Drawer from './components/overlay/Drawer.vue';
@@ -46,6 +47,9 @@ import Cascader from './components/data-display/Cascader.vue';
 import Timeline from './components/data-display/Timeline.vue';
 import Steps from './components/data-display/Steps.vue';
 import Descriptions from './components/data-display/Descriptions.vue';
+import List from './components/data-display/List.vue';
+import ListItem from './components/data-display/ListItem.vue';
+import ListItemMeta from './components/data-display/ListItemMeta.vue';
 import Carousel from './components/data-display/Carousel.vue';
 import Progress from './components/data-display/Progress.vue';
 import Image from './components/data-display/Image.vue';
@@ -119,6 +123,7 @@ export {
   TimePicker,
   Upload,
   Chat,
+  VoiceButton,
   InputNumber,
   AutoComplete,
   Breadcrumb,
@@ -129,6 +134,9 @@ export {
   TreeSelect,
   Collapse,
   Descriptions,
+  List,
+  ListItem,
+  ListItemMeta,
   Avatar,
   Badge,
   Empty,
@@ -161,6 +169,9 @@ export {
   FloatButton,
 };
 export { LiveDemo };
+/** 三件套挂载：渲染函数/JSX 中可经 List.Item、List.Item.Meta 访问（SFC 模板请直接使用 ListItem/ListItemMeta） */
+(List as unknown as Record<string, unknown>).Item = ListItem;
+(ListItem as unknown as Record<string, unknown>).Meta = ListItemMeta;
 /** 单元格竞选：注册自定义单元格渲染器（同名替换内建实现） */
 export { registerCell };
 export type { CellRenderer, CellColumn } from './components/data-display/cells';
@@ -202,6 +213,7 @@ const registry: Record<string, unknown> = {
   CTimePicker: TimePicker,
   CUpload: Upload,
   CChat: Chat,
+  CVoiceButton: VoiceButton,
   CInputNumber: InputNumber,
   CAutoComplete: AutoComplete,
   CBreadcrumb: Breadcrumb,
@@ -212,6 +224,9 @@ const registry: Record<string, unknown> = {
   CTreeSelect: TreeSelect,
   CCollapse: Collapse,
   CDescriptions: Descriptions,
+  CList: List,
+  CListItem: ListItem,
+  CListItemMeta: ListItemMeta,
   CAvatar: Avatar,
   CBadge: Badge,
   CEmpty: Empty,
@@ -262,6 +277,9 @@ export type {
   FetchResult,
   PagedResult,
   UseFetchReturn,
+  VoiceButtonAction,
+  VoiceGesture,
+  VoiceReleasePayload,
 } from '@cumquat/composables';
 
 export default Cumquat;

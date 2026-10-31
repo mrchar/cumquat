@@ -40,6 +40,7 @@ const groups: Array<{ text: string; items: Array<[string, string, string]> }> = 
       ['form-item', 'FormItem 表单项'],
       ['tree-select', 'TreeSelect 树选择'],
       ['slider', 'Slider 滑块'],
+      ['voice-button', 'VoiceButton 语音按钮'],
     ],
   },
   {
@@ -65,6 +66,7 @@ const groups: Array<{ text: string; items: Array<[string, string, string]> }> = 
       ['timeline', 'Timeline 时间线'],
       ['steps', 'Steps 步骤条'],
       ['descriptions', 'Descriptions 描述列表'],
+      ['list', 'List 列表'],
       ['carousel', 'Carousel 走马灯'],
       ['progress', 'Progress 进度条'],
       ['image', 'Image 图片'],
@@ -157,6 +159,7 @@ const composableGroups: Array<{ text: string; items: Array<[string, string]> }> 
       ['control', '受控与动作'],
       ['dom', 'DOM 与浏览器'],
       ['focus', '焦点与键盘'],
+      ['voice', '语音音量 useVoiceLevel'],
     ],
   },
 ];

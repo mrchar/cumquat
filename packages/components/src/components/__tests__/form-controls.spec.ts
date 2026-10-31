@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { h } from 'vue';
+import { h, nextTick } from 'vue';
 import {
   Checkbox,
   Form,
@@ -17,6 +17,7 @@ import {
   Mention,
   Select,
   TreeSelect,
+  VoiceButton,
   registerField,
 } from '../../index';
 import type { FieldRenderer, FormFieldMeta } from '../../index';
@@ -764,5 +765,165 @@ describe('Form 字段竞选', () => {
       },
     });
     expect(wrapper.findAll('.cumquat-form-item')).toHaveLength(1);
+  });
+});
+
+describe('VoiceButton', () => {
+  const trigger = (wrapper: ReturnType<typeof mount>) =>
+    wrapper.find('.cumquat-voice-button__trigger');
+
+  /** jsdom 的 MouseEvent clientX 只读，test-utils 赋值会抛错，改用原生构造分发 */
+  const fire = async (
+    wrapper: ReturnType<typeof mount>,
+    type: string,
+    x = 0,
+    y = 0,
+  ) => {
+    trigger(wrapper)
+      .element.dispatchEvent(
+        new MouseEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y }),
+      );
+    await nextTick();
+  };
+
+  it('按下后按钮内出现提示文字与声波条，原地松开确认', async () => {
+    const wrapper = mount(VoiceButton);
+    expect(wrapper.find('.cumquat-voice-button__hint').exists()).toBe(false);
+    await fire(wrapper, 'pointerdown', 0, 0);
+    expect(wrapper.emitted('pressstart')).toHaveLength(1);
+    // 提示由按钮本身承担：文字切换 + meter 出现，无气泡
+    expect(trigger(wrapper).text()).toContain('松开发送');
+    expect(wrapper.find('.cumquat-voice-button__meter').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-voice-button__hint').exists()).toBe(false);
+    await fire(wrapper, 'pointerup');
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'confirm' }]);
+    expect(wrapper.find('.cumquat-voice-button__meter').exists()).toBe(false);
+  });
+
+  it('上滑越过阈值进入取消区，按钮文字跟随，松开发出 cancel', async () => {
+    const wrapper = mount(VoiceButton);
+    await fire(wrapper, 'pointerdown', 100, 200);
+    await fire(wrapper, 'pointermove', 100, 100);
+    expect(trigger(wrapper).text()).toContain('松开取消');
+    await fire(wrapper, 'pointerup');
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'cancel' }]);
+  });
+
+  it('左滑选中方向功能项，松开携带 key', async () => {
+    const wrapper = mount(VoiceButton, {
+      props: { actions: [{ key: 'text', label: '转文字' }, { key: 'translate', label: '翻译' }] },
+    });
+    await fire(wrapper, 'pointerdown', 200, 200);
+    await fire(wrapper, 'pointermove', 140, 200);
+    expect(trigger(wrapper).text()).toContain('松开转文字');
+    await fire(wrapper, 'pointerup');
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'action', key: 'text' }]);
+  });
+
+  it('右滑选中缺省交替的功能项', async () => {
+    const wrapper = mount(VoiceButton, {
+      props: { actions: [{ key: 'text', label: '转文字' }, { key: 'translate', label: '翻译' }] },
+    });
+    await fire(wrapper, 'pointerdown', 100, 200);
+    await fire(wrapper, 'pointermove', 160, 200);
+    expect(trigger(wrapper).text()).toContain('松开翻译');
+    await fire(wrapper, 'pointerup');
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'action', key: 'translate' }]);
+  });
+
+  it('滑出阈值后回到中心自动复位为确认区', async () => {
+    const wrapper = mount(VoiceButton);
+    await fire(wrapper, 'pointerdown', 100, 200);
+    await fire(wrapper, 'pointermove', 100, 100);
+    expect(trigger(wrapper).text()).toContain('松开取消');
+    await fire(wrapper, 'pointermove', 100, 200);
+    expect(trigger(wrapper).text()).toContain('松开发送');
+    await fire(wrapper, 'pointerup');
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'confirm' }]);
+  });
+
+  it('未配置 actions 时左右滑保持确认区', async () => {
+    const wrapper = mount(VoiceButton);
+    await fire(wrapper, 'pointerdown', 100, 200);
+    await fire(wrapper, 'pointermove', 200, 200);
+    expect(trigger(wrapper).text()).toContain('松开发送');
+    await fire(wrapper, 'pointerup');
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'confirm' }]);
+  });
+
+  it('disabled 忽略按下', async () => {
+    const wrapper = mount(VoiceButton, { props: { disabled: true } });
+    await fire(wrapper, 'pointerdown', 0, 0);
+    expect(wrapper.emitted('pressstart')).toBeUndefined();
+    expect(wrapper.find('.cumquat-voice-button__hint').exists()).toBe(false);
+  });
+
+  it('pointercancel 按取消收尾', async () => {
+    const wrapper = mount(VoiceButton);
+    await fire(wrapper, 'pointerdown', 0, 0);
+    await fire(wrapper, 'pointercancel');
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'cancel' }]);
+  });
+
+  it('空格键按住/松开等价原地确认', async () => {
+    const wrapper = mount(VoiceButton);
+    await trigger(wrapper).trigger('keydown', { key: ' ' });
+    expect(wrapper.emitted('pressstart')).toHaveLength(1);
+    expect(trigger(wrapper).text()).toContain('松开发送');
+    await trigger(wrapper).trigger('keyup', { key: ' ' });
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'confirm' }]);
+  });
+
+  it('转录文字非空时气泡浮动展示转录内容', async () => {
+    const wrapper = mount(VoiceButton, { props: { transcript: '   ' } });
+    await fire(wrapper, 'pointerdown', 100, 200);
+    // 空白转录视为无内容：无气泡，提示由按钮承担
+    expect(wrapper.find('.cumquat-voice-button__hint').exists()).toBe(false);
+    expect(wrapper.find('.cumquat-voice-button__transcript').exists()).toBe(false);
+    await wrapper.setProps({ transcript: '帮我订一杯冰美式' });
+    expect(wrapper.find('.cumquat-voice-button__hint--text').exists()).toBe(true);
+    expect(wrapper.find('.cumquat-voice-button__transcript').text()).toBe('帮我订一杯冰美式');
+    // 转录清空后气泡消失，按钮提示仍在
+    await wrapper.setProps({ transcript: '' });
+    expect(wrapper.find('.cumquat-voice-button__hint').exists()).toBe(false);
+    expect(trigger(wrapper).text()).toContain('松开发送');
+    await fire(wrapper, 'pointerup');
+    expect(wrapper.emitted('release')?.[0]).toEqual([{ result: 'confirm' }]);
+  });
+
+  it('上滑取消时气泡隐藏转录，回到中心恢复展示', async () => {
+    const wrapper = mount(VoiceButton, { props: { transcript: '帮我订一杯冰美式' } });
+    await fire(wrapper, 'pointerdown', 100, 200);
+    expect(wrapper.find('.cumquat-voice-button__transcript').exists()).toBe(true);
+    await fire(wrapper, 'pointermove', 100, 100);
+    expect(wrapper.find('.cumquat-voice-button__hint').exists()).toBe(false);
+    expect(trigger(wrapper).text()).toContain('松开取消');
+    await fire(wrapper, 'pointermove', 100, 200);
+    expect(wrapper.find('.cumquat-voice-button__transcript').exists()).toBe(true);
+  });
+
+  it('按住时按钮内出现声波条，未接音量时走循环动画', async () => {
+    const wrapper = mount(VoiceButton);
+    await fire(wrapper, 'pointerdown', 100, 200);
+    const meter = wrapper.find('.cumquat-voice-button__meter');
+    expect(meter.exists()).toBe(true);
+    expect(meter.classes()).not.toContain('cumquat-voice-button__meter--level');
+    expect(meter.findAll('.cumquat-voice-button__meter-bar')).toHaveLength(4);
+    await fire(wrapper, 'pointerup');
+    expect(wrapper.find('.cumquat-voice-button__meter').exists()).toBe(false);
+  });
+
+  it('接入 level 后条高随音量起伏', async () => {
+    const wrapper = mount(VoiceButton, { props: { level: 0 } });
+    await fire(wrapper, 'pointerdown', 100, 200);
+    const meter = wrapper.find('.cumquat-voice-button__meter');
+    expect(meter.classes()).toContain('cumquat-voice-button__meter--level');
+    const bars = meter.findAll('.cumquat-voice-button__meter-bar');
+    // 无声：条保持基础高度 6px
+    expect(bars[0].element.getAttribute('style')).toContain('height: 6px');
+    // 有声：主条（系数 1）随音量升高，6 + 14 * 0.8 ≈ 17px
+    await wrapper.setProps({ level: 0.8 });
+    expect(bars[1].element.getAttribute('style')).toContain('height: 17px');
+    await fire(wrapper, 'pointerup');
   });
 });

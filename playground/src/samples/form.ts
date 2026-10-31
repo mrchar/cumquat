@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import { useVoiceLevel } from '@cumquat/composables';
 import type { Sample } from '../samples';
 
 /** 表单控件 */
@@ -231,5 +232,67 @@ export const formSamples: Sample[] = [
   </div>
 `,
     scope: () => ({ single: ref(40), rangeValue: ref<[number, number]>([20, 60]) }),
+  },
+  {
+    key: 'voice-button',
+    title: 'VoiceButton 语音按钮',
+    code: `
+  <div class="flex flex-col items-center gap-6 py-12">
+    <VoiceButton
+      :actions="voiceActions"
+      :transcript="transcript"
+      :level="level"
+      @pressstart="onPressStart"
+      @release="onRelease"
+    />
+    <p class="text-sm text-cumquat-text-muted">结果：{{ last }}</p>
+  </div>
+`,
+    scope: () => {
+      const last = ref('（尚未操作）');
+      const transcript = ref('');
+      // 按住中从麦克风采集真实音量，传入 level 驱动按钮内声波条起伏
+      const voice = useVoiceLevel();
+      const sentence = '帮我订一杯冰美式咖啡，少冰去糖，谢谢';
+      let timer: ReturnType<typeof setInterval> | null = null;
+      const stopSimulate = () => {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      };
+      return {
+        last,
+        transcript,
+        level: voice.level,
+        voiceActions: [
+          { key: 'text', label: '转文字' },
+          { key: 'translate', label: '翻译' },
+        ],
+        onPressStart: () => {
+          void voice.start();
+          last.value = '开始录音';
+          transcript.value = '';
+          let index = 0;
+          stopSimulate();
+          timer = setInterval(() => {
+            index += 1;
+            transcript.value = sentence.slice(0, index);
+            if (index >= sentence.length) stopSimulate();
+          }, 300);
+        },
+        onRelease: (payload: { result: 'confirm' | 'cancel' | 'action'; key?: string }) => {
+          voice.stop();
+          stopSimulate();
+          last.value =
+            payload.result === 'action'
+              ? `选中功能：${payload.key}`
+              : payload.result === 'cancel'
+                ? '已取消'
+                : `确认发送：${transcript.value || '（无内容）'}`;
+          transcript.value = '';
+        },
+      };
+    },
   },
 ];

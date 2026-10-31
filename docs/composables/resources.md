@@ -56,8 +56,8 @@ const columns = computed(() => [...userApi.columns, { key: 'actions', title: '�
   <!-- 创建 / 编辑：字段由 properties 描述，required / type / options 已就绪 -->
   <Form :action="userApi.create">…</Form>
 
-  <!-- 详情 -->
-  <Descriptions :fetch="() => userApi.detail(currentId)" />
+  <!-- 详情：数据对象 + properties 元数据驱动 -->
+  <Descriptions :fetch="() => userApi.detail(currentId)" :properties="userApi.properties" />
 </template>
 ```
 
@@ -94,10 +94,11 @@ loading、失败回退提示等行为与动作协议一致。`properties` 提供
 
 ### 详情
 
-`detail` 返回单值对象，直接绑给单值形态的 fetch：
+`detail` 返回单值对象，绑给 Descriptions 的 fetch；展示哪些字段、顺序与标签由
+`properties` 元数据声明（可直接复用 `userApi.properties`）：
 
 ```vue
-<Descriptions :fetch="() => userApi.detail(currentId)" />
+<Descriptions :fetch="() => userApi.detail(currentId)" :properties="userApi.properties" />
 ```
 
 ## useResources(options)

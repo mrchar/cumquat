@@ -773,6 +773,71 @@
   .cumquat-slider__value {
     @apply ml-3 w-8 text-right text-xs text-cumquat-text-muted;
   }
+
+  /* ---------- VoiceButton ---------- */
+  .cumquat-voice-button {
+    @apply relative inline-flex flex-col items-center;
+  }
+  .cumquat-voice-button__trigger {
+    @apply h-10 cursor-pointer select-none rounded-full border border-cumquat-border bg-cumquat-surface px-6 text-sm text-cumquat-text shadow-sm;
+    @apply transition-all duration-200;
+    transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* hover 排除按住态：按住时指针必然悬浮，否则 accent 文字会以更高特异性压过反色文字，蓝底蓝字不可见 */
+  .cumquat-voice-button__trigger:hover:not(.cumquat-voice-button__trigger--holding) {
+    @apply border-cumquat-accent text-cumquat-accent shadow;
+  }
+  .cumquat-voice-button__trigger--holding {
+    @apply inline-flex scale-95 items-center gap-1.5 border-cumquat-accent bg-cumquat-accent text-cumquat-text-inverse shadow;
+  }
+  .cumquat-voice-button__meter {
+    @apply flex h-5 items-center gap-0.5;
+  }
+  .cumquat-voice-button__meter-bar {
+    @apply h-1 w-0.5 rounded-full bg-current;
+    animation: cumquat-voice-bar 0.9s ease-in-out infinite;
+  }
+  .cumquat-voice-button__meter-bar:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .cumquat-voice-button__meter-bar:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  .cumquat-voice-button__meter-bar:nth-child(4) {
+    animation-delay: 0.45s;
+  }
+  /* 音量驱动模式：条高由内联样式实时控制，关闭循环动画 */
+  .cumquat-voice-button__meter--level .cumquat-voice-button__meter-bar {
+    animation: none;
+  }
+  .cumquat-voice-button__trigger:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  .cumquat-voice-button__hint {
+    @apply absolute bottom-full left-1/2 mb-3 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 text-sm shadow-cumquat-overlay;
+    @apply bg-black/75 text-cumquat-text-inverse;
+    white-space: nowrap;
+  }
+  .cumquat-voice-button__hint--text {
+    @apply w-max max-w-56 flex-col items-start rounded-2xl text-left;
+    white-space: normal;
+  }
+  .cumquat-voice-button__transcript {
+    @apply line-clamp-3 break-words text-sm leading-snug;
+  }
+  @keyframes cumquat-voice-bar {
+    0%,
+    100% {
+      transform: scaleY(0.4);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
 }
 
 /*
@@ -1415,6 +1480,77 @@
   }
   .cumquat-descriptions--bordered .cumquat-descriptions__value {
     @apply px-4 py-2.5;
+  }
+
+  /* ---------- List ---------- */
+  .cumquat-list {
+    @apply flex flex-col;
+  }
+  .cumquat-list--scroll {
+    @apply overflow-y-auto;
+  }
+  .cumquat-list--stale .cumquat-list__body {
+    @apply opacity-60 transition-opacity;
+  }
+  .cumquat-list__header {
+    @apply border-b border-cumquat-border px-4 py-3 text-sm font-semibold text-cumquat-text;
+  }
+  .cumquat-list__body {
+    @apply m-0 list-none divide-y divide-cumquat-border p-0;
+  }
+  .cumquat-list__state {
+    @apply py-4 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-list__state.cq-state--error {
+    @apply text-cumquat-danger;
+  }
+  .cumquat-list-item {
+    @apply flex items-start gap-4 px-4 py-3;
+  }
+  .cumquat-list-item--plain {
+    @apply text-sm text-cumquat-text;
+  }
+  .cumquat-list-item__main {
+    @apply min-w-0 flex-1;
+  }
+  .cumquat-list-item__row {
+    @apply flex min-w-0 flex-1 items-start gap-1;
+  }
+  .cumquat-list__expander {
+    @apply mt-0.5 flex size-4 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-cumquat-text-muted transition-transform;
+  }
+  .cumquat-list__expander--expanded {
+    @apply rotate-90;
+  }
+  .cumquat-list__expander-icon {
+    @apply size-3.5;
+  }
+  .cumquat-list-item__actions {
+    @apply m-0 flex list-none items-center gap-2 p-0;
+  }
+  .cumquat-list-item__extra {
+    @apply shrink-0;
+  }
+  .cumquat-list-item-meta {
+    @apply flex items-start gap-3;
+  }
+  .cumquat-list-item-meta__content {
+    @apply min-w-0;
+  }
+  .cumquat-list-item-meta__title {
+    @apply text-sm font-medium text-cumquat-text;
+  }
+  .cumquat-list-item-meta__description {
+    @apply mt-0.5 text-sm text-cumquat-text-muted;
+  }
+  .cumquat-list__errorbar {
+    @apply flex items-center gap-2 border-t border-cumquat-border px-4 py-2 text-sm text-cumquat-danger;
+  }
+  .cumquat-list__more {
+    @apply flex justify-center border-t border-cumquat-border py-3;
+  }
+  .cumquat-list__footer {
+    @apply border-t border-cumquat-border px-4 py-3 text-sm text-cumquat-text-muted;
   }
 
   /* ---------- Carousel ---------- */

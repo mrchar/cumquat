@@ -11,6 +11,9 @@ import {
   Timeline,
   Steps,
   Descriptions,
+  List,
+  ListItem,
+  ListItemMeta,
   Carousel,
   Progress,
   registerCell,
@@ -23,7 +26,6 @@ import type { TreeNode } from '../data-display/Tree.vue';
 import type { CascaderOption } from '../data-display/Cascader.vue';
 import type { StepItem } from '../data-display/Steps.vue';
 import type { TimelineItem } from '../data-display/Timeline.vue';
-import type { DescriptionItem } from '../data-display/Descriptions.vue';
 
 /** post watcher + Promise 链走完一个宏任务周期 */
 const wait = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -781,15 +783,30 @@ describe('Steps', () => {
 });
 
 describe('Descriptions', () => {
-  const items: DescriptionItem[] = [
-    { label: '名称', value: 'Cumquat' },
-    { label: '版本', value: '0.1.0' },
+  const data = { name: 'Cumquat', version: '0.1.0', createdAt: '2026-01-01', active: true };
+  const properties = [
+    { key: 'name', label: '名称' },
+    { key: 'version', label: '版本' },
+    { key: 'createdAt', label: '创建时间', type: 'date' as const },
+    { key: 'active', label: '启用', type: 'boolean' as const },
   ];
 
-  it('渲染标签与值', () => {
-    const wrapper = mount(Descriptions, { props: { title: '详情', items } });
+  it('按元数据渲染标签与值', () => {
+    const wrapper = mount(Descriptions, { props: { title: '详情', data, properties } });
     expect(wrapper.find('.cumquat-descriptions__title').text()).toBe('详情');
-    expect(wrapper.findAll('.cumquat-descriptions__label')).toHaveLength(2);
+    expect(wrapper.findAll('.cumquat-descriptions__label')).toHaveLength(4);
+    // Cell 竞选生效：date 格式化、boolean 转文案
+    const text = wrapper.text();
+    expect(text).toContain('2026-01-01');
+    expect(text).toContain('是');
+  });
+
+  it('值插槽覆盖竞选渲染', () => {
+    const wrapper = mount(Descriptions, {
+      props: { data, properties: [{ key: 'name', label: '名称' }] },
+      slots: { 'value-name': '自定义值' },
+    });
+    expect(wrapper.find('.cumquat-descriptions__value').text()).toBe('自定义值');
   });
 });
 
@@ -800,6 +817,167 @@ describe('Carousel', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([1]);
     await wrapper.find('.cumquat-carousel__prev').trigger('click');
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([0]);
+  });
+});
+
+describe('List', () => {
+  const users = [
+    { id: 1, name: 'Amber', sign: '前端工程师', avatarUrl: 'https://example.com/a.png' },
+    { id: 2, name: 'Bolt', sign: '设计师', avatarUrl: '' },
+  ];
+
+  it('数据模式：映射器驱动内建 Meta 渲染', () => {
+    const wrapper = mount(List, {
+      props: {
+        items: users,
+        title: (item: any) => item.name,
+        description: (item: any) => item.sign,
+        avatar: (item: any) => item.avatarUrl,
+        rowKey: (item: any) => item.id,
+      },
+    });
+    const items = wrapper.findAll('.cumquat-list-item');
+    expect(items).toHaveLength(2);
+    expect(wrapper.find('.cumquat-list-item-meta__title').text()).toBe('Amber');
+    expect(wrapper.find('.cumquat-list-item-meta__description').text()).toBe('前端工程师');
+    expect(wrapper.find('.cumquat-list-item-meta__avatar').exists()).toBe(true);
+    // 头像地址为空的项不渲染头像区域
+    expect(items[1].find('.cumquat-list-item-meta__avatar').exists()).toBe(false);
+  });
+
+  it('数据模式：无映射器时回退 String(item)', () => {
+    const wrapper = mount(List, { props: { items: ['苹果', '香蕉'] } });
+    const items = wrapper.findAll('.cumquat-list-item--plain');
+    expect(items).toHaveLength(2);
+    expect(items[0].text()).toBe('苹果');
+  });
+
+  it('#item 插槽完全接管行渲染', () => {
+    const wrapper = mount(List, {
+      props: { items: users, title: (item: any) => item.name },
+      slots: {
+        item: `<template #item="{ item }"><div class="row-custom">{{ item.name }}-自绘</div></template>`,
+      },
+    });
+    expect(wrapper.findAll('.row-custom')).toHaveLength(2);
+    expect(wrapper.find('.cumquat-list-item-meta').exists()).toBe(false);
+  });
+
+  it('插槽模式：ListItem + Meta 编排，actions/extra 就位', () => {
+    const wrapper = mount(List, {
+      slots: {
+        default: () =>
+          h(ListItem, null, {
+            default: () => h(ListItemMeta, { title: '标题', description: '描述' }),
+            actions: () => h('span', { class: 'row-action' }, '操作'),
+            extra: () => h('span', { class: 'row-extra' }, '附加'),
+          }),
+      },
+    });
+    expect(wrapper.find('.cumquat-list-item-meta__title').text()).toBe('标题');
+    expect(wrapper.find('.row-action').exists()).toBe(true);
+    expect(wrapper.find('.row-extra').exists()).toBe(true);
+  });
+
+  it('fetch：分页结果点「加载更多」累积下一页，取满后隐藏按钮', async () => {
+    const fetcher = vi.fn(async ({ pagination }) => ({
+      list: Array.from({ length: pagination?.currentPage === 1 ? 2 : 1 }, (_, index) => ({
+        id: index + 1,
+        name: `用户 ${(pagination?.currentPage - 1) * 2 + index + 1}`,
+      })),
+      total: 3,
+    }));
+    const wrapper = mount(List, { props: { fetch: fetcher, pageSize: 2 } });
+    await wait();
+    expect(wrapper.findAll('.cumquat-list-item')).toHaveLength(2);
+    expect(wrapper.find('.cumquat-list__more').exists()).toBe(true);
+    await wrapper.find('.cumquat-list__more-btn').trigger('click');
+    await wait();
+    expect(fetcher.mock.calls[1][0].pagination).toEqual({ currentPage: 2, pageSize: 2 });
+    expect(wrapper.findAll('.cumquat-list-item')).toHaveLength(3);
+    expect(wrapper.find('.cumquat-list__more').exists()).toBe(false);
+  });
+
+  it('fetch：返回纯数组不分页，不显示加载更多', async () => {
+    const fetcher = vi.fn(async () => ['一', '二']);
+    const wrapper = mount(List, { props: { fetch: fetcher } });
+    await wait();
+    expect(wrapper.findAll('.cumquat-list-item--plain')).toHaveLength(2);
+    expect(wrapper.find('.cumquat-list__more').exists()).toBe(false);
+  });
+
+  it('fetch：失败展示错误与重试，重试成功恢复', async () => {
+    const fetcher = vi
+      .fn<() => Promise<unknown>>()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValue({ list: users, total: 2 });
+    const wrapper = mount(List, { props: { fetch: fetcher } });
+    await wait();
+    expect(wrapper.find('.cumquat-list__state.cq-state--error').exists()).toBe(true);
+    await wrapper.find('.cumquat-list__retry').trigger('click');
+    await wait();
+    expect(wrapper.findAll('.cumquat-list-item')).toHaveLength(2);
+  });
+
+  it('数据模式空数据展示空态文案', () => {
+    const wrapper = mount(List, { props: { items: [] } });
+    expect(wrapper.find('.cumquat-list__state').text()).toBe('暂无数据');
+  });
+
+  it('header/footer 渲染且插槽优先', () => {
+    const wrapper = mount(List, {
+      props: { items: users, header: '头部', footer: '底部' },
+      slots: { header: '插槽头' },
+    });
+    expect(wrapper.find('.cumquat-list__header').text()).toBe('插槽头');
+    expect(wrapper.find('.cumquat-list__footer').text()).toBe('底部');
+  });
+
+  it('children 数据：缺省收起，点箭头展开并缩进，再点收起', async () => {
+    const tree = [
+      { id: 1, name: '研发部', children: [
+        { id: 11, name: '前端组' },
+        { id: 12, name: '后端组' },
+      ] },
+      { id: 2, name: '设计部' },
+    ];
+    const wrapper = mount(List, {
+      props: {
+        items: tree,
+        title: (item: any) => item.name,
+        rowKey: (item: any) => item.id,
+      },
+    });
+    // 缺省收起：只有 2 个顶层项，含箭头的只有研发部
+    expect(wrapper.findAll('.cumquat-list-item')).toHaveLength(2);
+    expect(wrapper.find('.cumquat-list__expander').exists()).toBe(true);
+    // 展开后子项经映射器渲染并带缩进
+    await wrapper.find('.cumquat-list__expander').trigger('click');
+    const items = wrapper.findAll('.cumquat-list-item');
+    expect(items).toHaveLength(4);
+    expect(items[1].text()).toContain('前端组');
+    expect(items[1].attributes('style')).toContain('padding-inline-start: calc(2.25rem)');
+    expect(wrapper.emitted('expand')?.[0]).toEqual([{ item: tree[0], expanded: true }]);
+    // 再点收起
+    await wrapper.find('.cumquat-list__expander').trigger('click');
+    expect(wrapper.findAll('.cumquat-list-item')).toHaveLength(2);
+    expect(wrapper.emitted('expand')?.[1]).toEqual([{ item: tree[0], expanded: false }]);
+  });
+
+  it('defaultExpandAll：初始展开全部，可手动收起', async () => {
+    const tree = [
+      { id: 1, name: '研发部', children: [
+        { id: 11, name: '前端组', children: [{ id: 111, name: 'Web 组' }] },
+      ] },
+    ];
+    const wrapper = mount(List, {
+      props: { items: tree, title: (item: any) => item.name, rowKey: (item: any) => item.id, defaultExpandAll: true },
+    });
+    expect(wrapper.findAll('.cumquat-list-item')).toHaveLength(3);
+    expect(wrapper.text()).toContain('Web 组');
+    // 收起顶层后子级整体隐藏
+    await wrapper.find('.cumquat-list__expander').trigger('click');
+    expect(wrapper.findAll('.cumquat-list-item')).toHaveLength(1);
   });
 });
 
