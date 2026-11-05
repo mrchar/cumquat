@@ -233,6 +233,9 @@ export { subscribeErrorText } from './data/useSubscribe';
 export { useChat } from './data/useChat';
 export type { ChatMessage, UseChatOptions, UseChatReturn } from './data/useChat';
 
+export { useMask } from './data/useMask';
+export type { MaskRule, UseMaskReturn } from './data/useMask';
+
 // L2 资源池
 export { useResources } from './resources/use-resources';
 export { parseOpenApi } from './resources/parse-open-api';

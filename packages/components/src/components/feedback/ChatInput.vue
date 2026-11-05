@@ -234,7 +234,7 @@ defineExpose({ input });
             <span class="cumquat-chat-input__recording-hint">{{ recordingHint }}</span>
           </div>
         </div>
-        <!-- 有可发送内容时语音键替换为发送键 -->
+        <!-- 有可发送内容时语音键替换为发送键：同尺寸圆形实心钮，切换无形状跳变 -->
         <Button
           v-if="canSend"
           type="primary"
@@ -242,9 +242,23 @@ defineExpose({ input });
           class="cumquat-chat-input__send"
           :disabled="sendDisabled"
           :loading="sending"
+          aria-label="发送"
           @click="send"
         >
-          发送
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path
+              d="M17.2 2.8 2.8 8.9c-.6.25-.57 1.1.05 1.32l5.5 1.83 1.83 5.5c.22.62 1.07.65 1.32.05l6.1-14.4c.24-.57-.35-1.16-.92-.92Z"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            />
+            <path
+              d="m8.35 12.05 8.85-9.25"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
         </Button>
         <button
           v-else-if="hasVoice"
