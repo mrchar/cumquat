@@ -112,6 +112,8 @@ interface ExtractedField {
   name: string;
   label: string;
   type: ResourceFieldType;
+  /** description 与 example 合成的帮助提示 */
+  help?: string;
   /** 文档声明的内容格式，原样透传（date-time / date / email / uri / int64…） */
   format?: string;
   options?: Array<{ label: string; value: string | number }>;
@@ -121,6 +123,29 @@ interface ExtractedField {
 /** 文档声明的内容格式：仅透传字符串形式的 format，其余忽略 */
 function fieldFormat(schema: Dict): string | undefined {
   return typeof schema.format === 'string' && schema.format !== '' ? schema.format : undefined;
+}
+
+/** 帮助提示：description 为主，example 以「示例：…」形式附后 */
+function fieldHelp(schema: Dict): string | undefined {
+  const description =
+    typeof schema.description === 'string' && schema.description.trim() !== ''
+      ? schema.description.trim()
+      : undefined;
+  let example: string | undefined;
+  if (schema.example !== undefined) {
+    example =
+      typeof schema.example === 'string' ? schema.example : JSON.stringify(schema.example);
+  }
+  if (description && example) return `${description}（示例：${example}）`;
+  if (description) return description;
+  if (example) return `示例：${example}`;
+  return undefined;
+}
+
+/** 列名：优先文档 title，缺失回落字段名 */
+function fieldLabel(schema: Dict, name: string): string {
+  const title = typeof schema.title === 'string' ? schema.title.trim() : '';
+  return title !== '' ? title : name;
 }
 
 /** 从对象 schema 的 properties 提取字段描述（仅原始类型） */
@@ -137,7 +162,8 @@ function extractFields(doc: Dict, schema: unknown): ExtractedField[] {
     if (!type) continue;
     fields.push({
       name,
-      label: (resolvedProp.description as string) ?? (resolvedProp.title as string) ?? name,
+      label: fieldLabel(resolvedProp, name),
+      help: fieldHelp(resolvedProp),
       type,
       format: fieldFormat(resolvedProp),
       options: type === 'enum' ? fieldOptions(resolvedProp) : undefined,
@@ -191,12 +217,19 @@ function mergeField(
   const fields = (definition.fields ??= []);
   let field = fields.find((item) => item.name === partial.name);
   if (!field) {
-    field = { name: partial.name, label: partial.label, type: partial.type, scope: {} };
+    field = {
+      name: partial.name,
+      label: partial.label,
+      type: partial.type,
+      scope: {},
+    };
+    if (partial.help) field.help = partial.help;
     if (partial.options) field.options = partial.options;
     if (partial.format) field.format = partial.format;
     fields.push(field);
-  } else if (partial.format) {
-    field.format ??= partial.format;
+  } else {
+    if (partial.format) field.format ??= partial.format;
+    if (partial.help) field.help ??= partial.help;
   }
   field.scope = { ...field.scope, [scopeKey]: true };
   if (partial.required) field.required = true;

@@ -11,12 +11,15 @@ import type { AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composabl
 import CqButton from '../basic/Button.vue';
 import Pagination from './Pagination.vue';
 import Dropdown from '../overlay/Dropdown.vue';
+import Tooltip from '../overlay/Tooltip.vue';
 import { resolveCell } from './cells';
 import type { CellRenderer } from './cells';
 
 export interface TableColumn {
   key: string;
   title: string;
+  /** 帮助提示：表头标题后的说明图标悬浮展示，资源池投影自动携带 */
+  help?: string;
   width?: string;
   align?: 'left' | 'center' | 'right';
   /** 保存格式提示（string / number / boolean / date / datetime / enum）：单元格竞选的评分输入，资源池投影自动携带 */
@@ -448,6 +451,19 @@ const CellView = (cellProps: { cell?: CellRenderer; row: Row; column: TableColum
           >
             <span class="cumquat-table__th-title">
               <span class="cumquat-table__th-text" :title="col.title">{{ col.title }}</span>
+              <Tooltip
+                v-if="col.help"
+                class="cumquat-table__th-help"
+                :content="col.help"
+                placement="top"
+              >
+                <span class="cumquat-table__th-help-icon" aria-label="字段说明">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 11v5M12 7.6v.8" stroke-linecap="round" />
+                  </svg>
+                </span>
+              </Tooltip>
               <button
                 v-if="col.sortable"
                 type="button"

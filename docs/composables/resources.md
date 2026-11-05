@@ -141,7 +141,7 @@ loading、失败回退提示等行为与动作协议一致。`properties` 提供
 | 成员         | 类型                                                    | 说明                                                                                                                                                           |
 | ------------ | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fields`     | `ResourceField[]`                                       | 完整字段元数据原始列表                                                                                                                                         |
-| `columns`    | `{ key, title, type?, format?, sortable?, filters? }[]` | 列表列投影（`scope.list`），直接绑定 Table 的 `:columns`；`type` / `format` 供[单元格竞选](/cell)自动推断显示                                                  |
+| `columns`    | `{ key, title, help?, type?, format?, sortable?, filters? }[]` | 列表列投影（`scope.list`），直接绑定 Table 的 `:columns`；`help` 展示表头说明，`type` / `format` 供[单元格竞选](/cell)自动推断显示                                                  |
 | `filters`    | `ResourceField[]`                                       | 筛选字段投影（`scope.filter`），enum 字段自带 options                                                                                                          |
 | `properties` | `ResourceField[]`                                       | 表单字段投影（`scope.create` / `scope.update`，保留场景标记），直接绑定 Form 的 `:properties`；`type` / `format` / `required` 供[字段竞选](/field)自动推断控件 |
 
@@ -180,8 +180,10 @@ interface ResourceDefinition {
 interface ResourceField {
   /** 字段名：数据对象键 */
   name: string;
-  /** 展示名，解析自文档描述，缺失回落字段名 */
+  /** 展示名，解析自文档 title，缺失回落字段名 */
   label: string;
+  /** 帮助提示：由文档 description 与 example 合成 */
+  help?: string;
   /** 值类型：决定筛选与表单的控件选择 */
   type: 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum';
   /** 内容格式：原样透传文档声明的 format（如 email / uri / int64），与 type 的保存格式互补 */
@@ -270,7 +272,7 @@ interface QueryNames {
 
 - 资源名取 tag（或 operationId 前缀），同一资源的操作聚合为一个 `ResourceDefinition`
 - 请求参数名从文档的参数声明中识别常见命名（`page` / `pageNo` / `current` → currentPage，`pageSize` / `size` / `limit` → pageSize，`keyword` / `q` / `search` → keyword 等），识别失败回落默认命名，可用 `refine` 修正
-- 字段元数据自文档 schema 提取：属性名 → `name`，description → `label`，format 映射 `type`（如 date-time → datetime、int64 → number），enum（含整型枚举）附带 options
+- 字段元数据自文档 schema 提取：属性名 → `name`，`title` → `label`（缺失回落字段名），`description` 与 `example` 合成 `help` 帮助提示（如「联系邮箱（示例：a@b.com）」），format 映射 `type`（如 date-time → datetime、int64 → number），enum（含整型枚举）附带 options
 - 场景标记按出现位置判定：create 请求体属性 → `scope.create`，update 请求体 → `scope.update`，`required` 取 schema 的 required 列表；查询参数中除分页 / 关键词外的项 → `scope.filter`；列表与详情响应属性 → `scope.list`
 - 信封响应（数组属性 + 总数属性，如 `records` / `total`、`items` / `count`）自动映射为 `response` 路径；裸数组响应不映射
 - 解析器只读文档，不校验服务器实现；路径与方法以文档为准，schema 缺失时 `fields` 为空数组，请求方法照常可用

@@ -174,6 +174,7 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
         .filter((field) => field.scope?.list)
         .map((field) => {
           const column: ResourceColumn = { key: field.name, title: field.label, type: field.type };
+          if (field.help) column.help = field.help;
           if (field.format) column.format = field.format;
           if (field.type === 'enum' && field.options && field.options.length > 0) {
             column.filters = field.options;

@@ -42,6 +42,73 @@ describe('parseOpenApi（OpenAPI 3.x）', () => {
     expect(schema.resources.orders.response).toEqual({ list: 'items', total: 'total' });
   });
 
+  it('列名优先 title、缺失回落字段名；帮助提示由 description 与 example 合成', () => {
+    const byName = Object.fromEntries(
+      (schema.resources.users.fields ?? []).map((field) => [field.name, field]),
+    );
+    // title 作为列名，description 不再参与命名
+    expect(byName.id.label).toBe('用户ID');
+    expect(byName.email.label).toBe('邮箱');
+    // description + example 合成帮助提示
+    expect(byName.id.help).toBe('用户唯一标识（示例：1001）');
+    expect(byName.email.help).toBe('联系邮箱（示例：zhangsan@example.com）');
+    // 仅 description 或仅 example 时降级合成
+    expect(byName.status.help).toBe('账号状态');
+    expect(byName.createdAt.help).toBeUndefined();
+
+    const orderFields = Object.fromEntries(
+      (schema.resources.orders.fields ?? []).map((field) => [field.name, field]),
+    );
+    expect(orderFields.amount.help).toBe('订单金额（示例：99.5）');
+    expect(orderFields.status.help).toBe('订单当前状态（示例：1）');
+    // 未声明 title 时回落字段名
+    expect(orderFields.id.label).toBe('id');
+    expect(orderFields.id.help).toBeUndefined();
+  });
+
+  it('fieldHelp 支持对象类型的 example（序列化为 JSON 文本）', () => {
+    const doc = {
+      paths: {
+        '/things': {
+          get: {
+            tags: ['things'],
+            responses: {
+              '200': {
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          tags: {
+                            type: 'string',
+                            title: '标签',
+                            example: ['a', 'b'],
+                          },
+                          meta: {
+                            type: 'string',
+                            example: { level: 1 },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const thingSchema = parseOpenApi(doc, { server: 'https://api.test' });
+    const byName = Object.fromEntries(
+      (thingSchema.resources.things.fields ?? []).map((field) => [field.name, field]),
+    );
+    expect(byName.tags.help).toBe('示例：["a","b"]');
+    expect(byName.meta.help).toBe('示例：{"level":1}');
+  });
+
   it('字段元数据：名称 / 展示名 / 类型映射 / 枚举选项，非原始类型跳过', () => {
     const fields = schema.resources.users.fields ?? [];
     expect(fields.map((field) => field.name)).toEqual([

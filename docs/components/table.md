@@ -12,6 +12,7 @@ title: Table 表格
 interface TableColumn {
   key: string;
   title: string;
+  help?: string; // 表头说明图标悬浮提示，资源池投影自动携带
   width?: string;
   align?: 'left' | 'center' | 'right';
   type?: 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum'; // 保存格式提示（竞选评分输入）

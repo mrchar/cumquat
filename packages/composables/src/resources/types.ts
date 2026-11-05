@@ -52,9 +52,11 @@ export interface ResourceFieldOption {
 export interface ResourceField {
   /** 字段名：数据对象键 */
   name: string;
-  /** 展示名，解析自文档描述，缺失回落字段名 */
+  /** 展示名，解析自文档 title，缺失回落字段名 */
   label: string;
   type: ResourceFieldType;
+  /** 帮助提示：由文档的 description 与 example 合成，供表头悬浮说明使用 */
+  help?: string;
   /** 内容格式：原样透传文档声明的 format（如 email / uri / int64），与 type 的保存格式互补 */
   format?: string;
   /** 枚举选项：type 为 enum 时提供，可直接喂给选项组件 */
@@ -78,6 +80,8 @@ export interface ResourceField {
 export interface ResourceColumn {
   key: string;
   title: string;
+  /** 帮助提示：字段 description 与 example 合成，供表头悬浮说明使用 */
+  help?: string;
   /** 保存格式提示：字段 type 原样投影，供 Table 单元格竞选消费 */
   type?: ResourceFieldType;
   /** 内容格式提示：字段 format 原样透传（如 email / uri / int64） */

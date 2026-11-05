@@ -182,7 +182,7 @@ describe('useResources（元数据与状态）', () => {
     expect(users.fields).toHaveLength(3);
   });
 
-  it('columns 投影携带 type 与原样透传的 format', async () => {
+  it('columns 投影携带 type、format 与帮助提示', async () => {
     const schema: ResourceSchema = {
       resources: {
         users: {
@@ -193,6 +193,7 @@ describe('useResources（元数据与状态）', () => {
               label: '邮箱',
               type: 'string',
               format: 'email',
+              help: '联系邮箱（示例：a@b.com）',
               scope: { list: true },
             },
             {
@@ -210,7 +211,13 @@ describe('useResources（元数据与状态）', () => {
     const pool = useResources({ server: 'https://api.test', schema, request: adapter });
     await flush();
     expect(pool.client('users').columns).toEqual([
-      { key: 'email', title: '邮箱', type: 'string', format: 'email' },
+      {
+        key: 'email',
+        title: '邮箱',
+        type: 'string',
+        format: 'email',
+        help: '联系邮箱（示例：a@b.com）',
+      },
       { key: 'score', title: '积分', type: 'number', format: 'int64' },
     ]);
   });

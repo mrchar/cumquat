@@ -47,6 +47,21 @@ describe('Table', () => {
     expect(wrapper.find('.cumquat-table__empty').exists()).toBe(false);
   });
 
+  it('列 help 渲染表头说明图标，悬浮展示帮助提示', async () => {
+    const wrapper = mount(Table, {
+      props: {
+        columns: [
+          { key: 'name', title: '名称', help: '用户姓名（示例：Amber）' },
+          { key: 'age', title: '年龄' },
+        ],
+        rows,
+      },
+    });
+    expect(wrapper.findAll('.cumquat-table__th-help-icon')).toHaveLength(1);
+    await wrapper.find('.cumquat-table__th-help').trigger('mouseenter');
+    expect(wrapper.find('.cumquat-tooltip__content').text()).toBe('用户姓名（示例：Amber）');
+  });
+
   it('空数据显示空态', () => {
     const wrapper = mount(Table, { props: { columns, rows: [] } });
     expect(wrapper.find('.cumquat-table__empty').text()).toBe('暂无数据');
