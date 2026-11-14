@@ -112,6 +112,7 @@ const groups: Array<{ text: string; items: Array<[string, string, string]> }> = 
     text: '其他',
     items: [
       ['affix', 'Affix 固钉'],
+      ['config-provider', 'ConfigProvider 全局配置'],
       ['float-button', 'FloatButton 悬浮按钮'],
       ['tour', 'Tour 漫游引导'],
       ['watermark', 'Watermark 水印'],

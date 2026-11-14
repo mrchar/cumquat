@@ -202,4 +202,18 @@ export const feedbackSamples: Sample[] = [
       };
     },
   },
+  {
+    key: 'chat',
+    title: 'Chat 聊天框',
+    code: `
+  <Chat :action="sendMessage" height="22rem" class="max-w-xl" />
+`,
+    scope: () => ({
+      sendMessage: async (content: string) => {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        if (content.includes('失败')) throw new Error('演示：模拟发送失败');
+        return { status: 'success' };
+      },
+    }),
+  },
 ];
