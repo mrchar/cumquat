@@ -280,6 +280,28 @@ vp run -r test --parallel      # 并行执行，加速 CI
 - `pack.platform` 统一为 `neutral`（同时产出 Node 与浏览器兼容的产物）
 - 所有 `pnpm run <script>` 的调用也可换成 `vp run <script>`（vite-plus 会走同样的缓存）
 
+## 发布
+
+发布只依赖 GitHub tag，**不要在本地执行 `npm publish` / `pnpm publish`**。
+
+1. 修改 `packages/cumquat/package.json` 的 `version`，例如 `0.4.1`。
+2. 提交并推送 `main`。
+3. 打 tag 并推送：
+
+```bash
+git tag v0.4.1
+git push origin main
+git push origin v0.4.1
+```
+
+推送 tag 后，`.github/workflows/publish.yml` 会自动执行：校验 tag 与包版本一致 → 构建全部包 → 用 `pnpm pack` 打出聚合包 → 通过 npm Trusted Publishing 发布。
+
+注意：
+
+- tag 名必须是 `v` + 包版本号（如 `v0.4.1`），工作流会校验两者一致，不一致会直接失败。
+- 发布由 GitHub Actions 完成，本地无需 npm 登录或提供 token。
+- 若某次发布失败且版本未成功上线，可删除远端 tag 后重新推送，触发工作流重跑。
+
 ## 文档
 
 - [状态自持](docs/state.md) — fetch / action / subscribe 三大协议的完整行为与工作原理
