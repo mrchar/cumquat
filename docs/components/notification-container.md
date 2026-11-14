@@ -8,8 +8,9 @@ title: NotificationContainer 通知容器
 
 | Prop      | 类型                                                           | 默认值                  | 说明           |
 | --------- | -------------------------------------------------------------- | ----------------------- | -------------- |
-| api       | `NotificationApi`                                              | 全局单例 `notification` | 可传入自建服务 |
+| api       | [`NotificationApi`](/types/basics/common#notificationapi)                                              | 全局单例 `notification` | 可传入自建服务 |
 | placement | `'top-right' \| 'top-left' \| 'bottom-right' \| 'bottom-left'` | `'top-right'`           | 默认弹出角落   |
+| target    | [`MountTarget`](/types/basics/overlay#mounttarget)                                                  | -                       | Teleport 目标；继承配置，最终回退 body |
 
 ```vue
 <!-- App.vue -->
@@ -17,7 +18,7 @@ title: NotificationContainer 通知容器
 ```
 
 ```ts
-import { notification } from '@mrchar/cumquat/composables';
+import { notification } from '@mrchar/cumquat';
 notification.success('导入完成', '共导入 128 条记录');
 notification.error('同步失败', '请检查网络后重试');
 ```

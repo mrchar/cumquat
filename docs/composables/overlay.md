@@ -46,7 +46,7 @@ const { referenceRef, floatingRef, floatingStyle, placement, arrowStyle, update 
 });
 ```
 
-参数见类型 `UseFloatingOptions`；`Placement` / `Strategy` 定义见[类型参考](/types)。
+参数见类型 [`UseFloatingOptions`](/types/basics/overlay#usefloatingoptions)；[`Placement`](/types/basics/overlay#placement) / [`Strategy`](/types/basics/overlay#strategy) 定义见类型参考。
 
 ## useOpen
 

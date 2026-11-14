@@ -1,25 +1,34 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useFetchResource, useSubscribe } from '@cumquat/composables';
-import type { AsyncStateLike, Fetch, SubscribeHandler } from '@cumquat/composables';
-import CqButton from '../basic/Button.vue';
+import type { FetchHandler, Status, SubscribeHandler } from '@cumquat/core';
+import { useFetchResource, useSubscribeResource } from '@cumquat/composables';
+
+import CqButton from '../general/Button.vue';
 import ListItem from './ListItem.vue';
 import ListItemMeta from './ListItemMeta.vue';
 
 /** 列表项映射器：把一个列表项映射为展示文本（非静态值，避免字段魔法推断） */
 export type ListMapper = (item: any) => string;
 
+/** 远程数据状态：组件自有的 props 形状，不在 core 中定义 */
+type State<T> = {
+  status: Status;
+  data?: T;
+  error?: unknown;
+  retry?: () => void;
+};
+
 const props = withDefaults(
   defineProps<{
     /** 本地数据：对象或原始值均可 */
     items?: unknown[];
     /** 远程数据状态：传入后 items 由其派生，组件自身不发请求 */
-    data?: AsyncStateLike<unknown[]>;
+    data?: State<unknown[]>;
     /**
      * 统一远程请求方法：挂载即请求；返回数组作为普通列表，
-     * 返回 { list, total } 自动识别为分页结果并启用加载更多
+     * 返回 { list, page, size, total } 自动识别为分页结果并启用加载更多
      */
-    fetch?: Fetch<unknown>;
+    fetch?: FetchHandler<unknown>;
     /**
      * 订阅数据：挂载时调用，resolve 出的列表数据用于渲染。
      * 优先级：subscribe > fetch > data > items
@@ -43,8 +52,8 @@ const props = withDefaults(
     defaultExpandAll?: boolean;
     /** 列表最大高度：设置后根容器内部滚动，触底自动加载下一页 */
     height?: string;
-    /** 每页条数（fetch 返回 { list, total } 分页结果时生效） */
-    pageSize?: number;
+    /** 每页条数（fetch 返回 { list, page, size, total } 分页结果时生效） */
+    size?: number;
   }>(),
   {
     items: () => [],
@@ -60,32 +69,35 @@ const props = withDefaults(
     rowKey: undefined,
     defaultExpandAll: false,
     height: '',
-    pageSize: 20,
+    size: 20,
   },
 );
 
 /* ---------------- fetch：挂载即拉列表；分页结果触底累积 ---------------- */
 const { enabled: fetchEnabled, state: fetchState, total: fetchTotal, refresh: refreshFetch } =
   useFetchResource<unknown[]>(() => props.fetch, {
-    getQuery: () => ({ pagination: { currentPage: 1, pageSize: props.pageSize } }),
+    getQuery: () => ({ page: 1, size: props.size }),
     initialData: [] as unknown[],
     // 查询基线恒为第 1 页（第 1 页整体替换），翻页靠命令式 refresh 累积
     merge: (previous, next, query) =>
-      (query.pagination?.currentPage ?? 1) <= 1 ? next : [...previous, ...next],
+      (query.page ?? 1) <= 1 ? next : [...previous, ...next],
   });
 
 /* ---------------- subscribe：订阅型数据 ---------------- */
-const { state: subState } = useSubscribe<unknown[]>(() => props.subscribe);
+const { state: subState } = useSubscribeResource<unknown[]>(() => props.subscribe);
 
-const remoteState = computed<AsyncStateLike<unknown[]> | undefined>(() => {
-  if (props.subscribe) return subState.value as AsyncStateLike<unknown[]>;
+const remoteState = computed<State<unknown[]> | undefined>(() => {
+  if (props.subscribe) return subState.value;
   return fetchEnabled.value ? fetchState.value : props.data;
 });
 const remoteLoading = computed(() => remoteState.value?.status === 'pending');
 const remoteError = computed(() =>
   remoteState.value?.status === 'error' ? remoteState.value.error : undefined,
 );
-const remoteStale = computed(() => !!remoteState.value?.isStale);
+const remoteStale = computed(() => {
+  const state = remoteState.value;
+  return !!state && state.status !== 'success' && state.data !== undefined;
+});
 const rows = computed<unknown[]>(() =>
   remoteState.value ? (remoteState.value.data ?? []) : props.items,
 );
@@ -103,8 +115,8 @@ const hasMore = computed(
 /** 触底加载下一页：命令式 refresh 绕过查询监听，保证翻页即时；页码由累积条数推算 */
 function loadMore() {
   if (!hasMore.value || remoteLoading.value) return;
-  const next = Math.ceil(rows.value.length / props.pageSize) + 1;
-  void refreshFetch({ pagination: { currentPage: next, pageSize: props.pageSize } });
+  const next = Math.ceil(rows.value.length / props.size) + 1;
+  void refreshFetch({ page: next, size: props.size });
 }
 
 /** 根容器滚动：设置了 height 时容器内部滚动，接近底部一行即触发下一页 */

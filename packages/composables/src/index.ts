@@ -4,23 +4,14 @@
  * 仅依赖 vue 运行时，无 CSS、无组件、无浏览器强依赖。
  */
 
-// 公共类型契约
-export type {
-  AsyncStateLike,
-  ActionLike,
-  ActionResult,
-  SubscribeResult,
-  SubscribeHandler,
-  ControlledProps,
-  AsyncFn,
-  Placement,
-  Strategy,
-} from './types';
+// 视图层类型契约
+export type { MountTarget, Placement, Strategy } from './types';
 
 // L0 工具原语
 export { useId } from './core/useId';
 export { useControllableModel, createControllableModel } from './core/useControllableModel';
 export type {
+  ControlledProps,
   ControllableModelOptions,
   ControllableModelReturn,
 } from './core/useControllableModel';
@@ -38,6 +29,10 @@ export { useTimeoutFn } from './core/useTimeoutFn';
 export type { UseTimeoutFnReturn } from './core/useTimeoutFn';
 export { useIntervalFn } from './core/useIntervalFn';
 export type { UseIntervalFnOptions, UseIntervalFnReturn } from './core/useIntervalFn';
+export { useDebounceFn } from './core/useDebounceFn';
+export type { UseDebounceFnReturn } from './core/useDebounceFn';
+export { useOnceFn } from './core/useOnceFn';
+export type { UseOnceFnReturn } from './core/useOnceFn';
 export { useMediaQuery } from './core/useMediaQuery';
 export { useScroll } from './core/useScroll';
 export type { ScrollDirection, ScrollPosition, UseScrollOptions } from './core/useScroll';
@@ -84,7 +79,8 @@ export type {
 } from './behavior/useListboxNavigation';
 export { useAsyncState } from './behavior/useAsyncState';
 export type { UseAsyncStateOptions, UseAsyncStateReturn } from './behavior/useAsyncState';
-export { useActionState, extractActionFailure, actionErrorText } from './behavior/useActionState';
+export type { Snapshot } from './state';
+export { useActionState } from './behavior/useActionState';
 export type { UseActionStateOptions, UseActionStateReturn } from './behavior/useActionState';
 export { useActionValue } from './behavior/useActionValue';
 export type { UseActionValueReturn } from './behavior/useActionValue';
@@ -96,10 +92,7 @@ export type {
   UseVoiceButtonOptions,
 } from './behavior/useVoiceButton';
 export { useVoiceLevel } from './behavior/useVoiceLevel';
-export type {
-  UseVoiceLevelOptions,
-  UseVoiceLevelReturn,
-} from './behavior/useVoiceLevel';
+export type { UseVoiceLevelOptions, UseVoiceLevelReturn } from './behavior/useVoiceLevel';
 export { useChatInput } from './behavior/useChatInput';
 export type {
   ChatInputAttachment,
@@ -173,6 +166,11 @@ export type {
 export { useTimeModel } from './form/useTimeModel';
 export type { TimeColumnItem, UseTimeModelOptions, UseTimeModelReturn } from './form/useTimeModel';
 export type { FieldRuleConfig, FormRule, FormRules } from './form/form-types';
+export { createValidator } from './form/createValidator';
+export type { CreateValidatorOptions, Validator } from './form/createValidator';
+export { useValidator } from './form/useValidator';
+export type { UseValidatorOptions, UseValidatorReturn } from './form/useValidator';
+export { DEFAULT_VALIDATION_MESSAGES } from './form/validation-types';
 
 // L2 浮层与反馈
 export { useModal } from './overlay/useModal';
@@ -202,33 +200,11 @@ export type {
   UsePaginationOptions,
   UsePaginationReturn,
 } from './data/usePagination';
-export {
-  useFetch,
-  useFetchResource,
-  createFetchController,
-  normalizeFetchResult,
-  isPagedResult,
-  isUseFetchReturn,
-  FETCH_RESOURCE,
-} from './data/fetch';
-export type {
-  Fetch,
-  FetchLike,
-  FetchPagination,
-  FetchQuery,
-  FetchSorter,
-  FetchResult,
-  PagedResult,
-  NormalizedFetch,
-  FetchController,
-  UseFetchReturn,
-  UseFetchResourceOptions,
-  FetchResource,
-} from './data/fetch';
+export { useFetchResource } from './data/fetch';
+export type { UseFetchResourceOptions, FetchResource } from './data/fetch';
+export type { FetchResponsePagination } from '@cumquat/core';
 
-export { useSubscribe, extractSubscribeFailure } from './data/useSubscribe';
-export type { UseSubscribeReturn } from './data/useSubscribe';
-export { subscribeErrorText } from './data/useSubscribe';
+export { useSubscribeResource } from './data/useSubscribe';
 
 export { useChat } from './data/useChat';
 export type { ChatMessage, UseChatOptions, UseChatReturn } from './data/useChat';
@@ -239,25 +215,16 @@ export type { MaskRule, UseMaskReturn } from './data/useMask';
 // L2 资源池
 export { useResources } from './resources/use-resources';
 export { parseOpenApi } from './resources/parse-open-api';
+export {
+  createView,
+  defaultView,
+  componentOf,
+  helpOf,
+  optionsOf,
+  schemaToColumns,
+} from './resources/schema-view';
+export type { CreateViewOptions, SchemaColumnOptions } from './resources/schema-view';
 export { createFetchAdapter, ResourceHttpError } from './resources/create-fetch-adapter';
-export type {
-  ResourceMethod,
-  ResourceOperation,
-  QueryNames,
-  ListResponseMapping,
-  ResourceFieldType,
-  ResourceFieldOption,
-  ResourceField,
-  ResourceColumn,
-  ResourceDefinition,
-  ResourceSchema,
-  MetadataParser,
-  ResourceRequest,
-  RequestAdapter,
-  UseResourcesOptions,
-  ResourceClient,
-  ResourcePool,
-} from './resources/types';
 
 // L2 媒体
 export { useImageState } from './media/useImageState';

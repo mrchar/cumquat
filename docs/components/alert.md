@@ -28,6 +28,16 @@ title: Alert 警告提示
 <Alert type="warning" title="注意" closable>当前配置将在 24 小时后生效。</Alert>
 ```
 
+## 补充：订阅内容与失败回退
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| message | `string` | `undefined` | 提示内容（`default` 插槽未提供时使用） |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<string>` | `undefined` | 订阅提示内容；挂载时调用，优先于 `message` 渲染 |
+| errorText | `string` | `undefined` | 订阅失败时的回退文案 |
+
+`subscribe` 与 `message` 同时存在时优先使用订阅结果；订阅失败时正文回退到 `message`，并在提供 `errorText` 时额外展示错误条。
+
 ## 交互演示
 
 ### 警告类型

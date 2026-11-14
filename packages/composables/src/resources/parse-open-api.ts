@@ -1,17 +1,23 @@
 import type {
+  Hint,
+  Kind,
   MetadataParser,
   QueryNames,
-  ResourceDefinition,
-  ResourceField,
-  ResourceFieldType,
+  Resource,
   ResourceMethod,
-  ResourceSchema,
-} from './types';
+  Registry,
+  Schema,
+  Scope,
+} from '@cumquat/core';
 
 /**
  * OpenAPI（Swagger）默认解析器：同时支持 OpenAPI 3.x 与 Swagger 2.0。
  * 只读文档、不做服务器校验；资源名取 tag（回落路径首段），
- * 操作按「路径 + 方法」归类，字段元数据自响应与请求体 schema 提取。
+ * 操作按「路径 + 方法」归类，字段定义自响应与请求体 schema 提取。
+ *
+ * 产物是三层 schema：属性定义（title / description / example…）、
+ * 类型定义（type / format / enum / items / properties…）、约束定义（minimum / minLength…）。
+ * 解析器只负责「文档 → schema」，视图层投影由 Converter 完成。
  */
 
 type Dict = Record<string, unknown>;
@@ -24,6 +30,16 @@ const SORTER_NAME = /^(sort|sorter|sortby|sort_by|order|orderby|order_by)$/i;
 const TOTAL_NAME = /^(total|totalcount|totalelements|total_items|count)$/i;
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
+
+const KINDS: readonly Kind[] = [
+  'string',
+  'number',
+  'integer',
+  'boolean',
+  'array',
+  'object',
+  'null',
+];
 
 /** 按 $ref 指针（#/a/b/c）在文档中查找目标 */
 function lookupRef(doc: Dict, ref: string): unknown {
@@ -78,105 +94,192 @@ function requestBodySchema(doc: Dict, op: Dict): unknown {
   return params?.find((param) => param.in === 'body')?.schema;
 }
 
-/** schema 的元数据字段类型；object / array 等非原始类型返回 null（不进入元数据） */
-function fieldType(schema: Dict): ResourceFieldType | null {
-  // enum 可挂在 string 或 integer 上，优先判定
-  if (
-    Array.isArray(schema.enum) &&
-    schema.enum.length > 0 &&
-    (schema.type === 'string' || schema.type === 'integer' || schema.type === 'number')
-  ) {
-    return 'enum';
+function numericValue(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function textValue(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined;
+}
+
+/**
+ * 类型定义：type / format / enum / const / nullable。
+ * JSON Schema 允许 type 为数组，`[T, 'null']` 归一为单类型 + nullable。
+ */
+function extractType(schema: Dict): Partial<Schema> {
+  const field: Partial<Schema> = {};
+  const raw = schema.type;
+  if (Array.isArray(raw)) {
+    const kinds = raw.filter((value): value is Kind => KINDS.includes(value as Kind));
+    const type = kinds.find((kind) => kind !== 'null');
+    if (type) field.type = type;
+    if (kinds.includes('null')) field.nullable = true;
+  } else if (typeof raw === 'string' && KINDS.includes(raw as Kind)) {
+    field.type = raw as Kind;
   }
-  switch (schema.type) {
-    case 'integer':
-    case 'number':
-      return 'number';
-    case 'boolean':
-      return 'boolean';
-    case 'string':
-      if (schema.format === 'date-time') return 'datetime';
-      if (schema.format === 'date') return 'date';
-      return 'string';
-    default:
-      return null;
+  if (schema.nullable === true) field.nullable = true;
+
+  const format = textValue(schema.format);
+  if (format) field.format = format;
+
+  if (Array.isArray(schema.enum) && schema.enum.length > 0) {
+    field.enum = schema.enum as Schema['enum'];
   }
+  if (schema.const !== undefined) field.const = schema.const;
+
+  return field;
 }
 
-function fieldOptions(schema: Dict): Array<{ label: string; value: string | number }> | undefined {
-  if (!Array.isArray(schema.enum)) return undefined;
-  return schema.enum.map((value) => ({ label: String(value), value: value as string | number }));
+/** 属性定义：标识与元数据 */
+function extractMeta(schema: Dict): Partial<Schema> {
+  const field: Partial<Schema> = {};
+  const title = textValue(schema.title);
+  if (title) field.title = title;
+  const description = textValue(schema.description);
+  if (description) field.description = description;
+  if (schema.default !== undefined) field.default = schema.default;
+  if (schema.example !== undefined) field.example = schema.example;
+  if (schema.deprecated === true) field.deprecated = true;
+  if (schema.readOnly === true) field.readOnly = true;
+  if (schema.writeOnly === true) field.writeOnly = true;
+  return field;
 }
 
-interface ExtractedField {
-  name: string;
-  label: string;
-  type: ResourceFieldType;
-  /** description 与 example 合成的帮助提示 */
-  help?: string;
-  /** 文档声明的内容格式，原样透传（date-time / date / email / uri / int64…） */
-  format?: string;
-  options?: Array<{ label: string; value: string | number }>;
-  required?: boolean;
-}
+/**
+ * 约束定义：命名对齐 JSON Schema。
+ * OpenAPI 3.0 的布尔排他值（exclusiveMinimum: true + minimum: n）归一为数值形式。
+ */
+function extractConstraints(schema: Dict): Partial<Schema> {
+  const field: Partial<Schema> = {};
 
-/** 文档声明的内容格式：仅透传字符串形式的 format，其余忽略 */
-function fieldFormat(schema: Dict): string | undefined {
-  return typeof schema.format === 'string' && schema.format !== '' ? schema.format : undefined;
-}
+  const minimum = numericValue(schema.minimum);
+  const maximum = numericValue(schema.maximum);
+  const exclusiveMinimum = schema.exclusiveMinimum;
+  const exclusiveMaximum = schema.exclusiveMaximum;
 
-/** 帮助提示：description 为主，example 以「示例：…」形式附后 */
-function fieldHelp(schema: Dict): string | undefined {
-  const description =
-    typeof schema.description === 'string' && schema.description.trim() !== ''
-      ? schema.description.trim()
-      : undefined;
-  let example: string | undefined;
-  if (schema.example !== undefined) {
-    example =
-      typeof schema.example === 'string' ? schema.example : JSON.stringify(schema.example);
+  if (typeof exclusiveMinimum === 'number') {
+    field.exclusiveMinimum = exclusiveMinimum;
+  } else if (exclusiveMinimum === true && minimum !== undefined) {
+    field.exclusiveMinimum = minimum;
   }
-  if (description && example) return `${description}（示例：${example}）`;
-  if (description) return description;
-  if (example) return `示例：${example}`;
-  return undefined;
-}
+  if (minimum !== undefined && exclusiveMinimum !== true) field.minimum = minimum;
 
-/** 列名：优先文档 title，缺失回落字段名 */
-function fieldLabel(schema: Dict, name: string): string {
-  const title = typeof schema.title === 'string' ? schema.title.trim() : '';
-  return title !== '' ? title : name;
-}
-
-/** 从对象 schema 的 properties 提取字段描述（仅原始类型） */
-function extractFields(doc: Dict, schema: unknown): ExtractedField[] {
-  const resolved = resolve(doc, schema);
-  const properties = resolved?.properties as Dict | undefined;
-  if (!properties) return [];
-  const requiredList = Array.isArray(resolved?.required) ? (resolved!.required as string[]) : [];
-  const fields: ExtractedField[] = [];
-  for (const [name, prop] of Object.entries(properties)) {
-    const resolvedProp = resolve(doc, prop);
-    if (!resolvedProp) continue;
-    const type = fieldType(resolvedProp);
-    if (!type) continue;
-    fields.push({
-      name,
-      label: fieldLabel(resolvedProp, name),
-      help: fieldHelp(resolvedProp),
-      type,
-      format: fieldFormat(resolvedProp),
-      options: type === 'enum' ? fieldOptions(resolvedProp) : undefined,
-      required: requiredList.includes(name) || undefined,
-    });
+  if (typeof exclusiveMaximum === 'number') {
+    field.exclusiveMaximum = exclusiveMaximum;
+  } else if (exclusiveMaximum === true && maximum !== undefined) {
+    field.exclusiveMaximum = maximum;
   }
-  return fields;
+  if (maximum !== undefined && exclusiveMaximum !== true) field.maximum = maximum;
+
+  const multipleOf = numericValue(schema.multipleOf);
+  if (multipleOf !== undefined) field.multipleOf = multipleOf;
+
+  const minLength = numericValue(schema.minLength);
+  if (minLength !== undefined) field.minLength = minLength;
+  const maxLength = numericValue(schema.maxLength);
+  if (maxLength !== undefined) field.maxLength = maxLength;
+
+  const pattern = textValue(schema.pattern);
+  if (pattern) field.pattern = pattern;
+
+  const minItems = numericValue(schema.minItems);
+  if (minItems !== undefined) field.minItems = minItems;
+  const maxItems = numericValue(schema.maxItems);
+  if (maxItems !== undefined) field.maxItems = maxItems;
+  if (schema.uniqueItems === true) field.uniqueItems = true;
+
+  return field;
+}
+
+/** 嵌套结构：items / properties / 组合关键字，原样保留为 schema */
+function extractStructure(doc: Dict, schema: Dict): Partial<Schema> {
+  const field: Partial<Schema> = {};
+
+  if (schema.items !== undefined) {
+    const items = extractField(doc, schema.items);
+    if (items) field.items = items;
+  }
+
+  if (schema.properties !== undefined) {
+    const { properties, required } = extractProperties(doc, schema);
+    if (Object.keys(properties).length > 0) field.properties = properties;
+    if (required.length > 0) field.required = required;
+  }
+
+  if (typeof schema.additionalProperties === 'boolean') {
+    field.additionalProperties = schema.additionalProperties;
+  } else if (schema.additionalProperties !== undefined) {
+    const additional = extractField(doc, schema.additionalProperties);
+    if (additional) field.additionalProperties = additional;
+  }
+
+  for (const key of ['allOf', 'anyOf', 'oneOf'] as const) {
+    const list = schema[key];
+    if (!Array.isArray(list)) continue;
+    const fields = list
+      .map((item) => extractField(doc, item))
+      .filter((item): item is Schema => item !== undefined);
+    if (fields.length > 0) field[key] = fields;
+  }
+
+  if (schema.not !== undefined) {
+    const not = extractField(doc, schema.not);
+    if (not) field.not = not;
+  }
+
+  return field;
+}
+
+/** 单个字段定义：三层合并 */
+function extractField(doc: Dict, rawSchema: unknown): Schema | undefined {
+  const schema = resolve(doc, rawSchema);
+  if (!schema) return undefined;
+  return {
+    ...extractType(schema),
+    ...extractStructure(doc, schema),
+    ...extractConstraints(schema),
+    ...extractMeta(schema),
+  };
+}
+
+/** 对象 schema → 属性表 + 对象级必填 */
+function extractProperties(
+  doc: Dict,
+  rawSchema: unknown,
+): { properties: Record<string, Schema>; required: string[] } {
+  const resolved = resolve(doc, rawSchema);
+  const raw = resolved?.properties as Dict | undefined;
+  if (!raw) return { properties: {}, required: [] };
+
+  const required = Array.isArray(resolved!.required)
+    ? (resolved!.required as unknown[]).filter((name): name is string => typeof name === 'string')
+    : [];
+
+  const properties: Record<string, Schema> = {};
+  for (const [name, prop] of Object.entries(raw)) {
+    const field = extractField(doc, prop);
+    if (field) properties[name] = field;
+  }
+  return { properties, required };
+}
+
+/** 顶层对象 schema；无属性时返回 undefined */
+function schemaOf(doc: Dict, rawSchema: unknown): Schema | undefined {
+  const { properties, required } = extractProperties(doc, rawSchema);
+  if (Object.keys(properties).length === 0) return undefined;
+  const schema: Schema = { type: 'object', properties };
+  if (required.length > 0) schema.required = required;
+  return schema;
 }
 
 interface ListShape {
   itemSchema: unknown;
   /** 列表数组在响应体中的路径 */
   listPath?: string;
+  /** 页码在响应体中的路径 */
+  pagePath?: string;
+  /** 页大小在响应体中的路径 */
+  sizePath?: string;
   /** 总数在响应体中的路径 */
   totalPath?: string;
 }
@@ -189,6 +292,8 @@ function listShape(doc: Dict, schema: unknown): ListShape | null {
   const properties = resolved.properties as Dict | undefined;
   if (!properties) return null;
   let listPath: string | undefined;
+  let pagePath: string | undefined;
+  let sizePath: string | undefined;
   let totalPath: string | undefined;
   let itemSchema: unknown;
   for (const [name, prop] of Object.entries(properties)) {
@@ -197,6 +302,10 @@ function listShape(doc: Dict, schema: unknown): ListShape | null {
     if (resolvedProp.type === 'array' && listPath === undefined) {
       listPath = name;
       itemSchema = resolvedProp.items;
+    } else if (resolvedProp.type === 'integer' && PAGE_SIZE_NAME.test(name) && sizePath === undefined) {
+      sizePath = name;
+    } else if (resolvedProp.type === 'integer' && PAGE_NAME.test(name) && pagePath === undefined) {
+      pagePath = name;
     } else if (
       TOTAL_NAME.test(name) &&
       resolvedProp.type === 'integer' &&
@@ -205,34 +314,7 @@ function listShape(doc: Dict, schema: unknown): ListShape | null {
       totalPath = name;
     }
   }
-  return listPath === undefined ? null : { itemSchema, listPath, totalPath };
-}
-
-/** 把提取的字段合并进资源：已存在则追加场景标记，否则新建 */
-function mergeField(
-  definition: ResourceDefinition,
-  partial: ExtractedField,
-  scopeKey: 'list' | 'create' | 'update',
-): void {
-  const fields = (definition.fields ??= []);
-  let field = fields.find((item) => item.name === partial.name);
-  if (!field) {
-    field = {
-      name: partial.name,
-      label: partial.label,
-      type: partial.type,
-      scope: {},
-    };
-    if (partial.help) field.help = partial.help;
-    if (partial.options) field.options = partial.options;
-    if (partial.format) field.format = partial.format;
-    fields.push(field);
-  } else {
-    if (partial.format) field.format ??= partial.format;
-    if (partial.help) field.help ??= partial.help;
-  }
-  field.scope = { ...field.scope, [scopeKey]: true };
-  if (partial.required) field.required = true;
+  return listPath === undefined ? null : { itemSchema, listPath, pagePath, sizePath, totalPath };
 }
 
 /** 操作归类：路径占位符区分集合与单项 */
@@ -263,23 +345,64 @@ function resourceName(op: Dict, path: string): string {
   return segment ?? 'root';
 }
 
+/** 标记字段出现场景 */
+function markScope(hints: Record<string, Hint>, name: string, key: keyof Scope): void {
+  hints[name] = { ...hints[name], scope: { ...hints[name]?.scope, [key]: true } };
+}
+
+/** 再次出现的字段：补齐缺失键，保留先声明的定义 */
+function fillMissing(target: Schema, source: Schema): void {
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    if ((target as Record<string, unknown>)[key] === undefined) {
+      (target as Record<string, unknown>)[key] = value;
+    }
+  }
+}
+
+/**
+ * 合并多个来源的 schema（列表响应 / create 请求体 / update 请求体）：
+ * 同名属性补齐缺失键；create / update 的对象级 required 取并集。
+ */
+function mergeSchema(
+  resource: Resource,
+  incoming: Schema | undefined,
+  scopeKey: 'list' | 'create' | 'update',
+): void {
+  if (!incoming) return;
+  const schema = resource.schema;
+  const properties = (schema.properties ??= {});
+  resource.hints ??= {};
+  for (const [name, field] of Object.entries(incoming.properties ?? {})) {
+    const existing = properties[name];
+    if (!existing) properties[name] = field;
+    else fillMissing(existing, field);
+    markScope(resource.hints, name, scopeKey);
+  }
+  if (scopeKey !== 'list' && incoming.required && incoming.required.length > 0) {
+    const required = new Set([...(schema.required ?? []), ...incoming.required]);
+    schema.required = [...required];
+  }
+}
+
 /** 从列表操作的查询参数识别统一查询片段命名 */
-function applyQueryNames(definition: ResourceDefinition, params: Dict[]): void {
+function applyQueryNames(resource: Resource, params: Dict[]): void {
   const queryNames: QueryNames = {};
   for (const param of params) {
     const name = param.name as string | undefined;
     if (!name || param.in !== 'query') continue;
-    if (PAGE_NAME.test(name)) queryNames.currentPage = name;
-    else if (PAGE_SIZE_NAME.test(name)) queryNames.pageSize = name;
+    if (PAGE_NAME.test(name)) queryNames.page = name;
+    else if (PAGE_SIZE_NAME.test(name)) queryNames.size = name;
     else if (KEYWORD_NAME.test(name)) queryNames.keyword = name;
     else if (SORTER_NAME.test(name)) queryNames.sorter = name;
   }
-  if (Object.keys(queryNames).length > 0) definition.queryNames = queryNames;
+  if (Object.keys(queryNames).length > 0) resource.queryNames = queryNames;
 }
 
 /** 非分页 / 关键词 / 排序的查询参数标记为筛选项；不存在的字段新建 */
-function applyFilterScopes(doc: Dict, definition: ResourceDefinition, params: Dict[]): void {
-  const fields = (definition.fields ??= []);
+function applyFilters(doc: Dict, resource: Resource, params: Dict[]): void {
+  const { properties } = resource.schema;
+  resource.hints ??= {};
   for (const param of params) {
     const name = param.name as string | undefined;
     if (!name || param.in !== 'query') continue;
@@ -291,25 +414,21 @@ function applyFilterScopes(doc: Dict, definition: ResourceDefinition, params: Di
     ) {
       continue;
     }
-    const schema = resolve(doc, (param.schema as Dict | undefined) ?? param);
-    const type = (schema && fieldType(schema)) ?? 'string';
-    const existing = fields.find((field) => field.name === name);
+
+    const existing = properties[name];
     if (existing) {
-      existing.scope = { ...existing.scope, filter: true };
-    } else {
-      const field: ResourceField = {
-        name,
-        label: (param.description as string) ?? (param.summary as string) ?? name,
-        type,
-        scope: { filter: true },
-      };
-      if (schema) {
-        const format = fieldFormat(schema);
-        if (format) field.format = format;
-        if (fieldType(schema) === 'enum') field.options = fieldOptions(schema);
-      }
-      fields.push(field);
+      markScope(resource.hints, name, 'filter');
+      continue;
     }
+
+    const source = (param.schema as Dict | undefined) ?? param;
+    const field = extractField(doc, source) ?? {};
+    if (!field.title) {
+      field.title =
+        textValue(param.summary) ?? textValue(param.description) ?? name;
+    }
+    properties[name] = field;
+    markScope(resource.hints, name, 'filter');
   }
 }
 
@@ -325,8 +444,9 @@ export const parseOpenApi: MetadataParser = (rawDoc) => {
     throw new Error('无法解析元数据文档：缺少 paths 定义');
   }
 
-  const resources: Record<string, ResourceDefinition> = {};
-  const ensureResource = (name: string): ResourceDefinition => (resources[name] ??= { fields: [] });
+  const resources: Record<string, Resource> = {};
+  const ensureResource = (name: string): Resource =>
+    (resources[name] ??= { name, schema: { type: 'object', properties: {} } });
 
   for (const [path, rawItem] of Object.entries(paths)) {
     const item = rawItem as Dict;
@@ -337,23 +457,26 @@ export const parseOpenApi: MetadataParser = (rawDoc) => {
       const key = classify(method, path.includes('{'));
       if (!key) continue;
 
-      const definition = ensureResource(resourceName(op, path));
-      definition[key] = { method: method.toUpperCase() as ResourceMethod, path };
+      const resource = ensureResource(resourceName(op, path));
+      resource[key] = { method: method.toUpperCase() as ResourceMethod, path };
 
       const params = [...sharedParams, ...((op.parameters as Dict[] | undefined) ?? [])];
       if (key === 'list') {
-        applyQueryNames(definition, params);
+        applyQueryNames(resource, params);
         const shape = listShape(doc, responseSchema(op));
         if (shape) {
           if (shape.listPath)
-            definition.response = { list: shape.listPath, total: shape.totalPath };
-          for (const field of extractFields(doc, shape.itemSchema))
-            mergeField(definition, field, 'list');
-          applyFilterScopes(doc, definition, params);
+            resource.response = {
+              list: shape.listPath,
+              page: shape.pagePath,
+              size: shape.sizePath,
+              total: shape.totalPath,
+            };
+          mergeSchema(resource, schemaOf(doc, shape.itemSchema), 'list');
+          applyFilters(doc, resource, params);
         }
       } else if (key === 'create' || key === 'update') {
-        for (const field of extractFields(doc, requestBodySchema(doc, op)))
-          mergeField(definition, field, key);
+        mergeSchema(resource, schemaOf(doc, requestBodySchema(doc, op)), key);
       }
     }
   }

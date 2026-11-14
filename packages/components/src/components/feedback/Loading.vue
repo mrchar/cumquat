@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useLoadingService } from '@cumquat/composables';
+import type { MountTarget } from '@cumquat/composables';
+import { useLoadingService, useOverlayContainer } from '@cumquat/composables';
+
+import { useCumquatConfig } from '../../config';
 
 const props = withDefaults(
   defineProps<{
@@ -10,19 +13,26 @@ const props = withDefaults(
     active?: boolean;
     /** 全屏遮罩形态：可见性与全局 loading 服务计数联动 */
     fullscreen?: boolean;
+    /** 全屏形态的 Teleport 目标；未传时继承配置，默认 body */
+    appendTo?: MountTarget;
   }>(),
-  { size: 'md', text: '', active: true, fullscreen: false },
+  { size: 'md', text: '', active: true, fullscreen: false, appendTo: undefined },
 );
 
 const service = useLoadingService();
 
 const visible = computed(() => (props.fullscreen ? service.loading.value : props.active));
+const config = useCumquatConfig();
+const { container } = useOverlayContainer({
+  to: () => props.appendTo ?? config.value.overlay?.appendTo,
+});
+const teleportTarget = computed<MountTarget>(() => container.value ?? 'body');
 
 defineExpose({ service });
 </script>
 
 <template>
-  <Teleport v-if="fullscreen" to="body">
+  <Teleport v-if="fullscreen" :to="teleportTarget">
     <div
       v-if="visible"
       class="cumquat-loading cumquat-loading--fullscreen"

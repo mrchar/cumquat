@@ -6,12 +6,12 @@ title: Timeline 时间线
 
 时间轴信息流。
 
-`TimelineItem` 结构：`{ key: string; title: string; content?: string; time?: string; type?: 'primary' | 'success' | 'warning' | 'danger' }`。
+[`TimelineItem`](/types/view/data-display#timelineitem) 结构：`{ key: string; title: string; content?: string; time?: string; type?: 'primary' | 'success' | 'warning' | 'danger' }`。
 
 | Prop  | 类型                  | 默认值 | 说明                            |
 | ----- | --------------------- | ------ | ------------------------------- |
-| items | `TimelineItem[]`      | `[]`   | 节点列表（绑定 fetch 时可省略） |
-| fetch | `Fetch<TimelineItem>` | -      | 远程节点：挂载即请求，内置四态  |
+| items | [`TimelineItem`](/types/view/data-display#timelineitem)`[]`      | `[]`   | 节点列表（绑定 fetch 时可省略） |
+| fetch | [`FetchHandler`](/types/basics/core#fetchhandler)`<`[`TimelineItem`](/types/view/data-display#timelineitem)`>` | -      | 远程节点：挂载即请求，内置四态  |
 
 | 插槽    | 说明                                              |
 | ------- | ------------------------------------------------- |
@@ -25,6 +25,14 @@ title: Timeline 时间线
   ]"
 />
 ```
+
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<`[`TimelineItem`](/types/view/data-display#timelineitem)`[]>` | `undefined` | 订阅时间轴项；挂载时调用，优先于本地 `items` |
+
+`subscribe` 与本地 `items` 同时存在时优先使用 `subscribe`；订阅失败时回退到 `items`。
 
 ## 交互演示
 

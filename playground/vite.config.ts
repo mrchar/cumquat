@@ -17,6 +17,11 @@ export default defineConfig({
         find: /^@cumquat\/components$/,
         replacement: fileURLToPath(new URL('../packages/components/src/index.ts', import.meta.url)),
       },
+      {
+        // 核心包源码无需先构建 dist
+        find: /^@cumquat\/core$/,
+        replacement: fileURLToPath(new URL('../packages/core/src/index.ts', import.meta.url)),
+      },
     ],
   },
 });

@@ -6,31 +6,31 @@ export type PaginationPageItem = number | 'start-ellipsis' | 'end-ellipsis';
 
 export interface UsePaginationOptions {
   /** 当前页（受控；传 getter 保持外部变化的响应性） */
-  currentPage?: MaybeRefOrGetter<number>;
-  defaultCurrentPage?: number;
+  page?: MaybeRefOrGetter<number>;
+  defaultPage?: number;
   onPageChange?: (page: number) => void;
   /** 页大小（受控；传 getter 保持外部变化的响应性） */
-  pageSize?: MaybeRefOrGetter<number>;
-  defaultPageSize?: number;
-  onPageSizeChange?: (size: number) => void;
+  size?: MaybeRefOrGetter<number>;
+  defaultSize?: number;
+  onSizeChange?: (size: number) => void;
   /** 总条数，默认 0 */
   total?: number;
   /** 每页条数候选 */
-  pageSizes?: number[];
+  sizes?: number[];
   /** 当前页两侧始终展示的兄弟页数，默认 1 */
   siblingCount?: number;
   /** 首尾始终展示的页数，默认 1 */
   boundaryCount?: number;
   /** 页码或页大小变化统一回调（组件据此组装 change 事件参数） */
-  onChange?: (payload: { currentPage: number; pageSize: number }) => void;
+  onChange?: (payload: { page: number; size: number }) => void;
 }
 
 export interface UsePaginationReturn {
-  currentPage: Ref<number>;
-  pageSize: Ref<number>;
+  page: Ref<number>;
+  size: Ref<number>;
   total: Ref<number>;
   totalPages: Ref<number>;
-  pageSizes: number[];
+  sizes: number[];
   /** 含省略号占位的页码序列 */
   pages: Ref<PaginationPageItem[]>;
   isFirst: Ref<boolean>;
@@ -43,7 +43,7 @@ export interface UsePaginationReturn {
   go: (page: number) => void;
   prev: () => void;
   next: () => void;
-  setPageSize: (size: number) => void;
+  setSize: (size: number) => void;
 }
 
 const range = (start: number, end: number): number[] =>
@@ -51,20 +51,20 @@ const range = (start: number, end: number): number[] =>
 
 /**
  * 分页模型：当前页 / 页大小、总页数、含省略号的页码序列、跳页与边界约束。
- * 组件自身不发请求，go/setPageSize 只负责状态与 onChange 通知。
+ * 组件自身不发请求，go/setSize 只负责状态与 onChange 通知。
  *
  * @internal 消费组件：Pagination；Table 内联复用；宿主列表可独立使用
  */
 export function usePagination(options: UsePaginationOptions = {}): UsePaginationReturn {
   const {
-    currentPage,
-    defaultCurrentPage = 1,
+    page,
+    defaultPage = 1,
     onPageChange,
-    pageSize: pageSizeProp,
-    defaultPageSize = 10,
-    onPageSizeChange,
+    size: sizeProp,
+    defaultSize = 10,
+    onSizeChange,
     total: totalProp = 0,
-    pageSizes = [10, 20, 50, 100],
+    sizes = [10, 20, 50, 100],
     siblingCount = 1,
     boundaryCount = 1,
     onChange,
@@ -73,33 +73,33 @@ export function usePagination(options: UsePaginationOptions = {}): UsePagination
   const total = ref(totalProp);
 
   const pageModel = useControllableModel<number>({
-    modelValue: currentPage,
-    defaultValue: defaultCurrentPage,
+    modelValue: page,
+    defaultValue: defaultPage,
     fallback: 1,
-    onChange: (page) => {
-      onPageChange?.(page);
-      onChange?.({ currentPage: page, pageSize: sizeModel.value.value });
+    onChange: (value) => {
+      onPageChange?.(value);
+      onChange?.({ page: value, size: sizeModel.value.value });
     },
   });
-  const currentPageRef = pageModel.value;
+  const pageRef = pageModel.value;
 
   const sizeModel = useControllableModel<number>({
-    modelValue: pageSizeProp,
-    defaultValue: defaultPageSize,
+    modelValue: sizeProp,
+    defaultValue: defaultSize,
     fallback: 10,
-    onChange: (size) => {
-      onPageSizeChange?.(size);
-      onChange?.({ currentPage: currentPageRef.value, pageSize: size });
+    onChange: (value) => {
+      onSizeChange?.(value);
+      onChange?.({ page: pageRef.value, size: value });
     },
   });
-  const pageSize = sizeModel.value;
+  const size = sizeModel.value;
 
-  const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)));
+  const totalPages = computed(() => Math.max(1, Math.ceil(total.value / size.value)));
 
   // 总页数收缩后，当前页越界时自动回退到最后一页
   watch(totalPages, (lastPage) => {
-    if (currentPageRef.value > lastPage) {
-      currentPageRef.value = lastPage;
+    if (pageRef.value > lastPage) {
+      pageRef.value = lastPage;
     }
   });
 
@@ -109,7 +109,7 @@ export function usePagination(options: UsePaginationOptions = {}): UsePagination
     const totalShown = boundaryCount * 2 + siblingCount * 2 + 3; /* 首尾+当前+2省略号 */
     if (lastPage <= totalShown) return range(1, lastPage);
 
-    const current = currentPageRef.value;
+    const current = pageRef.value;
     // 三个锚点分组：头部边界、当前页±兄弟页、尾部边界
     const groups: Array<[number, number, PaginationPageItem]> = [
       [1, boundaryCount, 'start-ellipsis'],
@@ -142,37 +142,35 @@ export function usePagination(options: UsePaginationOptions = {}): UsePagination
     return result;
   });
 
-  const isFirst = computed(() => currentPageRef.value <= 1);
-  const isLast = computed(() => currentPageRef.value >= totalPages.value);
+  const isFirst = computed(() => pageRef.value <= 1);
+  const isLast = computed(() => pageRef.value >= totalPages.value);
   const canPrev = computed(() => !isFirst.value);
   const canNext = computed(() => !isLast.value);
 
-  const rangeStart = computed(() =>
-    total.value === 0 ? 0 : (currentPageRef.value - 1) * pageSize.value + 1,
-  );
-  const rangeEnd = computed(() => Math.min(total.value, currentPageRef.value * pageSize.value));
+  const rangeStart = computed(() => (total.value === 0 ? 0 : (pageRef.value - 1) * size.value + 1));
+  const rangeEnd = computed(() => Math.min(total.value, pageRef.value * size.value));
 
-  const go = (page: number) => {
-    const target = Math.min(Math.max(1, Math.trunc(page)), totalPages.value);
-    if (target === currentPageRef.value) return;
-    currentPageRef.value = target;
+  const go = (target: number) => {
+    const next = Math.min(Math.max(1, Math.trunc(target)), totalPages.value);
+    if (next === pageRef.value) return;
+    pageRef.value = next;
   };
 
-  const prev = () => go(currentPageRef.value - 1);
-  const next = () => go(currentPageRef.value + 1);
+  const prev = () => go(pageRef.value - 1);
+  const next = () => go(pageRef.value + 1);
 
-  const setPageSize = (size: number) => {
-    if (size === pageSize.value) return;
-    pageSize.value = size;
+  const setSize = (value: number) => {
+    if (value === size.value) return;
+    size.value = value;
     go(1);
   };
 
   return {
-    currentPage: currentPageRef,
-    pageSize,
+    page: pageRef,
+    size,
     total,
     totalPages,
-    pageSizes,
+    sizes,
     pages,
     isFirst,
     isLast,
@@ -183,6 +181,6 @@ export function usePagination(options: UsePaginationOptions = {}): UsePagination
     go,
     prev,
     next,
-    setPageSize,
+    setSize,
   };
 }

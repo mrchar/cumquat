@@ -6,11 +6,11 @@ title: Breadcrumb 面包屑
 
 层级路径导航。
 
-`BreadcrumbItem` 结构：`{ label: string; href?: string }`。
+[`BreadcrumbItem`](/types/view/navigation#breadcrumbitem) 结构：`{ label: string; href?: string }`。
 
 | Prop  | 类型               | 默认值 | 说明     |
 | ----- | ------------------ | ------ | -------- |
-| items | `BreadcrumbItem[]` | `[]`   | 路径列表 |
+| items | [`BreadcrumbItem`](/types/view/navigation#breadcrumbitem)`[]` | `[]`   | 路径列表 |
 
 ```vue
 <Breadcrumb

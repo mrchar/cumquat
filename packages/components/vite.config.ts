@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite-plus';
 import Vue from 'unplugin-vue/rolldown';
 import VueVite from 'unplugin-vue/vite';
@@ -17,6 +18,10 @@ export default defineConfig({
         // LiveDemo 运行时编译模板需要含编译器的完整版构建（仅测试环境）
         find: /^vue$/,
         replacement: 'vue/dist/vue.esm-bundler.js',
+      },
+      {
+        find: /^@cumquat\/core$/,
+        replacement: fileURLToPath(new URL('../core/src/index.ts', import.meta.url)),
       },
     ],
   },

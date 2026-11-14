@@ -24,6 +24,7 @@
     --color-cumquat-surface: rgb(255 255 255 / 0.1);
     --color-cumquat-surface-2: rgb(255 255 255 / 0.07);
     --color-cumquat-surface-3: rgb(255 255 255 / 0.04);
+    --color-cumquat-hover: rgb(0 0 0 / 0.06);
 
     /* 描边：亮色半透明描边模拟玻璃边缘 */
     --color-cumquat-border: rgb(255 255 255 / 0.7);

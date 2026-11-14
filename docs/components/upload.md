@@ -6,11 +6,11 @@ title: Upload 上传
 
 文件选择、拖拽上传与列表管理。
 
-`UploadFile` 结构：`{ uid?: string | number; name: string; size?: string; status?: 'uploading' | 'done' | 'error'; percent?: number; raw?: File }`。
+[`UploadFile`](/types/view/data-entry#uploadfile) 结构：`{ uid?: string | number; name: string; size?: string; status?: 'uploading' | 'done' | 'error'; percent?: number; raw?: File }`。
 
 | Prop     | 类型                                                                      | 默认值  | 说明                                           |
 | -------- | ------------------------------------------------------------------------- | ------- | ---------------------------------------------- |
-| fileList | `UploadFile[]`                                                            | `[]`    | 外部文件列表（v-model:fileList）               |
+| fileList | [`UploadFile`](/types/view/data-entry#uploadfile)`[]`                                                            | `[]`    | 外部文件列表（v-model:fileList）               |
 | accept   | `string`                                                                  | `''`    | 接受类型（扩展名 / MIME，逗号分隔）            |
 | multiple | `boolean`                                                                 | `false` | 多选                                           |
 | maxCount | `number`                                                                  | -       | 最多文件数                                     |
@@ -21,11 +21,11 @@ title: Upload 上传
 
 | 事件            | 参数                                   | 说明                    |
 | --------------- | -------------------------------------- | ----------------------- |
-| update:fileList | `files: UploadFile[]`                  | 文件列表更新            |
-| change          | `files: UploadFile[]`                  | 文件列表变化            |
-| success         | `file: UploadFile`                     | 单文件上传成功          |
-| error           | `{ file: UploadFile, error: unknown }` | 单文件上传失败          |
-| remove          | `file: UploadFile`                     | 删除文件                |
+| update:fileList | `files: `[`UploadFile`](/types/view/data-entry#uploadfile)`[]`                  | 文件列表更新            |
+| change          | `files: `[`UploadFile`](/types/view/data-entry#uploadfile)`[]`                  | 文件列表变化            |
+| success         | `file: `[`UploadFile`](/types/view/data-entry#uploadfile)                     | 单文件上传成功          |
+| error           | `{ file: `[`UploadFile`](/types/view/data-entry#uploadfile)`, error: unknown }` | 单文件上传失败          |
+| remove          | `file: `[`UploadFile`](/types/view/data-entry#uploadfile)                     | 删除文件                |
 | exceed          | `files: File[]`                        | 超出 maxCount 的部分    |
 | reject          | `files: File[]`                        | accept 校验未通过的部分 |
 

@@ -6,17 +6,17 @@ title: TreeSelect 树选择
 
 树形结构的选择器，叶子可选、回显完整路径。
 
-`TreeSelectNode` 结构：`{ key: string; label: string; disabled?: boolean; children?: TreeSelectNode[] }`。
+[`TreeSelectNode`](/types/view/data-entry#treeselectnode) 结构：`{ key: string; label: string; disabled?: boolean; children?: `[`TreeSelectNode`](/types/view/data-entry#treeselectnode)`[] }`。
 
 | Prop             | 类型                    | 默认值     | 说明                                                                      |
 | ---------------- | ----------------------- | ---------- | ------------------------------------------------------------------------- |
-| nodes            | `TreeSelectNode[]`      | `[]`       | 树数据                                                                    |
+| nodes            | [`TreeSelectNode`](/types/view/data-entry#treeselectnode)`[]`      | `[]`       | 树数据                                                                    |
 | modelValue       | `string \| null`        | -          | 选中叶子 key（v-model）                                                   |
 | placeholder      | `string`                | `'请选择'` | 占位文本                                                                  |
 | disabled         | `boolean`               | `false`    | 禁用                                                                      |
 | filterable       | `boolean`               | `false`    | 可搜索（过滤并自动展开命中路径）                                          |
 | defaultExpandAll | `boolean`               | `false`    | 默认展开全部父节点                                                        |
-| fetch            | `Fetch<TreeSelectNode>` | -          | 远程树：展开节点时以 `query.filters.parentKey` 请求子级，自动懒加载与四态 |
+| fetch            | [`FetchHandler`](/types/basics/core#fetchhandler)`<`[`TreeSelectNode`](/types/view/data-entry#treeselectnode)`>` | -          | 远程树：展开节点时以 `query.filters.parentKey` 请求子级，自动懒加载与四态 |
 
 | 事件              | 参数                    | 说明   |
 | ----------------- | ----------------------- | ------ |
@@ -26,6 +26,14 @@ title: TreeSelect 树选择
 ```vue
 <TreeSelect v-model="dept" :nodes="deptTree" filterable default-expand-all />
 ```
+
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<`[`TreeSelectNode`](/types/view/data-entry#treeselectnode)`[]>` | `undefined` | 订阅树数据；挂载时调用，优先于本地 `data` |
+
+`subscribe` 与本地 `data` 同时存在时优先使用 `subscribe`；订阅失败时回退到 `data`。
 
 ## 交互演示
 

@@ -15,7 +15,7 @@ title: Carousel 走马灯
 | interval     | `number`        | `3000`    | 播放间隔（ms）                   |
 | pauseOnHover | `boolean`       | `true`    | 悬停暂停                         |
 | loop         | `boolean`       | `true`    | 循环切换                         |
-| fetch        | `Fetch<string>` | -         | 远程轮播项：挂载即请求，内置四态 |
+| fetch        | [`FetchHandler`](/types/basics/core#fetchhandler)`<string>` | -         | 远程轮播项：挂载即请求，内置四态 |
 
 | 事件              | 参数                              | 说明     |
 | ----------------- | --------------------------------- | -------- |
@@ -29,6 +29,14 @@ title: Carousel 走马灯
 ```vue
 <Carousel autoplay :interval="4000" :items="['新品发布', '限时优惠', '会员专享']" />
 ```
+
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<string[]>` | `undefined` | 订阅轮播项；挂载时调用，优先于本地 `items` |
+
+`subscribe` 与本地 `items` 同时存在时优先使用 `subscribe`；订阅失败时回退到 `items`。
 
 ## 交互演示
 

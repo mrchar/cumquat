@@ -7,7 +7,7 @@ import { useScrollLock } from '../core/useScrollLock';
 import { useTransitionVisible } from '../core/useTransitionVisible';
 import { useZIndex } from '../core/useZIndex';
 import { useOpen } from '../behavior/useOpen';
-import type { ControlledProps } from '../types';
+import type { ControlledProps } from '../core/useControllableModel';
 
 export interface UseModalOptions extends ControlledProps<boolean> {
   /** 点击遮罩是否关闭，默认 true */

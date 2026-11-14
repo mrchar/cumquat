@@ -14,10 +14,8 @@ export type MaskRule =
   | { prop: string; value: unknown }
   | ((value: unknown, key: string | number) => boolean);
 
-export interface UseMaskReturn<T = unknown> {
-  /** 遮罩后的结果：对象 / 数组（与源数据同形态） */
-  masked: ComputedRef<T>;
-}
+/** 原始数据源返回一次性裁剪结果，响应式数据源返回计算属性 */
+export type UseMaskReturn<T = unknown> = T | ComputedRef<T>;
 
 /** 移除对象的指定属性，返回新对象 */
 function omit<T extends object>(obj: T, key: string): T {
@@ -69,32 +67,39 @@ function resolveRule(rule: MaskRule | Ref<MaskRule>): MaskRule {
 
 /**
  * 数据遮罩：第一个参数为源数据（对象或数组，可响应式），后续参数为遮罩规则，
- * 按顺序依次叠加移除匹配的属性或成员，返回不可变的响应式结果。
+ * 按顺序依次叠加移除匹配的属性或成员，不修改原数据。
+ *
+ * 返回形式由源数据决定：
+ * - 原始对象或数组：立即执行一次，直接返回裁剪后的原始值。
+ * - `ref` 或 getter：返回 `ComputedRef`，随源数据与规则响应式更新。
  *
  * ```ts
- * useMask(list, 'password');                                     // 移除所有成员的 password
- * useMask(list, { prop: 'role', value: 'admin' });               // 移除管理员成员
- * useMask(list, (it) => it.disabled);                             // 移除禁用成员
- * useMask(obj,  (v, k) => typeof v === 'number');                 // 移除数值属性
- * useMask(list, 'token', { prop: 'hidden', value: true });        // 叠加：先去 token 再去隐藏行
- * useMask(refList, ref('password'));                              // 源与规则均可响应式
+ * const result = useMask(list, 'password');                  // 原始数组，一次性执行
+ * const adminsRemoved = useMask(list, { prop: 'role', value: 'admin' });
+ * const masked = useMask(refList, 'password');               // ComputedRef，响应式更新
+ * const dynamic = useMask(() => list.value, ref('password')); // 源与规则均可响应式
  * ```
  *
  * 规则可直接传值（含函数形态）或 `ref<MaskRule>`。函数规则与 getter 在运行时无法区分，
  * 因此规则不支持 getter 形式——如需响应式切换，请用 `ref`。
  */
 export function useMask<T = unknown>(
+  source: Ref<T> | (() => T),
+  ...rules: (MaskRule | Ref<MaskRule>)[]
+): ComputedRef<T>;
+export function useMask<T = unknown>(source: T, ...rules: (MaskRule | Ref<MaskRule>)[]): T;
+export function useMask<T = unknown>(
   source: MaybeRefOrGetter<T>,
   ...rules: (MaskRule | Ref<MaskRule>)[]
 ): UseMaskReturn<T> {
-  const masked = computed<T>(() => {
+  const mask = (): T => {
     let result: unknown = toValue(source);
     for (const rule of rules) {
       result = applyMask(result, resolveRule(rule));
     }
     return result as T;
-  });
-  return { masked };
-}
+  };
 
+  return isRef(source) || typeof source === 'function' ? computed(mask) : mask();
+}
 

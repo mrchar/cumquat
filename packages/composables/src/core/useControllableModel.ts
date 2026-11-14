@@ -1,6 +1,15 @@
 import { computed, isRef, ref, toValue } from 'vue';
 import type { MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
-import type { ControlledProps } from '../types';
+
+/**
+ * 受控值的标准入参形态：Vue v-model 约定的 props 形状，
+ * 供开合类组合函数（useOpen / useModal / usePopoverModel）以 extends 复用。
+ */
+export interface ControlledProps<T> {
+  modelValue?: T;
+  defaultValue?: T;
+  'onUpdate:modelValue'?: (value: T) => void;
+}
 
 export interface ControllableModelOptions<T> {
   /** 受控值（可直接传值、ref 或 getter；SFC 中传 `() => props.modelValue` 保持响应式） */

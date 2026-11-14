@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { subscribeErrorText, useControllableModel, useSubscribe } from '@cumquat/composables';
-import type { SubscribeHandler } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/core';
+import { asyncErrorText } from '@cumquat/core';
+
+import { useControllableModel, useSubscribeResource } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -39,13 +41,13 @@ const {
   state: subState,
   loading: subLoading,
   error: subError,
-} = useSubscribe<string>(() => props.subscribe);
+} = useSubscribeResource<string>(() => props.subscribe);
 
 const effectiveMessage = computed<string>(() =>
   subState.value.status === 'success' ? (subState.value.data as string) : (props.message ?? ''),
 );
 const errorText = computed(() =>
-  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
+  subError.value != null ? asyncErrorText(subError.value, props.errorText) : null,
 );
 
 const { value: visible } = useControllableModel<boolean>({

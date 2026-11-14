@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Cumquat
   text: Vue 3 组件库
-  tagline: 绑定一个方法，剩下的交给组件 —— 数据、动作、订阅全部内置状态管理，元数据自动推断展示与录入
+  tagline: 一个状态自持的组件库
   actions:
     - theme: brand
       text: 快速上手
@@ -15,27 +15,21 @@ hero:
 
 features:
   - icon: 🔌
-    title: 绑定 fetch 即完成远程接入
-    details: 分页、搜索、排序、懒加载的参数注入、防抖、竞态、错误重试、骨架空态全部内置，不写一行状态管理代码。
-  - icon: ⚡
-    title: action 动作协议
-    details: 交互组件绑定返回 Promise 的方法，自动派生加载与禁用；失败在原地展示错误，切换型操作自动回退旧值。
-  - icon: 📡
-    title: subscribe 订阅实时数据
-    details: WebSocket、响应式 store 等外部推送源直接绑到展示组件，失败保留旧数据，优先级高于本地与请求数据。
-  - icon: 🏷️
-    title: 元数据自动推断展示与录入
-    details: 单元格竞选按列定义自动推断展示（枚举标签、邮箱链接、日期格式化），字段竞选按字段定义自动装配表单控件；插槽 > 显式指定 > 竞选推断 > 兜底，可扩展可调整。
-  - icon: 🗃️
-    title: 资源池直通 Swagger 文档
-    details: useResources 绑定服务器与 OpenAPI 文档地址即导出资源方法与字段元数据，Table / Form 零胶水对接，元数据原样透传。
-  - icon: 🎨
-    title: 五套主题开箱即用
-    details: 浅色、深色、高对比、液态玻璃随 class 一键切换；组件只暴露语义变量，宿主重写同名变量即可深度换肤。
+    title: 状态自持
+    details: 组件自己处理加载、错误、空态、重试、竞态——这些胶水代码不用再写，你只管绑业务方法。
   - icon: 🧩
-    title: 默认渲染也可逐层替换
-    details: 零配置直接用、插槽覆盖局部、完全自定义结构，三种用法在同一组件上共存，升级路径无断点。
-  - icon: 🛡️
-    title: 可访问性与 SSR 内建
-    details: 键盘导航、焦点管理、aria 语义全部随组件自带；所有浏览器 API 访问惰性化，服务端渲染安全。
+    title: 逻辑与外观解耦
+    details: composables 管行为、.vue 只做渲染壳、主题换 token 即可换肤，任一层独立替换不影响其他。
+  - icon: 🏷️
+    title: 元数据驱动
+    details: 给列定义和字段定义，组件自动推断 Table 单元格怎么展示、Form 字段用什么控件录入。
+  - icon: 📐
+    title: 三种异步协议
+    details: fetch 查列表、action 绑动作、subscribe 收推送，统一状态机自动处理竞态和四态渲染。
+  - icon: 🪄
+    title: Headless 组合函数
+    details: 所有交互逻辑抽成 composables，默认 .vue 只提供 Tailwind 渲染，插槽或自定义渲染随时接管。
+  - icon: 🗂️
+    title: OpenAPI 对接
+    details: useResources 绑定服务器和 Swagger 文档，自动导出资源方法和字段元数据，组件据此推断展示与录入。
 ---

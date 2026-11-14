@@ -26,6 +26,16 @@ title: Tag 标签
 <Tag v-model="visible" closable type="primary">可关闭</Tag>
 ```
 
+## 补充：文本订阅与失败回退
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| text | `string` | `undefined` | 标签文本（`default` 插槽未提供时使用） |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<string>` | `undefined` | 订阅标签文本；优先于 `text` |
+| errorText | `string` | `undefined` | 订阅失败时的回退文案 |
+
+`subscribe` 与 `text` 同时存在时优先使用订阅结果；订阅失败时文本回退到 `text`，并在提供 `errorText` 时额外展示错误条。
+
 ## 交互演示
 
 ### 语义类型与可关闭

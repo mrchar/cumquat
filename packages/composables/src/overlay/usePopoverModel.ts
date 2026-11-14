@@ -3,7 +3,7 @@ import type { Ref } from 'vue';
 import { useHoverIntent } from '../behavior/useHoverIntent';
 import { useOpen } from '../behavior/useOpen';
 import { useTransitionVisible } from '../core/useTransitionVisible';
-import type { ControlledProps } from '../types';
+import type { ControlledProps } from '../core/useControllableModel';
 
 export type PopoverTrigger = 'click' | 'hover' | 'focus' | 'manual';
 

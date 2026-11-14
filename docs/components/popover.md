@@ -10,7 +10,7 @@ title: Popover 气泡卡片
 | ---------- | ---------------- | --------- | -------------------- |
 | title      | `string`         | `''`      | 标题                 |
 | trigger    | `PopoverTrigger` | `'click'` | 触发方式             |
-| placement  | `Placement`      | `'top'`   | 气泡位置             |
+| placement  | [`Placement`](/types/basics/overlay#placement)      | `'top'`   | 气泡位置             |
 | open       | `boolean`        | -         | 开合（v-model:open） |
 | openDelay  | `number`         | `100`     | 打开延迟（ms）       |
 | closeDelay | `number`         | `100`     | 关闭延迟（ms）       |

@@ -10,7 +10,7 @@ title: Statistic 统计数值
 | -------------- | -------------------------- | ------- | --------------------------------------------------- |
 | title          | `string`                   | `''`    | 标题                                                |
 | value          | `string \| number \| Date` | -       | 数值；倒计时模式下为到期时刻；绑定 fetch 时可省略   |
-| fetch          | `Fetch<StatisticValue>`    | -       | 远程单值；返回非数组即作为 value，优先于 value prop |
+| fetch          | [`FetchHandler`](/types/basics/core#fetchhandler)`<`[`StatisticValue`](/types/view/data-display#statisticvalue)`>`    | -       | 远程单值资源工厂；`data` 写非数组值即作为 value，优先于 value prop |
 | prefix         | `string`                   | `''`    | 前缀                                                |
 | suffix         | `string`                   | `''`    | 后缀                                                |
 | precision      | `number`                   | -       | 小数位数                                            |
@@ -31,6 +31,14 @@ title: Statistic 统计数值
 <Statistic title="成交额" :value="128000" prefix="¥" group-separator="," animation />
 <Statistic title="距截止" countdown :value="deadline" @finish="onFinish" />
 ```
+
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<`[`StatisticValue`](/types/view/data-display#statisticvalue)`>` | `undefined` | 订阅统计数据；挂载时调用，优先于 `fetch` / `value` |
+
+[`StatisticValue`](/types/view/data-display#statisticvalue) 为 `string | number | Date`。远程数据优先级：`subscribe > fetch > value`；订阅失败时回退到本地 `value`。
 
 ## 交互演示
 

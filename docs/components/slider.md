@@ -6,7 +6,7 @@ title: Slider 滑块
 
 单点 / 区间数值选择，支持刻度、键盘步进与轨道点击定位。
 
-`SliderMark` 结构：`{ value: number; label?: string }`。
+[`SliderMark`](/types/view/data-entry#slidermark) 结构：`{ value: number; label?: string }`。
 
 | Prop       | 类型                          | 默认值  | 说明                                |
 | ---------- | ----------------------------- | ------- | ----------------------------------- |
@@ -16,7 +16,7 @@ title: Slider 滑块
 | step       | `number`                      | `1`     | 步进                                |
 | disabled   | `boolean`                     | `false` | 禁用                                |
 | range      | `boolean`                     | `false` | 区间选择                            |
-| marks      | `Array<number \| SliderMark>` | `[]`    | 刻度（数值或对象）                  |
+| marks      | `Array<number \| `[`SliderMark`](/types/view/data-entry#slidermark)`>` | `[]`    | 刻度（数值或对象）                  |
 | showValue  | `boolean`                     | `true`  | 显示当前值文字                      |
 
 | 事件              | 参数                 | 说明   |
@@ -30,6 +30,18 @@ title: Slider 滑块
 ```
 
 ---
+
+## 补充：交互动作
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| action | [`ActionHandler`](/types/basics/core#actionhandler) | `undefined` | 交互动作；执行期间进入 pending/禁用状态，失败时 emit `actionError` |
+
+| 事件 | 参数 | 说明 |
+| --- | --- | --- |
+| actionError | `error: unknown` | 动作失败（reject 或返回值导出错误）时触发 |
+
+动作失败时回退到原值，并 emit `actionError`。
 
 ## 交互演示
 

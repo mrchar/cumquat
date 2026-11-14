@@ -6,24 +6,24 @@ title: Select 选择器
 
 下拉单选 / 多选，支持搜索、分组、清空、远程四态与大数据量虚拟滚动。
 
-`SelectOption` 结构：`{ label: string; value: string | number; disabled?: boolean; group?: string }`，相同 `group` 的选项在面板内聚合为分组。
+[`SelectOption`](/types/view/data-entry#selectoption) 结构：`{ label: string; value: string | number; disabled?: boolean; group?: string }`，相同 `group` 的选项在面板内聚合为分组。
 
 | Prop        | 类型                               | 默认值     | 说明                                                                                                                             |
 | ----------- | ---------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | modelValue  | `V \| V[] \| null`                 | -          | 绑定值（v-model，多选为数组）                                                                                                    |
-| options     | `SelectOption[]`                   | `[]`       | 静态选项                                                                                                                         |
+| options     | [`SelectOption`](/types/view/data-entry#selectoption)`[]`                   | `[]`       | 静态选项                                                                                                                         |
 | placeholder | `string`                           | `'请选择'` | 占位文本                                                                                                                         |
 | disabled    | `boolean`                          | `false`    | 禁用                                                                                                                             |
 | multiple    | `boolean`                          | `false`    | 多选（标签回显，可逐个移除；已选标签独立于当前候选数据，翻页/搜索后依然保留）                                                    |
 | filterable  | `boolean`                          | `false`    | 可搜索（fetch 模式下同样渲染搜索框，过滤交由服务端）                                                                             |
 | clearable   | `boolean`                          | `false`    | 可清空                                                                                                                           |
 | name        | `string`                           | -          | 表单字段名                                                                                                                       |
-| state       | `AsyncStateLike<SelectOption[]>`   | -          | 远程数据状态：传入后优先于 options 渲染，组件自身不发请求                                                                        |
-| fetch       | `Fetch<SelectOption>`              | -          | 远程选项源：挂载即请求第 1 页，输入时以 `query.keyword` 自动重取（防抖 300ms），滚动到面板底部按 `query.pagination` 递增取下一页 |
-| pageSize    | `number`                           | `20`       | 每页大小：fetch 模式下作为 `pagination.pageSize` 注入                                                                            |
-| subscribe   | `SubscribeHandler<SelectOption[]>` | -          | 订阅数据：挂载时调用，resolve 出的选项用于渲染；优先级 `subscribe > fetch > state > options`                                     |
+| state       | `{ status, data?, error?, retry? }`（[`SelectOption`](/types/view/data-entry#selectoption)`[]`）   | -          | 远程数据状态：传入后优先于 options 渲染，组件自身不发请求                                                                        |
+| fetch       | [`FetchHandler`](/types/basics/core#fetchhandler)`<`[`SelectOption`](/types/view/data-entry#selectoption)`>`              | -          | 远程选项资源工厂：挂载即创建资源并执行首次 `execute`，输入时以 `query.keyword` 重取（防抖 300ms），滚动到面板底部按查询中的 `page` 递增取下一页 |
+| size        | `number`                           | `20`       | 每页大小：fetch 模式下作为 `query.size` 注入                                                                                |
+| subscribe   | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<`[`SelectOption`](/types/view/data-entry#selectoption)`[]>` | -          | 订阅数据：挂载时调用，resolve 出的选项用于渲染；优先级 `subscribe > fetch > state > options`                                     |
 
-判定「还有下一页」依赖 fetch 返回 `{ list, total }`：已累积条数达到 `total` 后不再请求；返回纯数组时视为单页，不会触发翻页。
+判定「还有下一页」依赖资源 `data` 写入 `{ list, page, size, total }`：已累积条数达到 `total` 后不再请求；写入纯数组时视为单页，不会触发翻页。
 
 | 事件              | 参数                      | 说明   |
 | ----------------- | ------------------------- | ------ |
@@ -34,8 +34,20 @@ title: Select 选择器
 <Select v-model="city" :options="cityOptions" placeholder="选择城市" clearable />
 <Select v-model="tags" :options="tagOptions" multiple filterable />
 <Select v-model="uid" :state="userListState" filterable />
-<Select v-model="uid" :fetch="fetchUsers" :page-size="20" filterable placeholder="搜索用户" />
+<Select v-model="uid" :fetch="fetchUsers" :size="20" filterable placeholder="搜索用户" />
 ```
+
+## 补充：交互动作
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| action | [`ActionHandler`](/types/basics/core#actionhandler) | `undefined` | 交互动作；执行期间进入 pending/禁用状态，失败时 emit `actionError` |
+
+| 事件 | 参数 | 说明 |
+| --- | --- | --- |
+| actionError | `error: unknown` | 动作失败（reject 或返回值导出错误）时触发 |
+
+动作失败时回退到原选中值，并 emit `actionError`。
 
 ## 交互演示
 
@@ -61,7 +73,35 @@ title: Select 选择器
 
 import { ref } from 'vue';
 
-import type { Fetch, FetchQuery } from '@mrchar/cumquat/components';
+import type { FetchHandler, ResolvedFetchQuery, Status } from '@mrchar/cumquat';
+
+/** 演示用：把 execute 函数体包装为符合协议的 FetchHandler 资源工厂 */
+function makeFetch<T>(run: (query: ResolvedFetchQuery) => T | Promise<T>): FetchHandler<T> {
+  return () => {
+    const status = ref<Status>('idle');
+    const data = ref<T>();
+    const error = ref<unknown>();
+    const message = ref<string>();
+    return {
+      status,
+      data,
+      error,
+      message,
+      async execute(query: ResolvedFetchQuery) {
+        status.value = 'pending';
+        try {
+          data.value = await run(query);
+          status.value = 'success';
+        } catch (err) {
+          error.value = err;
+          message.value = err instanceof Error ? err.message : String(err);
+          status.value = 'error';
+        }
+      },
+      abort() {},
+    };
+  };
+}
 
 const selectValue = ref<string | number | null>('bj');
 
@@ -86,13 +126,13 @@ const remoteUserOptions = Array.from({ length: 30 }, (_, index) => ({
   value: index + 1,
 }));
 
-const fetchRemoteUsers: Fetch<{ label: string; value: number }> = async (query: FetchQuery) => {
+const fetchRemoteUsers = makeFetch<{ label: string; value: number }>(async (query) => {
   await new Promise((resolve) => setTimeout(resolve, 400));
   const keyword = query.keyword?.trim() ?? '';
   return keyword
     ? remoteUserOptions.filter((option) => option.label.includes(keyword))
     : remoteUserOptions;
-};
+});
 
 const remoteSelectCode = ref(`
   <div class="flex flex-wrap items-center gap-3">
@@ -117,23 +157,24 @@ const pagedUserOptions = Array.from({ length: 60 }, (_, index) => ({
   value: index + 1,
 }));
 
-const fetchPagedUsers: Fetch<{ label: string; value: number }> = async (query: FetchQuery) => {
+const fetchPagedUsers = makeFetch<{ label: string; value: number }>(async (query) => {
   await new Promise((resolve) => setTimeout(resolve, 300));
   const keyword = query.keyword?.trim() ?? '';
   const matched = keyword
     ? pagedUserOptions.filter((option) => option.label.includes(keyword))
     : pagedUserOptions;
-  const size = query.pagination?.pageSize ?? 10;
-  const start = ((query.pagination?.currentPage ?? 1) - 1) * size;
-  return { list: matched.slice(start, start + size), total: matched.length };
-};
+  const size = query.size ?? 10;
+  const page = query.page ?? 1;
+  const start = (page - 1) * size;
+  return { list: matched.slice(start, start + size), page, size, total: matched.length };
+});
 
 const pagedSelectCode = ref(`
   <div class="flex flex-wrap items-center gap-3">
     <Select
       v-model="pagedSelectValue"
       :fetch="fetchPagedUsers"
-      :page-size="10"
+      :size="10"
       multiple
       filterable
       clearable

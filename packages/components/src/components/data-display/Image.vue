@@ -1,12 +1,8 @@
 <script setup lang="ts">
+import type { SubscribeHandler } from '@cumquat/core';
+import { asyncErrorText } from '@cumquat/core';
+import { useDraggable, useImageState, useSubscribeResource } from '@cumquat/composables';
 import { computed, ref } from 'vue';
-import {
-  subscribeErrorText,
-  useDraggable,
-  useImageState,
-  useSubscribe,
-} from '@cumquat/composables';
-import type { SubscribeHandler } from '@cumquat/composables';
 
 const props = withDefaults(
   defineProps<{
@@ -41,13 +37,13 @@ const {
   state: subState,
   loading: subLoading,
   error: subError,
-} = useSubscribe<string>(() => props.subscribe);
+} = useSubscribeResource<string>(() => props.subscribe);
 
 const effectiveSrc = computed<string>(() =>
   subState.value.status === 'success' ? (subState.value.data as string) : (props.src ?? ''),
 );
 const errorText = computed(() =>
-  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
+  subError.value != null ? asyncErrorText(subError.value, props.errorText) : null,
 );
 
 const emit = defineEmits<{

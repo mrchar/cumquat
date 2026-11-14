@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { actionErrorText, useActionState, useActionValue } from '../../index';
+import { asyncErrorText } from '@cumquat/core';
+import { useActionState, useActionValue } from '../../index';
 import { withScope } from '../helpers';
 
 describe('useActionState', () => {
@@ -86,16 +87,16 @@ describe('useActionState', () => {
       useActionState(async () => ({ status: 'error', message: '请稍后重试' })),
     );
     await ctx.run();
-    expect(actionErrorText(ctx.error.value)).toBe('请稍后重试');
+    expect(asyncErrorText(ctx.error.value)).toBe('请稍后重试');
   });
 });
 
-describe('actionErrorText', () => {
+describe('asyncErrorText', () => {
   it('优先取 message，其次字符串与 Error.message，最后回退', () => {
-    expect(actionErrorText({ message: '自定义文案', error: 'x' })).toBe('自定义文案');
-    expect(actionErrorText('裸字符串')).toBe('裸字符串');
-    expect(actionErrorText(new Error('error message'))).toBe('error message');
-    expect(actionErrorText(undefined, '回退文案')).toBe('回退文案');
+    expect(asyncErrorText({ message: '自定义文案', error: 'x' })).toBe('自定义文案');
+    expect(asyncErrorText('裸字符串')).toBe('裸字符串');
+    expect(asyncErrorText(new Error('error message'))).toBe('error message');
+    expect(asyncErrorText(undefined, '回退文案')).toBe('回退文案');
   });
 });
 

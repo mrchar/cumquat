@@ -8,7 +8,7 @@ title: 聊天输入
 
 聊天输入条的完整会话逻辑：草稿文本、附件管理、语音会话与发送编排。组件 [ChatInput](/components/chat-input) 由它驱动，也可脱离组件在自定义 UI 中使用。
 
-语音识别经 `VoiceRecognizer` 协议注入，组合函数不耦合任何识别实现。两条语音入口共享同一会话语义：
+语音识别经 [`VoiceRecognizer`](/types/view/scenarios#voicerecognizer) 协议注入，组合函数不耦合任何识别实现。两条语音入口共享同一会话语义：
 
 - **长按输入框说话**：转录实时写入输入框位置展示，松手后转录写入输入框，需手动发送
 - **按住语音键说话**（输入框为空时右侧窄键 / 左滑后的全宽键）：松手即把转录并入草稿发送
@@ -33,8 +33,8 @@ await input.send();
 | 成员            | 类型                                 | 说明                                     |
 | --------------- | ------------------------------------ | ---------------------------------------- |
 | modelValue      | `() => string \| undefined`          | 受控文本 getter，不传即非受控            |
-| attachments     | `() => ChatInputAttachment[] \| undefined` | 受控附件 getter，不传即非受控      |
-| voice           | `() => VoiceRecognizer \| undefined` | 识别器 getter，未提供时语音入口整体不渲染 |
+| attachments     | `() => `[`ChatInputAttachment`](/types/view/scenarios#chatinputattachment)`[] \| undefined` | 受控附件 getter，不传即非受控      |
+| voice           | `() => `[`VoiceRecognizer`](/types/view/scenarios#voicerecognizer)` \| undefined` | 识别器 getter，未提供时语音入口整体不渲染 |
 | action          | `(payload) => Promise<unknown>`      | 发送动作，抛错或返回 error 结果即失败    |
 | holdDelay       | `MaybeRefOrGetter<number>`           | 长按阈值 ms，默认 `300`                  |
 | swipeDistance   | `MaybeRefOrGetter<number>`           | 左滑切换距离 px，默认 `48`               |
@@ -49,7 +49,7 @@ await input.send();
 | 成员                  | 类型                                  | 说明                                       |
 | --------------------- | ------------------------------------- | ------------------------------------------ |
 | draft                 | `WritableComputedRef<string>`         | 统一读写入口：受控读外部，非受控内部自持   |
-| attachments           | `ComputedRef<ChatInputAttachment[]>`  | 解析后的附件列表                           |
+| attachments           | `ComputedRef<`[`ChatInputAttachment`](/types/view/scenarios#chatinputattachment)`[]>`  | 解析后的附件列表                           |
 | mode                  | `Ref<'text' \| 'voice'>`              | 当前模式                                   |
 | recording             | `Ref<boolean>`                        | 语音会话进行中                             |
 | sessionGesture        | `Ref<'confirm' \| 'cancel'>`          | 录音手势区（提示用）                       |

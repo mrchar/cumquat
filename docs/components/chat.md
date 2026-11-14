@@ -8,10 +8,10 @@ title: Chat 聊天框
 
 | Prop        | 类型                                             | 默认值                 | 说明                                         |
 | ----------- | ------------------------------------------------ | ---------------------- | -------------------------------------------- |
-| fetch       | `Fetch<ChatMessage[]>`                           | —                      | 历史消息加载：currentPage 递增表示更早一页   |
-| subscribe   | `SubscribeHandler<ChatMessage[] \| ChatMessage>` | —                      | 新消息订阅：推送单条或数组，响应式源持续推送 |
+| fetch       | [`FetchHandler`](/types/basics/core#fetchhandler)`<`[`ChatMessage`](/types/view/scenarios#chatmessage)`>`                           | —                      | 历史消息资源工厂：翻页经 `execute` 驱动，page 递增表示更早一页，卸载自动 `abort`   |
+| subscribe   | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<`[`ChatMessage`](/types/view/scenarios#chatmessage)`[] \| `[`ChatMessage`](/types/view/scenarios#chatmessage)`>` | —                      | 新消息订阅：推送单条或数组，响应式源持续推送 |
 | action      | `(content: string) => Promise<unknown>`          | —                      | 发送动作：抛错或返回 error 结果即发送失败    |
-| pageSize    | `number`                                         | `20`                   | 历史分页每页条数                             |
+| size        | `number`                                         | `20`                   | 历史分页每页条数                             |
 | placeholder | `string`                                         | `'输入消息，回车发送'` | 输入框占位文案                               |
 | disabled    | `boolean`                                        | `false`                | 禁用整窗交互                                 |
 | height      | `string`                                         | `'22rem'`              | 窗体高度                                     |
@@ -30,7 +30,7 @@ title: Chat 聊天框
 | ------- | -------------------- | -------------------------- |
 | message | `{ message, retry }` | 自定义气泡渲染，retry 重发 |
 
-消息契约 `ChatMessage`：`{ id, sender?, content, time?, self?, status? }`。`id` 是唯一锚点——历史与推送按 id 去重；本地乐观消息以 `__local_` 前缀占位，自己消息（`self: true`）被服务端回显时自动收敛为服务端消息；`status` 标记本地消息的 `sending / sent / failed` 中间态。
+消息契约 [`ChatMessage`](/types/view/scenarios#chatmessage)：`{ id, sender?, content, time?, self?, status? }`。`id` 是唯一锚点——历史与推送按 id 去重；本地乐观消息以 `__local_` 前缀占位，自己消息（`self: true`）被服务端回显时自动收敛为服务端消息；`status` 标记本地消息的 `sending / sent / failed` 中间态。
 
 行为细节：
 
@@ -38,6 +38,23 @@ title: Chat 聊天框
 - 滚动到顶部或点击顶部按钮加载更早消息，加载后视口停驻在原有消息处
 - 发送失败保留气泡并展示错误条，点击「重试」按原内容重发
 - 历史加载失败展示错误条与重试入口，页码自动回退
+
+## Expose
+
+组件通过 `defineExpose` 暴露底层 `useChat` 返回对象：
+
+| 成员 | 类型 | 说明 |
+| --- | --- | --- |
+| chat.messages | `Ref<`[`ChatMessage`](/types/view/scenarios#chatmessage)`[]>` | 当前消息列表（含乐观上屏消息） |
+| chat.sending | `Ref<boolean>` | 是否正在发送 |
+| chat.loadingOlder | `Ref<boolean>` | 是否正在加载更早历史 |
+| chat.hasMore | `Ref<boolean>` | 是否还有更早历史 |
+| chat.sendError / chat.historyError | `Ref<string \| undefined>` | 发送 / 历史加载失败文案 |
+| chat.send(content) | `(content: string) => Promise<`[`ChatMessage`](/types/view/scenarios#chatmessage)` \| undefined>` | 发送消息；失败时消息保留为 `failed` |
+| chat.retry(message) | `(message: `[`ChatMessage`](/types/view/scenarios#chatmessage)`) => Promise<`[`ChatMessage`](/types/view/scenarios#chatmessage)` \| undefined>` | 重试失败消息 |
+| chat.loadOlder() | `() => Promise<void>` | 加载更早一页并前插去重 |
+
+通过模板 ref 访问：`chatRef.value?.chat.send('你好')`。
 
 ## 交互演示
 
@@ -50,7 +67,7 @@ title: Chat 聊天框
 <script setup lang="ts">
 
 import { ref } from 'vue';
-import type { ChatMessage } from '@mrchar/cumquat/composables';
+import type { ChatMessage } from '@mrchar/cumquat';
 
 const SEED: ChatMessage[] = [
   { id: 'm1', sender: '林一', content: '这个组件库的协议设计真清爽', time: Date.now() - 3600_000 },
@@ -58,18 +75,38 @@ const SEED: ChatMessage[] = [
   { id: 'm3', sender: '林一', content: '发送失败还能保留气泡重试', time: Date.now() - 1200_000 },
 ];
 
-/** 历史消息：第 1 页最新 3 条，第 2 页更早 3 条 */
-const loadHistory = async (query: { pagination?: { currentPage?: number } }) => {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  const page = query.pagination?.currentPage ?? 1;
-  if (page === 1) return { list: SEED, total: 6 };
+/** 历史消息资源工厂：第 1 页最新 3 条，第 2 页更早 3 条；翻页经 execute 驱动 */
+const loadHistory = () => {
+  const status = ref('idle');
+  const data = ref();
+  const error = ref();
+  const message = ref();
   return {
-    list: [
-      { id: 'm0', sender: '周九', content: '历史消息是向上翻页前插的', time: Date.now() - 7200_000 },
-      { id: 'm-1', sender: '我', content: '视口还会停驻在原位置', time: Date.now() - 9000_000, self: true },
-      { id: 'm-2', sender: '周九', content: '最早的问候 👋', time: Date.now() - 10800_000 },
-    ] as ChatMessage[],
-    total: 6,
+    status,
+    data,
+    error,
+    message,
+    async execute(query: { page?: number; size?: number }) {
+      status.value = 'pending';
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const page = query.page ?? 1;
+      if (page === 1) {
+        data.value = { list: SEED, page: 1, size: 3, total: 6 };
+      } else {
+        data.value = {
+          list: [
+            { id: 'm0', sender: '周九', content: '历史消息是向上翻页前插的', time: Date.now() - 7200_000 },
+            { id: 'm-1', sender: '我', content: '视口还会停驻在原位置', time: Date.now() - 9000_000, self: true },
+            { id: 'm-2', sender: '周九', content: '最早的问候 👋', time: Date.now() - 10800_000 },
+          ] as ChatMessage[],
+          page,
+          size: 3,
+          total: 6,
+        };
+      }
+      status.value = 'success';
+    },
+    abort() {},
   };
 };
 

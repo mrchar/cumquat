@@ -1,5 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import { message } from '@cumquat/composables';
+import { mockFetch } from './helpers';
+
 import {
   Button,
   Icon,
@@ -15,6 +18,8 @@ import {
 } from '../../index';
 
 describe('Button', () => {
+  afterEach(() => message.clear());
+
   it('渲染锚点类与语义类型', () => {
     const wrapper = mount(Button, { props: { type: 'primary' } });
     expect(wrapper.classes()).toContain('cumquat-button');
@@ -31,12 +36,58 @@ describe('Button', () => {
     await wrapper.trigger('click');
     expect(wrapper.emitted('click')).toHaveLength(1);
   });
+
+  it('成功 toast 使用默认文案并携带选择器目标', async () => {
+    const wrapper = mount(Button, {
+      props: { action: async () => undefined, toast: true, toastTarget: '#button-toasts' },
+    });
+    await wrapper.trigger('click');
+    await flushPromises();
+    expect(message.items.value[0]).toMatchObject({
+      type: 'success',
+      content: '操作成功',
+      target: '#button-toasts',
+    });
+  });
+
+  it('失败 toast 携带 DOM 目标并保持 5000ms 时长', async () => {
+    const target = document.createElement('div');
+    const wrapper = mount(Button, {
+      props: {
+        action: async () => {
+          throw new Error('保存失败');
+        },
+        toast: true,
+        toastTarget: target,
+      },
+    });
+    await wrapper.trigger('click');
+    await flushPromises();
+    expect(message.items.value[0]).toMatchObject({
+      type: 'error',
+      content: '保存失败',
+      duration: 5000,
+      target,
+    });
+  });
 });
 
 describe('Icon', () => {
   it('渲染 svg 容器', () => {
     const wrapper = mount(Icon);
     expect(wrapper.find('svg.cumquat-icon').exists()).toBe(true);
+  });
+
+  it('支持通用尺寸并响应更新', async () => {
+    const wrapper = mount(Icon);
+    expect(wrapper.classes()).toContain('cumquat-icon--md');
+
+    await wrapper.setProps({ size: 'sm' });
+    expect(wrapper.classes()).toContain('cumquat-icon--sm');
+    expect(wrapper.classes()).not.toContain('cumquat-icon--md');
+
+    await wrapper.setProps({ size: 'lg' });
+    expect(wrapper.classes()).toContain('cumquat-icon--lg');
   });
 });
 
@@ -103,10 +154,10 @@ describe('Statistic', () => {
   });
 
   it('fetch 单值：挂载即请求并渲染远程数值', async () => {
-    const fetcher = vi.fn(async () => 42);
+    const fetcher = mockFetch(async () => 42);
     const wrapper = mount(Statistic, { props: { title: '在线用户', fetch: fetcher } });
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.queries).toHaveLength(1);
     expect(wrapper.find('.cumquat-statistic__number').text()).toBe('42');
   });
 });

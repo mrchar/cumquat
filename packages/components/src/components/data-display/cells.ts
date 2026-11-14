@@ -1,5 +1,6 @@
 import { h } from 'vue';
 import type { VNodeChild } from 'vue';
+import type { Kind, Option } from '@cumquat/core';
 
 /**
  * 单元格竞选：列定义驱动的单元格渲染机制。
@@ -9,18 +10,18 @@ import type { VNodeChild } from 'vue';
  * 优先级链路：插槽 > 显式指定 cell > 竞选推断 > 默认文本。
  */
 
-/** 竞选输入：完整列定义。type / format 只是常用字段，宿主附加的自定义字段同样进入评价输入 */
+/** 竞选输入：完整列定义。type / format / enum 来自 schema 的类型定义与约束定义 */
 export interface CellColumn {
   key: string;
   title: string;
-  /** 保存格式提示：string / number / boolean / date / datetime / enum */
-  type?: 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'enum';
-  /** 内容格式提示：email / uri / tag / status…（原样透传文档声明） */
+  /** 类型提示：JSON Schema 子集 */
+  type?: Kind;
+  /** 内容格式提示：date / date-time / email / uri / tag / status…（原样透传） */
   format?: string;
+  /** 枚举值：单元格据此识别枚举列 */
+  enum?: Array<string | number | boolean | null>;
   /** 枚举选项：enum 单元格据此显示 label */
-  options?: Array<{ label: string; value: string | number }>;
-  /** 筛选项：与 options 同形，enum 单元格回落使用 */
-  filters?: Array<{ label: string; value: string | number }>;
+  options?: Option[];
   /** 显式指定单元格渲染器名称，跳过竞选 */
   cell?: string;
   /** 竞选加成：对指定渲染器加减分，正负均可，裁决前应用 */
@@ -117,9 +118,10 @@ function formatDateTime(value: unknown): string | null {
   return dateOnly ? day : `${day} ${time}`;
 }
 
-/** enum label 查找：优先 options，回落 filters；越界值由调用方降级显示原值 */
+/** enum label 查找：优先 options，缺省时由 enum 取值生成；越界值由调用方降级显示原值 */
 function enumLabel(column: CellColumn, value: unknown): string | undefined {
-  const options = column.options ?? column.filters;
+  const options =
+    column.options ?? column.enum?.map((item) => ({ label: textOf(item), value: item }));
   if (!options) return undefined;
   const hit = options.find((option) => String(option.value) === String(value));
   return hit?.label;
@@ -142,7 +144,7 @@ const textCell: CellRenderer = {
 
 const numberCell: CellRenderer = {
   name: 'number',
-  fitness: (column) => (column.type === 'number' ? 80 : 0),
+  fitness: (column) => (column.type === 'number' || column.type === 'integer' ? 80 : 0),
   render: (value) => {
     const parsed = toNumber(value);
     if (parsed === null) return textOf(value);
@@ -168,7 +170,7 @@ const booleanCell: CellRenderer = {
 
 const enumCell: CellRenderer = {
   name: 'enum',
-  fitness: (column) => (column.type === 'enum' ? 100 : 0),
+  fitness: (column) => (column.enum && column.enum.length > 0 ? 100 : 0),
   render: (value, column) => {
     if (value === null || value === undefined || value === '') return '';
     const label = enumLabel(column, value);
@@ -182,7 +184,7 @@ const enumCell: CellRenderer = {
 
 const dateCell: CellRenderer = {
   name: 'date',
-  fitness: (column) => (column.type === 'date' ? 90 : 0),
+  fitness: (column) => (column.format === 'date' ? 90 : 0),
   render: (value) => {
     const formatted = formatDate(value);
     if (formatted === null) return textOf(value);
@@ -192,7 +194,7 @@ const dateCell: CellRenderer = {
 
 const datetimeCell: CellRenderer = {
   name: 'datetime',
-  fitness: (column) => (column.type === 'datetime' ? 95 : 0),
+  fitness: (column) => (column.format === 'date-time' ? 95 : 0),
   render: (value) => {
     const formatted = formatDateTime(value);
     if (formatted === null) return textOf(value);

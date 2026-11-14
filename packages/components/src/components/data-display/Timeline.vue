@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useFetchResource, useSubscribe } from '@cumquat/composables';
-import type { Fetch, SubscribeHandler } from '@cumquat/composables';
-import CqButton from '../basic/Button.vue';
+import type { FetchHandler, SubscribeHandler } from '@cumquat/core';
+import { useFetchResource, useSubscribeResource } from '@cumquat/composables';
+
+import CqButton from '../general/Button.vue';
 
 export interface TimelineItem {
   key: string;
@@ -18,9 +19,9 @@ const props = withDefaults(
     items?: TimelineItem[];
     /**
      * 统一远程请求：挂载即拉取时间轴项，
-     * 返回数组或 { list, total }
+     * 返回数组或 { list, page, size, total }
      */
-    fetch?: Fetch<TimelineItem>;
+    fetch?: FetchHandler<TimelineItem>;
     /**
      * 订阅数据：挂载时调用，resolve 出的时间轴项用于渲染。
      * 优先级：subscribe > fetch > items
@@ -36,7 +37,7 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<TimelineIt
 );
 
 /* ---------------- subscribe：订阅型数据 ---------------- */
-const { state: subState } = useSubscribe<TimelineItem[]>(() => props.subscribe);
+const { state: subState } = useSubscribeResource<TimelineItem[]>(() => props.subscribe);
 
 const sourceItems = computed<TimelineItem[]>(() => {
   if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];

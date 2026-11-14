@@ -16,6 +16,9 @@
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vp pack",
     "test": "vp test run"
   },
+  "dependencies": {
+    "@cumquat/core": "workspace:*"
+  },
   "devDependencies": {
     "@vue/test-utils": "catalog:",
     "jsdom": "catalog:",

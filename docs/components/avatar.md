@@ -25,6 +25,15 @@ title: Avatar 头像
 <Avatar text="张三" shape="square" />
 ```
 
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<{ src?: string; text?: string }>` | `undefined` | 订阅头像数据；挂载时调用，`src` / `text` 优先于同名 props |
+| errorText | `string` | `undefined` | 订阅失败时的错误文案；未提供时使用组件内建兜底 |
+
+`subscribe` 与本地 `src` / `text` 同时存在时优先使用订阅结果；成功结果中缺失的字段回退到同名 props，订阅失败时正文回退到本地 props，并在提供 `errorText` 时额外展示错误条。
+
 ## 交互演示
 
 ### 尺寸与形状

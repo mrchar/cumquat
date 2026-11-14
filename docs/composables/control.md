@@ -36,7 +36,7 @@ toggle(true); // 显式设置
 
 ## useActionState
 
-action 协议的宿主侧原语：消费 `ActionLike`，执行期间派生 `pending / disabled`，错误归一。Button、Form、Popconfirm 等确认型组件内部使用。
+action 协议的宿主侧原语：消费 [`ActionHandler`](/types/basics/core#actionhandler)，执行期间派生 `pending / disabled`，错误归一。Button、Form、Popconfirm 等确认型组件内部使用。
 
 ```ts
 const { pending, disabled, error, run } = useActionState(() => api.save(form), {

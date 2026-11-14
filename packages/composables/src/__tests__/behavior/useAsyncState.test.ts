@@ -3,10 +3,10 @@ import { useAsyncState } from '../../index';
 import { withScope } from '../helpers';
 
 describe('useAsyncState', () => {
-  it('成功流转 pending → success', async () => {
+  it('成功流转 idle → pending → success', async () => {
     const fetcher = vi.fn().mockResolvedValue('ok');
     const ctx = withScope(() => useAsyncState(fetcher, { immediate: false }));
-    expect(ctx.state.value.status).toBe('success');
+    expect(ctx.state.value.status).toBe('idle');
     const promise = ctx.run('a');
     expect(ctx.loading.value).toBe(true);
     expect(ctx.state.value.status).toBe('pending');
@@ -30,7 +30,7 @@ describe('useAsyncState', () => {
     expect(onError).toHaveBeenCalledWith(err);
   });
 
-  it('刷新期间保留旧数据并标记 stale', async () => {
+  it('刷新期间保留旧数据并进入 pending', async () => {
     let resolveFirst: (v: string) => void = () => {};
     const fetcher = vi
       .fn()
@@ -42,10 +42,10 @@ describe('useAsyncState', () => {
     resolveFirst('first');
     await first;
     const refresh = ctx.run();
-    expect(ctx.state.value.isStale).toBe(true);
+    expect(ctx.state.value.status).toBe('pending');
     expect(ctx.state.value.data).toBe('first');
     await refresh;
-    expect(ctx.state.value.isStale).toBe(false);
+    expect(ctx.state.value.status).toBe('success');
     expect(ctx.state.value.data).toBe('next');
   });
 

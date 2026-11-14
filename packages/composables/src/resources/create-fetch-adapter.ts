@@ -1,4 +1,4 @@
-import type { RequestAdapter, ResourceRequest } from './types';
+import type { RequestAdapter, ResourceRequest } from '@cumquat/core';
 
 /** 内置适配器的 HTTP 错误：携带状态码与解析后的响应体 */
 export class ResourceHttpError extends Error {

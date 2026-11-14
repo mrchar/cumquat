@@ -1,98 +1,104 @@
 import type { App } from 'vue';
 
-import LiveDemo from './components/extras/LiveDemo.vue';
+import { createCumquatConfig, cumquatConfigKey } from './config';
+import type { CumquatConfig } from './config';
 
-// 基础
-import Button from './components/basic/Button.vue';
-import Icon from './components/basic/Icon.vue';
-import Input from './components/basic/Input.vue';
-import Card from './components/basic/Card.vue';
-import Divider from './components/basic/Divider.vue';
-import Avatar from './components/basic/Avatar.vue';
-import Badge from './components/basic/Badge.vue';
-import Statistic from './components/basic/Statistic.vue';
-import Typography from './components/basic/Typography.vue';
-import Tag from './components/basic/Tag.vue';
-import Empty from './components/basic/Empty.vue';
-// 表单控件
-import Select from './components/form-controls/Select.vue';
-import Checkbox from './components/form-controls/Checkbox.vue';
-import Radio from './components/form-controls/Radio.vue';
-import RadioGroup from './components/form-controls/RadioGroup.vue';
-import Switch from './components/form-controls/Switch.vue';
-import InputNumber from './components/form-controls/InputNumber.vue';
-import Rate from './components/form-controls/Rate.vue';
-import Segmented from './components/form-controls/Segmented.vue';
-import AutoComplete from './components/form-controls/AutoComplete.vue';
-import Mention from './components/form-controls/Mention.vue';
-import Form from './components/form-controls/Form.vue';
-import FormItem from './components/form-controls/FormItem.vue';
-import TreeSelect from './components/form-controls/TreeSelect.vue';
-import Slider from './components/form-controls/Slider.vue';
-import VoiceButton from './components/form-controls/VoiceButton.vue';
-// 浮层
-import Dialog from './components/overlay/Dialog.vue';
-import Drawer from './components/overlay/Drawer.vue';
-import Dropdown from './components/overlay/Dropdown.vue';
-import Popover from './components/overlay/Popover.vue';
-import Popconfirm from './components/overlay/Popconfirm.vue';
-import Tooltip from './components/overlay/Tooltip.vue';
+// 通用
+import Button from './components/general/Button.vue';
+import Icon from './components/general/Icon.vue';
+import Typography from './components/general/Typography.vue';
+// 布局
+import Divider from './components/layout/Divider.vue';
+import Grid from './components/layout/Grid.vue';
+import Layout from './components/layout/Layout.vue';
+import Space from './components/layout/Space.vue';
+// 导航
+import Anchor from './components/navigation/Anchor.vue';
+import BackTop from './components/navigation/BackTop.vue';
+import Breadcrumb from './components/navigation/Breadcrumb.vue';
+import Dropdown from './components/navigation/Dropdown.vue';
+import Menu from './components/navigation/Menu.vue';
+import Pagination from './components/navigation/Pagination.vue';
+import Steps from './components/navigation/Steps.vue';
+import Tabs from './components/navigation/Tabs.vue';
+// 数据输入
+import AutoComplete from './components/data-entry/AutoComplete.vue';
+import Cascader from './components/data-entry/Cascader.vue';
+import Checkbox from './components/data-entry/Checkbox.vue';
+import ColorPicker from './components/data-entry/ColorPicker.vue';
+import DatePicker from './components/data-entry/DatePicker.vue';
+import Form from './components/data-entry/Form.vue';
+import FormItem from './components/data-entry/FormItem.vue';
+import Input from './components/data-entry/Input.vue';
+import InputNumber from './components/data-entry/InputNumber.vue';
+import Mention from './components/data-entry/Mention.vue';
+import Radio from './components/data-entry/Radio.vue';
+import RadioGroup from './components/data-entry/RadioGroup.vue';
+import Rate from './components/data-entry/Rate.vue';
+import Select from './components/data-entry/Select.vue';
+import Segmented from './components/data-entry/Segmented.vue';
+import Slider from './components/data-entry/Slider.vue';
+import Switch from './components/data-entry/Switch.vue';
+import TimePicker from './components/data-entry/TimePicker.vue';
+import Transfer from './components/data-entry/Transfer.vue';
+import TreeSelect from './components/data-entry/TreeSelect.vue';
+import Upload from './components/data-entry/Upload.vue';
 // 数据展示
-import Table from './components/data-display/Table.vue';
-import Pagination from './components/data-display/Pagination.vue';
-import Tabs from './components/data-display/Tabs.vue';
+import Avatar from './components/data-display/Avatar.vue';
+import Badge from './components/data-display/Badge.vue';
+import Calendar from './components/data-display/Calendar.vue';
+import Card from './components/data-display/Card.vue';
+import Carousel from './components/data-display/Carousel.vue';
 import Collapse from './components/data-display/Collapse.vue';
-import Tree from './components/data-display/Tree.vue';
-import Cascader from './components/data-display/Cascader.vue';
-import Timeline from './components/data-display/Timeline.vue';
-import Steps from './components/data-display/Steps.vue';
 import Descriptions from './components/data-display/Descriptions.vue';
+import Empty from './components/data-display/Empty.vue';
+import Image from './components/data-display/Image.vue';
 import List from './components/data-display/List.vue';
 import ListItem from './components/data-display/ListItem.vue';
 import ListItemMeta from './components/data-display/ListItemMeta.vue';
-import Carousel from './components/data-display/Carousel.vue';
-import Progress from './components/data-display/Progress.vue';
-import Image from './components/data-display/Image.vue';
+import Popover from './components/data-display/Popover.vue';
+import QRCode from './components/data-display/QRCode.vue';
+import Statistic from './components/data-display/Statistic.vue';
+import Table from './components/data-display/Table.vue';
+import Tag from './components/data-display/Tag.vue';
+import Timeline from './components/data-display/Timeline.vue';
+import Tooltip from './components/data-display/Tooltip.vue';
+import Tree from './components/data-display/Tree.vue';
+import VirtualList from './components/data-display/VirtualList.vue';
 // 反馈
+import Alert from './components/feedback/Alert.vue';
+import Dialog from './components/feedback/Dialog.vue';
+import Drawer from './components/feedback/Drawer.vue';
+import Loading from './components/feedback/Loading.vue';
 import Message from './components/feedback/Message.vue';
 import MessageContainer from './components/feedback/MessageContainer.vue';
-import Alert from './components/feedback/Alert.vue';
 import Notification from './components/feedback/Notification.vue';
 import NotificationContainer from './components/feedback/NotificationContainer.vue';
-import Loading from './components/feedback/Loading.vue';
-import Skeleton from './components/feedback/Skeleton.vue';
+import Popconfirm from './components/feedback/Popconfirm.vue';
+import Progress from './components/feedback/Progress.vue';
 import Result from './components/feedback/Result.vue';
-import Upload from './components/feedback/Upload.vue';
-import Chat from './components/feedback/Chat.vue';
-import ChatInput from './components/feedback/ChatInput.vue';
-// 导航与布局
-import Breadcrumb from './components/navigation/Breadcrumb.vue';
-import Menu from './components/navigation/Menu.vue';
-import Anchor from './components/navigation/Anchor.vue';
-import BackTop from './components/navigation/BackTop.vue';
-import Affix from './components/navigation/Affix.vue';
-import FloatButton from './components/navigation/FloatButton.vue';
-import DatePicker from './components/navigation/DatePicker.vue';
-import TimePicker from './components/navigation/TimePicker.vue';
-import Calendar from './components/navigation/Calendar.vue';
-import ColorPicker from './components/navigation/ColorPicker.vue';
-import Transfer from './components/navigation/Transfer.vue';
-import VirtualList from './components/navigation/VirtualList.vue';
-import Layout from './components/navigation/Layout.vue';
-import Grid from './components/navigation/Grid.vue';
-import Space from './components/navigation/Space.vue';
+import Skeleton from './components/feedback/Skeleton.vue';
+// 场景组件
+import Chat from './components/scenarios/Chat.vue';
+import ChatInput from './components/scenarios/ChatInput.vue';
+import VoiceButton from './components/scenarios/VoiceButton.vue';
 // 其他
-import Watermark from './components/extras/Watermark.vue';
-import Tour from './components/extras/Tour.vue';
-import QRCode from './components/extras/QRCode.vue';
-import CodeCard from './components/extras/CodeCard.vue';
+import Affix from './components/other/Affix.vue';
+import ConfigProvider from './components/other/ConfigProvider.vue';
+import FloatButton from './components/other/FloatButton.vue';
+import Tour from './components/other/Tour.vue';
+import Watermark from './components/other/Watermark.vue';
+// 文档工具
+import CodeCard from './components/internal/CodeCard.vue';
+import LiveDemo from './components/internal/LiveDemo.vue';
 
 import { registerCell } from './components/data-display/cells';
-import { registerField } from './components/form-controls/fields';
+import { registerField } from './components/data-entry/fields';
 
 /** 组件导出名无前缀，按需导入后直接使用 */
 export {
   Button,
+  ConfigProvider,
   Icon,
   Input,
   Tooltip,
@@ -177,13 +183,16 @@ export { LiveDemo };
 /** 单元格竞选：注册自定义单元格渲染器（同名替换内建实现） */
 export { registerCell };
 export type { CellRenderer, CellColumn } from './components/data-display/cells';
+/** 表格列与行操作配置 */
+export type { TableColumn, TableAction } from './components/data-display/Table.vue';
 /** 字段竞选：注册自定义控件渲染器（同名替换内建实现） */
 export { registerField };
-export type { FieldRenderer, FormFieldMeta, FieldContext } from './components/form-controls/fields';
+export type { FieldRenderer, FieldContext } from './components/data-entry/fields';
 
 /** 全量注册映射：组件 → C 前缀 PascalCase 注册名（模板中使用 <c-button> 等） */
 const registry: Record<string, unknown> = {
   CButton: Button,
+  CConfigProvider: ConfigProvider,
   CIcon: Icon,
   CInput: Input,
   CTooltip: Tooltip,
@@ -262,31 +271,20 @@ const registry: Record<string, unknown> = {
   CFloatButton: FloatButton,
 };
 
-/** 全量安装入口：app.use(Cumquat) 后以 <c-xxx> 标签名使用全部组件 */
-export const Cumquat = {
-  install(app: App) {
-    for (const [name, component] of Object.entries(registry)) {
-      app.component(name, component as never);
-    }
-  },
+/**
+ * 全量安装入口：支持 app.use(Cumquat) 与 app.use(Cumquat, config)。
+ * 保留 install 自引用，兼容将 Cumquat 作为对象插件使用的场景。
+ */
+const install = (app: App, config: CumquatConfig = {}) => {
+  for (const [name, component] of Object.entries(registry)) {
+    app.component(name, component as never);
+  }
+  app.provide(cumquatConfigKey, createCumquatConfig(config));
 };
 
-/** 统一数据请求机制的类型（实现见 @cumquat/composables） */
-export type {
-  Fetch,
-  FetchQuery,
-  FetchPagination,
-  FetchSorter,
-  FetchResult,
-  PagedResult,
-  UseFetchReturn,
-  VoiceButtonAction,
-  VoiceGesture,
-  VoiceReleasePayload,
-  ChatInputAttachment,
-  ChatInputPayload,
-  ChatInputMode,
-  VoiceRecognizer,
-} from '@cumquat/composables';
+export const Cumquat = Object.assign(install, { install });
+
+export type { CumquatConfig } from './config';
+export { useCumquatConfig } from './config';
 
 export default Cumquat;

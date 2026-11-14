@@ -1,9 +1,14 @@
-import { ref, watch } from 'vue';
+import { onScopeDispose, ref, toValue, watch } from 'vue';
 import type { Ref } from 'vue';
-import type { ActionResult, SubscribeHandler } from '../types';
-import { actionErrorText, extractActionFailure } from '../behavior/useActionState';
-import type { Fetch } from './fetch';
-import { useSubscribe } from './useSubscribe';
+import type {
+  ActionResult,
+  FetchHandler,
+  FetchResult,
+  ResolvedFetchQuery,
+  SubscribeHandler,
+} from '@cumquat/core';
+import { asyncErrorText, extractAsyncFailure, isPagedResult } from '@cumquat/core';
+import { useSubscribeResource } from './useSubscribe';
 
 /* ------------------------------------------------------------------ */
 /* useChat：聊天消息模型                                                */
@@ -29,14 +34,17 @@ export interface ChatMessage {
 }
 
 export interface UseChatOptions {
-  /** 历史消息加载：注入分页查询，currentPage 递增表示更早一页；返回数组或 { list, total } */
-  fetch?: Fetch<ChatMessage[]>;
-  /** 新消息订阅：推送单条或数组；返回响应式数据时持续更新（经 useSubscribe 消费） */
+  /**
+   * 历史消息加载工厂：以初始分页查询创建自带 execute / abort 的资源对象，
+   * page 递增表示更早一页；data 为消息数组或 { list, page, size, total }
+   */
+  fetch?: FetchHandler<ChatMessage>;
+  /** 新消息订阅：推送单条或数组；返回响应式数据时持续更新（经 useSubscribeResource 消费） */
   subscribe?: SubscribeHandler<ChatMessage[] | ChatMessage>;
   /** 发送动作：入参为消息内容，抛错或返回 error 结果即发送失败 */
   send?: (content: string) => Promise<ActionResult | void>;
   /** 历史分页每页条数，默认 20 */
-  pageSize?: number;
+  size?: number;
 }
 
 export interface UseChatReturn {
@@ -69,7 +77,7 @@ const LOCAL_PREFIX = '__local_';
  * @internal 消费组件：Chat
  */
 export function useChat(options: UseChatOptions): UseChatReturn {
-  const pageSize = options.pageSize ?? 20;
+  const size = options.size ?? 20;
   const messages = ref<ChatMessage[]>([]) as Ref<ChatMessage[]>;
   const sending = ref(false);
   const loadingOlder = ref(false);
@@ -83,8 +91,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   const isLocal = (message: ChatMessage) => String(message.id).startsWith(LOCAL_PREFIX);
 
-  /* 订阅推送：经 useSubscribe 消费，推送数据（单条或数组）追加进列表 */
-  const subscription = useSubscribe<ChatMessage[] | ChatMessage>(options.subscribe);
+  /* 订阅推送：经 useSubscribeResource 消费，推送数据（单条或数组）追加进列表 */
+  const subscription = useSubscribeResource<ChatMessage[] | ChatMessage>(options.subscribe);
   watch(
     subscription.data,
     (incoming) => {
@@ -124,22 +132,39 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     if (older.length) messages.value.unshift(...older);
   }
 
+  /**
+   * 历史资源对象：工厂只创建一次，后续翻页调 execute；
+   * useChat 只负责调用，状态机、竞态与取消由资源对象内部实现。
+   */
+  let historyHandle: FetchResult<ChatMessage> | undefined;
+  let handlePromise: Promise<FetchResult<ChatMessage>> | undefined;
+
   async function loadOlder(): Promise<void> {
     if (!options.fetch || loadingOlder.value) return;
     loadingOlder.value = true;
     historyError.value = undefined;
     try {
       page += 1;
-      const result = await options.fetch({ pagination: { currentPage: page, pageSize } });
-      if (Array.isArray(result)) {
-        prepend(result);
-        historyCount += result.length;
-        hasMore.value = result.length >= pageSize;
-      } else if (result && Array.isArray((result as { list?: ChatMessage[] }).list)) {
-        const { list, total } = result as { list: ChatMessage[]; total?: number };
-        prepend(list);
-        historyCount += list.length;
-        hasMore.value = typeof total === 'number' ? historyCount < total : list.length >= pageSize;
+      const query: ResolvedFetchQuery = { page, size };
+      handlePromise ??= Promise.resolve(options.fetch(query));
+      const handle = await handlePromise;
+      historyHandle = handle;
+      await handle.execute(query);
+      // 失败不 reject：统一读资源对象的 error 状态
+      if (toValue(handle.status) === 'error') throw toValue(handle.error);
+      const raw = toValue(handle.data);
+      if (isPagedResult<ChatMessage>(raw)) {
+        prepend(raw.list);
+        historyCount += raw.list.length;
+        const responseSize = typeof raw.size === 'number' ? raw.size : size;
+        hasMore.value =
+          typeof raw.total === 'number'
+            ? historyCount < raw.total
+            : raw.list.length >= responseSize;
+      } else if (Array.isArray(raw)) {
+        prepend(raw);
+        historyCount += raw.length;
+        hasMore.value = raw.length >= size;
       } else {
         hasMore.value = false;
       }
@@ -168,17 +193,17 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     const temp = messages.value[messages.value.length - 1];
     try {
       const result = await options.send(text);
-      const failure = extractActionFailure(result);
+      const failure = extractAsyncFailure(result);
       if (failure) {
         temp.status = 'failed';
-        sendError.value = actionErrorText(failure.error, '发送失败');
+        sendError.value = asyncErrorText(failure.error, '发送失败');
         return undefined;
       }
       temp.status = 'sent';
       return temp;
     } catch (err) {
       temp.status = 'failed';
-      sendError.value = actionErrorText(err, '发送失败');
+      sendError.value = asyncErrorText(err, '发送失败');
       return undefined;
     } finally {
       sending.value = false;
@@ -194,6 +219,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   // 初始加载最新一页历史（延迟调用，与 fetch / subscribe 惯例一致，兼容 effectScope 测试）
   if (options.fetch) queueMicrotask(() => void loadOlder());
+
+  onScopeDispose(() => historyHandle?.abort());
 
   return {
     messages,

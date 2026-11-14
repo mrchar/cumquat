@@ -11,9 +11,9 @@ title: Popconfirm 气泡确认
 | text        | `string`     | `'确定执行该操作吗？'` | 确认气泡文案                                  |
 | confirmText | `string`     | `'确定'`               | 确认按钮文案                                  |
 | cancelText  | `string`     | `'取消'`               | 取消按钮文案                                  |
-| placement   | `Placement`  | `'top'`                | 气泡位置                                      |
+| placement   | [`Placement`](/types/basics/overlay#placement)  | `'top'`                | 气泡位置                                      |
 | open        | `boolean`    | -                      | 开合（v-model:open）                          |
-| action      | `ActionLike` | -                      | 确认时执行的异步动作（期间按钮 loading/禁用） |
+| action      | [`ActionHandler`](/types/basics/core#actionhandler) | -                      | 确认时执行的异步动作（期间按钮 loading/禁用） |
 | disabled    | `boolean`    | `false`                | 禁用                                          |
 
 | 事件        | 参数             | 说明     |

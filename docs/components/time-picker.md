@@ -26,6 +26,19 @@ title: TimePicker 时间选择器
 <TimePicker v-model="time" :minute-step="15" min-time="09:00" max-time="18:00" />
 ```
 
+## 补充：交互动作
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| action | [`ActionHandler`](/types/basics/core#actionhandler) | `undefined` | 交互动作；执行期间进入 pending/禁用状态，失败时保持并 emit `actionError` |
+| errorText | `string` | `undefined` | 动作失败时的回退文案；未提供时使用组件内建兜底 |
+
+| 事件 | 参数 | 说明 |
+| --- | --- | --- |
+| actionError | `error: unknown` | 动作失败（reject 或返回值导出错误）时触发 |
+
+动作失败时保持当前时间并 emit `actionError`；`errorText` 用于错误条回退。
+
 ## 交互演示
 
 ### 时间选择

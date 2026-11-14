@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import type { Ref } from 'vue';
-import { extractActionFailure } from './useActionState';
+import { extractAsyncFailure } from '@cumquat/core';
 
 export interface UseActionValueReturn {
   /** 动作执行中，期间组件应禁用新的交互 */
@@ -31,7 +31,7 @@ export function useActionValue(): UseActionValueReturn {
     pending.value = true;
     try {
       const result = await execute();
-      const failure = extractActionFailure(result);
+      const failure = extractAsyncFailure(result);
       if (failure) {
         error.value = failure.error;
         revert?.();

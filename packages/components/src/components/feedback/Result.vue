@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { subscribeErrorText, useSubscribe } from '@cumquat/composables';
-import type { SubscribeHandler } from '@cumquat/composables';
+import type { SubscribeHandler } from '@cumquat/core';
+import { asyncErrorText } from '@cumquat/core';
+
+import { useSubscribeResource } from '@cumquat/composables';
 
 interface ResultSubscribeData {
   title?: string;
@@ -31,7 +33,7 @@ const {
   state: subState,
   loading: subLoading,
   error: subError,
-} = useSubscribe<ResultSubscribeData>(() => props.subscribe);
+} = useSubscribeResource<ResultSubscribeData>(() => props.subscribe);
 
 const effectiveTitle = computed<string>(() =>
   subState.value.status === 'success'
@@ -44,7 +46,7 @@ const effectiveSubTitle = computed<string>(() =>
     : (props.subTitle ?? ''),
 );
 const errorText = computed(() =>
-  subError.value != null ? subscribeErrorText(subError.value, props.errorText) : null,
+  subError.value != null ? asyncErrorText(subError.value, props.errorText) : null,
 );
 
 const iconPath: Record<string, string> = {

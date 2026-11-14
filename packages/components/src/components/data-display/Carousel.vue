@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useFetchResource, useIntervalFn, useSubscribe } from '@cumquat/composables';
-import type { Fetch, SubscribeHandler } from '@cumquat/composables';
-import CqButton from '../basic/Button.vue';
+import type { FetchHandler, SubscribeHandler } from '@cumquat/core';
+import { useFetchResource, useIntervalFn, useSubscribeResource } from '@cumquat/composables';
+
+import CqButton from '../general/Button.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -18,8 +19,8 @@ const props = withDefaults(
     pauseOnHover?: boolean;
     /** 循环切换 */
     loop?: boolean;
-    /** 统一远程请求：挂载即拉取轮播项，返回数组或 { list, total } */
-    fetch?: Fetch<string>;
+    /** 统一远程请求：挂载即拉取轮播项，返回数组或 { list, page, size, total } */
+    fetch?: FetchHandler<string>;
     /**
      * 订阅数据：挂载时调用，resolve 出的轮播项用于渲染。
      * 优先级：subscribe > fetch > items
@@ -51,7 +52,7 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<string[]>(
 });
 
 /* ---------------- subscribe：订阅型数据 ---------------- */
-const { state: subState } = useSubscribe<string[]>(() => props.subscribe);
+const { state: subState } = useSubscribeResource<string[]>(() => props.subscribe);
 
 const sourceItems = computed<string[]>(() => {
   if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];

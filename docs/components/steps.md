@@ -6,11 +6,11 @@ title: Steps 步骤条
 
 分步流程引导。
 
-`StepItem` 结构：`{ key: string; title: string; description?: string; status?: 'done' | 'active' | 'error'; disabled?: boolean }`。
+[`StepItem`](/types/view/navigation#stepitem) 结构：`{ key: string; title: string; description?: string; status?: 'done' | 'active' | 'error'; disabled?: boolean }`。
 
 | Prop       | 类型         | 默认值 | 说明                      |
 | ---------- | ------------ | ------ | ------------------------- |
-| steps      | `StepItem[]` | `[]`   | 步骤列表                  |
+| steps      | [`StepItem`](/types/view/navigation#stepitem)`[]` | `[]`   | 步骤列表                  |
 | current    | `number`     | `0`    | 当前步骤索引（从 0 开始） |
 | changeable | `boolean`    | `true` | 允许点击已到达的步骤跳转  |
 

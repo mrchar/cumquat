@@ -27,6 +27,15 @@ title: Badge 徽标
 <Badge text="hot" type="warning"><span>活动</span></Badge>
 ```
 
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<number | string>` | `undefined` | 订阅角标值；挂载时调用，订阅结果优先于 `text` / `count` |
+| errorText | `string` | `undefined` | 订阅失败时的错误文案；未提供时使用组件内建兜底 |
+
+`subscribe` 与本地 `text` / `count` 同时存在时优先使用订阅结果；订阅失败时角标回退到 `text` / `count`，并在提供 `errorText` 时额外展示错误条。
+
 ## 交互演示
 
 ### 计数、溢出与红点

@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import type { FetchHandler, SubscribeHandler } from '@cumquat/core';
 import {
   useControllableModel,
   useFetchResource,
   useRovingFocus,
-  useSubscribe,
+  useSubscribeResource,
   useTypeahead,
 } from '@cumquat/composables';
-import CqButton from '../basic/Button.vue';
-import type { Fetch, SubscribeHandler } from '@cumquat/composables';
+import { computed, ref } from 'vue';
+
+import CqButton from '../general/Button.vue';
 
 export interface MenuItem {
   key: string;
@@ -26,8 +27,8 @@ const props = withDefaults(
     collapsed?: boolean;
     /** 默认展开的分组 key 列表 */
     defaultExpandedKeys?: string[];
-    /** 统一远程请求：挂载即拉取菜单项，返回数组或 { list, total } */
-    fetch?: Fetch<MenuItem>;
+    /** 统一远程请求：挂载即拉取菜单项，返回数组或 { list, page, size, total } */
+    fetch?: FetchHandler<MenuItem>;
     /**
      * 订阅数据：挂载时调用，resolve 出的菜单项用于渲染。
      * 优先级：subscribe > fetch > items
@@ -83,7 +84,7 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<MenuItem[]
 );
 
 /* ---------------- subscribe：订阅型数据 ---------------- */
-const { state: subState } = useSubscribe<MenuItem[]>(() => props.subscribe);
+const { state: subState } = useSubscribeResource<MenuItem[]>(() => props.subscribe);
 
 const sourceItems = computed<MenuItem[]>(() => {
   if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];

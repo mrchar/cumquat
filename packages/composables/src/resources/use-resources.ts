@@ -1,22 +1,30 @@
-import { shallowRef } from 'vue';
+import { ref, shallowRef } from 'vue';
 import { createFetchAdapter } from './create-fetch-adapter';
 import { parseOpenApi } from './parse-open-api';
-import type { FetchQuery, FetchResult } from '../data/fetch';
-import type { ActionResult } from '../types';
+import { defaultView, schemaToColumns } from './schema-view';
+import { asyncErrorText } from '@cumquat/core';
 import type {
+  ActionResult,
+  Converter,
+  FetchData,
+  FetchQuery,
+  FetchResult,
+  Registry,
   RequestAdapter,
-  ResourceColumn,
+  Resource,
   ResourceClient,
-  ResourceDefinition,
-  ResourceField,
+  ResourceColumn,
   ResourceOperation,
   ResourcePool,
   ResourceRequest,
-  ResourceSchema,
+  ResolvedFetchQuery,
+  Schema,
+  Status,
   UseResourcesOptions,
-} from './types';
+  View,
+} from '@cumquat/core';
 
-const EMPTY_SCHEMA: ResourceSchema = { resources: {} };
+const EMPTY_REGISTRY: Registry = { resources: {} };
 
 /** 拼接服务器根地址与路径；路径为绝对 URL 时直接使用 */
 function resolveUrl(server: string, path: string): string {
@@ -36,25 +44,23 @@ function pickPath(body: unknown, path: string): unknown {
 
 /** 统一查询片段 → 请求 query 参数（参数名按资源表映射，缺省回落默认名） */
 function buildListQuery(
-  definition: ResourceDefinition,
-  query?: FetchQuery,
+  resource: Resource,
+  query?: ResolvedFetchQuery,
 ): ResourceRequest['query'] {
   const names = {
     keyword: 'keyword',
-    currentPage: 'page',
-    pageSize: 'pageSize',
+    page: 'page',
+    size: 'size',
     sorter: 'sorter',
-    ...definition.queryNames,
+    ...resource.queryNames,
   };
   const params: Record<string, string | number | boolean | undefined> = {};
   if (!query) return params;
   if (query.keyword !== undefined && query.keyword !== null && query.keyword !== '') {
     params[names.keyword] = query.keyword;
   }
-  if (query.pagination) {
-    params[names.currentPage] = query.pagination.currentPage;
-    params[names.pageSize] = query.pagination.pageSize;
-  }
+  if (query.page !== undefined) params[names.page] = query.page;
+  if (query.size !== undefined) params[names.size] = query.size;
   if (query.sorter && query.sorter.order) {
     params[names.sorter] = `${query.sorter.key},${query.sorter.order}`;
   }
@@ -77,27 +83,43 @@ function buildListQuery(
   return params;
 }
 
-/** 按资源表的列表响应映射归一化：信封取数组与总数，裸数组直传 */
-function normalizeListResult(definition: ResourceDefinition, body: unknown): unknown {
-  const mapping = definition.response;
+/**
+ * 按资源表的列表响应映射归一化：信封取数组、页码、页大小与总数，裸数组直传。
+ * 响应中缺失 page / size 时以本次请求的分页参数回填，保证分页信封四项齐全。
+ */
+function normalizeListResult(
+  resource: Resource,
+  body: unknown,
+  query?: ResolvedFetchQuery,
+): unknown {
+  const mapping = resource.response;
   if (!mapping?.list) return body;
   const list = pickPath(body, mapping.list);
   if (!Array.isArray(list)) return body;
   const total = mapping.total ? pickPath(body, mapping.total) : undefined;
-  return total === undefined ? list : { list, total: Number(total) };
+  if (total === undefined) return list;
+  const page = mapping.page ? Number(pickPath(body, mapping.page)) : (query?.page ?? 1);
+  const size = mapping.size ? Number(pickPath(body, mapping.size)) : (query?.size ?? list.length);
+  return {
+    list,
+    page: Number.isFinite(page) ? page : (query?.page ?? 1),
+    size: Number.isFinite(size) ? size : (query?.size ?? list.length),
+    total: Number(total),
+  };
 }
 
 /**
  * 元数据驱动的资源池：声明一次「服务器地址 + 元数据解析方式」，
- * 按资源名取客户端，请求方法与 fetch / action 协议同形，
- * 字段元数据（columns / filters / properties）按组件属性形状导出。
+ * 按资源名取客户端，请求方法与 fetch / action 协议同形。
  *
- * 池初始化时开始加载元数据；client() 无需等待就绪，方法调用时内部自动等待。
+ * 字段在视图层的投影（fields / columns / filters / properties）由 `Converter` 完成：
+ * schema 是唯一的数据来源，视图只是它的一次投影，默认使用内置实现，可整体替换。
  */
 export function useResources(options: UseResourcesOptions): ResourcePool {
   const adapter: RequestAdapter = options.request ?? createFetchAdapter();
-  const schemaRef = shallowRef<ResourceSchema | null>(null);
-  const statusRef = shallowRef<'pending' | 'success' | 'error'>('pending');
+  const converter: Converter = options.view ?? defaultView;
+  const registryRef = shallowRef<Registry | null>(null);
+  const statusRef = shallowRef<Status>('pending');
   const errorRef = shallowRef<unknown>(undefined);
   let loadPromise: Promise<void> | null = null;
 
@@ -108,9 +130,10 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
     statusRef.value = 'pending';
     errorRef.value = undefined;
     try {
-      let raw: ResourceSchema;
-      if (options.schema !== undefined) {
-        raw = typeof options.schema === 'function' ? await options.schema() : options.schema;
+      let raw: Registry;
+      if (options.registry !== undefined) {
+        raw =
+          typeof options.registry === 'function' ? await options.registry() : options.registry;
       } else if (options.doc) {
         const doc = await adapter({
           method: 'GET',
@@ -119,9 +142,9 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
         });
         raw = await (options.parse ?? parseOpenApi)(doc, { server: options.server });
       } else {
-        throw new Error('useResources 需要提供 doc（元数据文档）或 schema（资源表）之一');
+        throw new Error('useResources 需要提供 doc（元数据文档）或 registry（资源表）之一');
       }
-      schemaRef.value = options.refine ? await options.refine(raw) : raw;
+      registryRef.value = options.refine ? await options.refine(raw) : raw;
       statusRef.value = 'success';
     } catch (error) {
       errorRef.value = error;
@@ -130,11 +153,11 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
   }
 
   /** 等待资源表就绪；加载失败时抛出错误，由调用方决定如何呈现 */
-  function ensureLoaded(): Promise<ResourceSchema> {
+  function ensureLoaded(): Promise<Registry> {
     if (!loadPromise) loadPromise = load();
     return loadPromise.then(() => {
       if (statusRef.value === 'error') throw errorRef.value;
-      return schemaRef.value as ResourceSchema;
+      return registryRef.value as Registry;
     });
   }
 
@@ -142,23 +165,23 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
   void ensureLoaded().catch(() => {});
 
   function client<D = unknown>(name: string): ResourceClient<D> {
-    const loaded = schemaRef.value;
+    const loaded = registryRef.value;
     if (loaded && !loaded.resources[name]) {
       throw new Error(`资源池中不存在资源「${name}」`);
     }
 
-    const requireDefinition = async (): Promise<ResourceDefinition> => {
-      const schema = await ensureLoaded();
-      const definition = schema.resources[name];
-      if (!definition) throw new Error(`资源池中不存在资源「${name}」`);
-      return definition;
+    const requireResource = async (): Promise<Resource> => {
+      const registry = await ensureLoaded();
+      const resource = registry.resources[name];
+      if (!resource) throw new Error(`资源池中不存在资源「${name}」`);
+      return resource;
     };
 
     const requireOp = (
-      definition: ResourceDefinition,
+      resource: Resource,
       key: 'list' | 'detail' | 'create' | 'update' | 'remove',
     ): ResourceOperation => {
-      const op = definition[key];
+      const op = resource[key];
       if (!op) throw new Error(`资源「${name}」未声明 ${key} 操作`);
       return op;
     };
@@ -167,40 +190,91 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
     const itemUrl = (op: ResourceOperation, id: string | number): string =>
       resolveUrl(options.server, op.path).replace(/\{id\}/g, encodeURIComponent(String(id)));
 
-    const fieldsOf = (): ResourceField[] => schemaRef.value?.resources[name]?.fields ?? [];
+    /** schema 的完整字段视图 */
+    const fieldsOf = (): View[] => {
+      const resource = registryRef.value?.resources[name];
+      return resource ? converter.toFields(resource.schema, resource.hints) : [];
+    };
 
-    const columnsOf = (): ResourceColumn[] =>
-      fieldsOf()
-        .filter((field) => field.scope?.list)
-        .map((field) => {
-          const column: ResourceColumn = { key: field.name, title: field.label, type: field.type };
-          if (field.help) column.help = field.help;
-          if (field.format) column.format = field.format;
-          if (field.type === 'enum' && field.options && field.options.length > 0) {
-            column.filters = field.options;
-          }
-          return column;
-        });
+    /** 按场景标记过滤字段视图 */
+    const scopedOf = (key: 'filter' | 'create' | 'update'): View[] => {
+      const resource = registryRef.value?.resources[name];
+      if (!resource) return [];
+      return fieldsOf().filter((item) => {
+        const scope = resource.hints?.[item.name]?.scope;
+        return scope?.[key] === true;
+      });
+    };
+
+    const columnsOf = (): ResourceColumn[] => {
+      const resource = registryRef.value?.resources[name];
+      if (!resource) return [];
+      return schemaToColumns(resource.schema, { hints: resource.hints, listOnly: true });
+    };
+
+    const propertiesOf = (): View[] => {
+      const resource = registryRef.value?.resources[name];
+      if (!resource) return [];
+      return fieldsOf().filter((item) => {
+        const scope = resource.hints?.[item.name]?.scope;
+        return scope?.create === true || scope?.update === true;
+      });
+    };
 
     return {
       name,
 
-      async list(query?: FetchQuery): Promise<FetchResult<D>> {
-        const definition = await requireDefinition();
-        const op = requireOp(definition, 'list');
-        const body = await adapter({
-          method: op.method,
-          url: collectionUrl(op),
-          query: buildListQuery(definition, query),
-          headers: await resolveHeaders(),
-          signal: query?.signal,
-        });
-        return normalizeListResult(definition, body) as FetchResult<D>;
+      list(_initialQuery?: FetchQuery): FetchResult<D> {
+        // 资源池私有的 FetchResult 实现：内部持有状态机、竞态序号与取消信号，
+        // 对外只暴露 execute / abort，组件库不感知 AbortController 的存在。
+        const status = ref<Status>('idle');
+        const data = ref<FetchData<D> | undefined>(undefined);
+        const error = ref<unknown>(undefined);
+        const message = ref<string | undefined>(undefined);
+        let controller: AbortController | undefined;
+        let runId = 0;
+
+        return {
+          status,
+          data,
+          error,
+          message,
+          async execute(query?: ResolvedFetchQuery) {
+            const currentId = ++runId;
+            controller?.abort();
+            controller =
+              typeof AbortController !== 'undefined' ? new AbortController() : undefined;
+            status.value = 'pending';
+            try {
+              const resource = await requireResource();
+              const op = requireOp(resource, 'list');
+              const body = await adapter({
+                method: op.method,
+                url: collectionUrl(op),
+                query: buildListQuery(resource, query),
+                headers: await resolveHeaders(),
+                signal: controller?.signal,
+              });
+              if (currentId !== runId) return;
+              data.value = normalizeListResult(resource, body, query) as FetchData<D>;
+              status.value = 'success';
+            } catch (err) {
+              if (currentId !== runId) return;
+              error.value = err;
+              message.value = asyncErrorText(err);
+              status.value = 'error';
+            }
+          },
+          abort() {
+            runId++;
+            controller?.abort();
+          },
+        };
       },
 
       async detail(id: string | number): Promise<D> {
-        const definition = await requireDefinition();
-        const op = requireOp(definition, 'detail');
+        const resource = await requireResource();
+        const op = requireOp(resource, 'detail');
         return (await adapter({
           method: op.method,
           url: itemUrl(op, id),
@@ -209,8 +283,8 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
       },
 
       async create(payload: unknown): Promise<ActionResult | void> {
-        const definition = await requireDefinition();
-        const op = requireOp(definition, 'create');
+        const resource = await requireResource();
+        const op = requireOp(resource, 'create');
         return (await adapter({
           method: op.method,
           url: collectionUrl(op),
@@ -220,8 +294,8 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
       },
 
       async update(id: string | number, payload: unknown): Promise<ActionResult | void> {
-        const definition = await requireDefinition();
-        const op = requireOp(definition, 'update');
+        const resource = await requireResource();
+        const op = requireOp(resource, 'update');
         return (await adapter({
           method: op.method,
           url: itemUrl(op, id),
@@ -231,8 +305,8 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
       },
 
       async remove(id: string | number): Promise<ActionResult | void> {
-        const definition = await requireDefinition();
-        const op = requireOp(definition, 'remove');
+        const resource = await requireResource();
+        const op = requireOp(resource, 'remove');
         return (await adapter({
           method: op.method,
           url: itemUrl(op, id),
@@ -240,7 +314,7 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
         })) as ActionResult | void;
       },
 
-      get fields(): ResourceField[] {
+      get fields(): View[] {
         return fieldsOf();
       },
 
@@ -248,14 +322,17 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
         return columnsOf();
       },
 
-      get filters(): ResourceField[] {
-        return fieldsOf().filter((field) => field.scope?.filter);
+      get filters(): View[] {
+        return scopedOf('filter');
       },
 
-      get properties(): ResourceField[] {
-        return fieldsOf().filter(
-          (field) => field.scope?.create === true || field.scope?.update === true,
-        );
+      get properties(): View[] {
+        return propertiesOf();
+      },
+
+      get schema(): Schema {
+        const resource = registryRef.value?.resources[name];
+        return resource?.schema ?? { type: 'object', properties: {} };
       },
     };
   }
@@ -266,7 +343,7 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
         return statusRef.value;
       },
       get data() {
-        return schemaRef.value ?? EMPTY_SCHEMA;
+        return registryRef.value ?? EMPTY_REGISTRY;
       },
       get error() {
         return errorRef.value;
@@ -277,11 +354,11 @@ export function useResources(options: UseResourcesOptions): ResourcePool {
       },
     },
     client,
-    has: (target: string) => schemaRef.value?.resources[target] !== undefined,
+    has: (target: string) => registryRef.value?.resources[target] !== undefined,
     get names() {
-      return Object.keys(schemaRef.value?.resources ?? {});
+      return Object.keys(registryRef.value?.resources ?? {});
     },
-  } satisfies ResourcePool;
+  };
 
   return pool;
 }

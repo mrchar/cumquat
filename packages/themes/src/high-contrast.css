@@ -17,6 +17,7 @@
     --color-cumquat-surface: #ffffff;
     --color-cumquat-surface-2: #ffffff;
     --color-cumquat-surface-3: #ffffff;
+    --color-cumquat-hover: #e5e5e5;
 
     /* 描边：纯黑，保证任何边界可辨 */
     --color-cumquat-border: #000000;

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { reactive } from 'vue';
 import { useChat } from '../../index';
 import type { ChatMessage } from '../../index';
-import { flushTimers, withScope } from '../helpers';
+import { flushTimers, mockFetch, withScope } from '../helpers';
 
 const tick = () => flushTimers(0);
 
@@ -19,52 +19,62 @@ const msg = (
 
 describe('useChat：历史加载（fetch）', () => {
   it('初始加载最新一页并按 total 判定 hasMore', async () => {
-    const fetch = vi.fn(async () => ({
+    const fetch = mockFetch<ChatMessage>(async () => ({
       list: [msg(1, '早'), msg(2, '晚')],
       total: 5,
     }));
     const chat = withScope(() => useChat({ fetch }));
-    expect(fetch).toHaveBeenCalledTimes(0);
+    expect(fetch.queries).toHaveLength(0);
     await tick();
-    expect(fetch).toHaveBeenCalledTimes(1);
-    expect(fetch).toHaveBeenCalledWith({ pagination: { currentPage: 1, pageSize: 20 } });
+    expect(fetch.queries).toHaveLength(1);
+    expect(fetch.queries[0]).toEqual({ page: 1, size: 20 });
     expect(chat.messages.value.map((m) => m.id)).toEqual([1, 2]);
     expect(chat.hasMore.value).toBe(true);
   });
 
   it('loadOlder 递增页码、结果前插并按 id 去重', async () => {
-    const fetch = vi
-      .fn<() => Promise<{ list: ChatMessage[]; total: number }>>()
-      .mockResolvedValueOnce({ list: [msg(2, '晚'), msg(3, '更晚')], total: 3 })
-      .mockResolvedValueOnce({ list: [msg(1, '早'), msg(2, '晚')], total: 3 });
+    const fetch = mockFetch<ChatMessage>(async ({ page = 1 }) => {
+      return page === 1
+        ? { list: [msg(2, '晚'), msg(3, '更晚')], total: 3 }
+        : { list: [msg(1, '早'), msg(2, '晚')], total: 3 };
+    });
     const chat = withScope(() => useChat({ fetch }));
     await tick();
     await chat.loadOlder();
-    expect(fetch).toHaveBeenLastCalledWith({ pagination: { currentPage: 2, pageSize: 20 } });
+    expect(fetch.queries.at(-1)).toEqual({ page: 2, size: 20 });
     expect(chat.messages.value.map((m) => m.id)).toEqual([1, 2, 3]);
     // 1 + 2 条历史 = total，取尽
     expect(chat.hasMore.value).toBe(false);
   });
 
   it('数组返回且凑满一页时 hasMore 为真', async () => {
-    const fetch = vi.fn(async () => [msg(1, 'a'), msg(2, 'b')]);
-    const chat = withScope(() => useChat({ fetch, pageSize: 2 }));
+    const fetch = mockFetch<ChatMessage>(async () => [msg(1, 'a'), msg(2, 'b')]);
+    const chat = withScope(() => useChat({ fetch, size: 2 }));
     await tick();
     expect(chat.hasMore.value).toBe(true);
   });
 
   it('历史加载失败回退页码并暴露错误，重试可恢复', async () => {
-    const fetch = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('网络断了'))
-      .mockResolvedValueOnce({ list: [msg(1, '早')], total: 1 });
+    const fetch = mockFetch<ChatMessage>(() => {
+      if (fetch.queries.length === 1) throw new Error('网络断了');
+      return { list: [msg(1, '早')], total: 1 };
+    });
     const chat = withScope(() => useChat({ fetch }));
     await tick();
     expect(chat.historyError.value).toBe('网络断了');
     await chat.loadOlder();
-    expect(fetch).toHaveBeenLastCalledWith({ pagination: { currentPage: 1, pageSize: 20 } });
+    expect(fetch.queries.at(-1)).toEqual({ page: 1, size: 20 });
     expect(chat.historyError.value).toBeUndefined();
     expect(chat.messages.value).toHaveLength(1);
+  });
+
+  it('作用域销毁时 abort 历史资源', async () => {
+    const fetch = mockFetch<ChatMessage>(async () => [msg(1, 'a')]);
+    const chat = withScope(() => useChat({ fetch }));
+    await tick();
+    expect(fetch.abortCount).toBe(0);
+    chat.$stop();
+    expect(fetch.abortCount).toBe(1);
   });
 });
 

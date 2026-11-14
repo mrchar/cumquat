@@ -6,10 +6,10 @@ Vue 3 组件库，核心理念是**逻辑与渲染解耦**：Headless 组合函�
 
 - **三层架构**：逻辑层（composables）→ 默认渲染层（components）→ 主题层（themes），单向依赖
 - **三大异步协议**：
-  - `fetch` — 组件主动查询（分页/搜索/排序），自动注入查询参数、防抖、竞态处理、四态渲染
+  - `fetch` — 资源工厂创建自带 `status/data/execute/abort` 的长命对象；组件只管调用（查询注入、防抖、四态渲染），竞态与取消的实现归开发者
   - `action` — 交互动作绑定 Promise，自动派生 loading/disabled，失败错误条或乐观回退
   - `subscribe` — 被动订阅外部推送数据，失败保留旧数据并支持重试
-- **统一契约**：`AsyncStateLike` / `ActionResult` / `SubscribeResult` 最小类型集合通信
+- **统一契约**：`Status` / `ActionResult` / `SubscribeResult` 最小类型集合通信
 - **资源池**：`useResources` 绑定服务器与 OpenAPI / Swagger 文档地址，即导出资源 list / detail / create / update / remove 方法与 `columns` / `properties` 字段元数据
 - **竞选机制**：`type` / `format` 元数据自动推断渲染——Table 单元格竞选管展示，Form 字段竞选管录入；插槽 > 显式指定 > 竞选推断 > 兜底，`bias` 加成与注册表覆盖支持宿主扩展
 - **语义化主题**：`cq-` 前缀语义 token + 5 套主题包（basic / light / dark / high-contrast / glass）
@@ -28,7 +28,7 @@ pnpm add @mrchar/cumquat
 ```ts
 import { composables, components } from '@mrchar/cumquat';
 
-const { useFetch, useSubscribe, message } = composables;
+const { usePagination, message } = composables;
 const { Button, Table, Cumquat } = components;
 ```
 
@@ -36,7 +36,7 @@ const { Button, Table, Cumquat } = components;
 
 ```ts
 // 仅组合函数
-import { useFetch } from '@mrchar/cumquat/composables';
+import { usePagination } from '@mrchar/cumquat/composables';
 // 仅组件
 import { Button } from '@mrchar/cumquat/components';
 ```
@@ -58,14 +58,43 @@ import { Button } from '@mrchar/cumquat/components';
 
 ```vue
 <script setup lang="ts">
+import { ref } from 'vue';
 import { components } from '@mrchar/cumquat';
 import type { components as c } from '@mrchar/cumquat';
 
 const { Table, Dialog } = components;
 
-const fetchUsers: c.Fetch<UserRow> = async (query) => {
-  const res = await fetch(`/api/users?page=${query.pagination?.currentPage ?? 1}`);
-  return res.json();
+// FetchHandler 是资源工厂：一次绑定一个 FetchResult 对象
+const fetchUsers: c.FetchHandler<UserRow> = () => {
+  const status = ref<c.Status>('idle');
+  const data = ref();
+  const error = ref();
+  const message = ref();
+  let controller: AbortController | undefined;
+  return {
+    status,
+    data,
+    error,
+    message,
+    async execute(query) {
+      controller?.abort();
+      controller = new AbortController();
+      status.value = 'pending';
+      try {
+        const res = await fetch(
+          `/api/users?page=${query.page ?? 1}`,
+          { signal: controller.signal },
+        );
+        data.value = await res.json();
+        status.value = 'success';
+      } catch (err) {
+        error.value = err;
+        message.value = err instanceof Error ? err.message : String(err);
+        status.value = 'error'; // 失败写状态，不 reject
+      }
+    },
+    abort: () => controller?.abort(),
+  };
 };
 
 const confirmAction = async () => {
@@ -74,7 +103,7 @@ const confirmAction = async () => {
 </script>
 
 <template>
-  <Table :columns="columns" :fetch="fetchUsers" :pagination="{ pageSize: 20 }" />
+  <Table :columns="columns" :fetch="fetchUsers" pagination :size="20" />
   <Dialog v-model:open="open" title="删除确认" :action="confirmAction">确定删除？</Dialog>
 </template>
 ```
@@ -83,7 +112,7 @@ const confirmAction = async () => {
 
 完整组件文档（含可编辑实时演示）位于仓库 [docs](https://github.com/mrchar/cumquat/tree/main/docs) 目录：
 
-- [远程数据 Fetch](https://github.com/mrchar/cumquat/blob/main/docs/fetch.md) / [交互动作 Action](https://github.com/mrchar/cumquat/blob/main/docs/action.md) / [数据订阅 Subscribe](https://github.com/mrchar/cumquat/blob/main/docs/subscribe.md)
+- [远程数据 Fetch](https://github.com/mrchar/cumquat/blob/main/docs/composables/fetch.md) / 交互动作 Action / 数据订阅 Subscribe（见 [composables 文档](https://github.com/mrchar/cumquat/tree/main/docs/composables)）
 - [组件文档](https://github.com/mrchar/cumquat/tree/main/docs/components) — 每个组件页含可编辑实时演示
 
 ## License

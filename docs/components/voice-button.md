@@ -12,16 +12,16 @@ title: VoiceButton 语音按钮
 
 按钮内建声波条反馈：未传 `level` 时按住中播放循环动画占位；传入 `level`（0~1 实时音量）后声波条高度随音量起伏——安静时贴底静止，说话时明显起伏，有无声音录入一目了然，提示由按钮本身承担。配合 [`useVoiceLevel`](/composables/voice) 可从麦克风采集真实音量（自适应底噪追踪，无声时归零）。
 
-`VoiceButtonAction` 结构：`{ key: string; label: string; direction?: 'left' | 'right' }`。
+[`VoiceButtonAction`](/types/view/scenarios#voicebuttonaction) 结构：`{ key: string; label: string; direction?: 'left' | 'right' }`。
 
-`VoiceReleasePayload` 结构：`{ result: 'confirm' | 'cancel' | 'action'; key?: string }`，`result` 为 `action` 时携带选中的功能 `key`。
+[`VoiceReleasePayload`](/types/view/scenarios#voicereleasepayload) 结构：`{ result: 'confirm' | 'cancel' | 'action'; key?: string }`，`result` 为 `action` 时携带选中的功能 `key`。
 
 | Prop        | 类型                  | 默认值       | 说明                                     |
 | ----------- | --------------------- | ------------ | ---------------------------------------- |
 | pressText   | `string`              | `按住说话`   | 静置文案                                 |
 | confirmText | `string`              | `松开发送`   | 按住后原地松开的确认文案                 |
 | cancelText  | `string`              | `松开取消`   | 上滑取消的提示文案                       |
-| actions     | `VoiceButtonAction[]` | `[]`         | 左右滑可选功能项，可传 0~N 个            |
+| actions     | [`VoiceButtonAction`](/types/view/scenarios#voicebuttonaction)`[]` | `[]`         | 左右滑可选功能项，可传 0~N 个            |
 | transcript  | `string`              | `''`         | 按住中的实时转录文字，非空时气泡改为浮动展示 |
 | level       | `number`              | -            | 实时音量 0~1，传入后按钮内声波条随音量起伏反馈录入状态 |
 | disabled    | `boolean`             | `false`      | 禁用                                     |
@@ -29,7 +29,7 @@ title: VoiceButton 语音按钮
 | 事件       | 参数                        | 说明                                       |
 | ---------- | --------------------------- | ------------------------------------------ |
 | pressstart | -                           | 按下（可据此开始录音）                     |
-| release    | `payload: VoiceReleasePayload` | 松开：confirm 确认 / cancel 取消 / action 选中功能 |
+| release    | `payload: `[`VoiceReleasePayload`](/types/view/scenarios#voicereleasepayload) | 松开：confirm 确认 / cancel 取消 / action 选中功能 |
 
 ```vue
 <VoiceButton @pressstart="startRecording" @release="onRelease" />

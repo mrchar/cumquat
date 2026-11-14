@@ -44,3 +44,64 @@ stop();
 - 环境不支持或权限被拒绝时 `error` 给出原因，`level` 保持 0，调用方可据此降级为纯动画
 - 组合函数作用域销毁时自动停止采集并释放麦克风，避免录音指示灯残留
 - 配合组件使用见 [VoiceButton](/components/voice-button) 的 `level` 属性
+
+## useVoiceButton
+
+语音按钮手势状态机：按住说话、上滑取消、左右滑选中功能项。按下后指针被捕获，移出按钮仍持续追踪；松开时按当前手势区产出结果。
+
+```ts
+const { holding, gesture, activeAction, onPointerDown, onPointerMove, onPointerUp, onPointerCancel } =
+  useVoiceButton(() => actions, {
+    cancelDistance: 48,
+    actionDistance: 48,
+    disabled: () => props.disabled,
+    onPressStart: () => voice.start(),
+    onRelease: ({ result, key }) => {
+      if (result === 'confirm') commit();
+      if (result === 'cancel') voice.stop();
+      if (result === 'action') runAction(key);
+    },
+  });
+```
+
+```ts
+function useVoiceButton(
+  actions: () => VoiceButtonAction[] | undefined,
+  options?: UseVoiceButtonOptions,
+): UseVoiceButtonReturn;
+
+interface VoiceButtonAction {
+  key: string;
+  label: string;
+  /** 滑动方向：left 左滑选中 / right 右滑选中；缺省按序号左右交替 */
+  direction?: 'left' | 'right';
+}
+
+type VoiceGesture = 'confirm' | 'cancel' | 'action';
+
+interface VoiceReleasePayload {
+  result: VoiceGesture;
+  /** result 为 action 时携带选中的功能键 */
+  key?: string;
+}
+```
+
+| 选项 | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| `cancelDistance` | `number` | `48` | 上滑取消的触发距离（px，位移向上量为负） |
+| `actionDistance` | `number` | `48` | 左右滑选中功能的触发距离（px） |
+| `disabled` | `() => boolean` | - | 返回 true 时忽略按下（禁用态） |
+| `onPressStart` | `() => void` | - | 按下回调（可据此开始录音） |
+| `onRelease` | `(payload: `[`VoiceReleasePayload`](/types/view/scenarios#voicereleasepayload)`) => void` | - | 松开回调；按住期间被系统打断按取消处理 |
+
+| 返回成员 | 类型 | 说明 |
+| --- | --- | --- |
+| `holding` | `Ref<boolean>` | 是否处于按住状态 |
+| `gesture` | `Ref<`[`VoiceGesture`](/types/view/scenarios#voicegesture)`>` | 当前手势区：`confirm` / `cancel` / `action` |
+| `activeAction` | `Ref<`[`VoiceButtonAction`](/types/view/scenarios#voicebuttonaction)` \| undefined>` | 当前命中的左右滑功能项 |
+| `onPointerDown` | `(event) => void` | 按下：开始按住、捕获指针、调用 `onPressStart` |
+| `onPointerMove` | `(event) => void` | 移动：按位移更新手势区 |
+| `onPointerUp` | `(event?) => void` | 松开：按当前手势区产出结果 |
+| `onPointerCancel` | `() => void` | 系统打断（来电、手势冲突等）：按取消收尾 |
+
+判定规则：纵向位移占优且上滑越过 `cancelDistance` 进入取消区；横向位移占优且越过 `actionDistance` 时按方向解析功能项；两轴独立判定，回到阈值内自动复位为确认区。`direction` 缺省时按功能项序号左右交替。

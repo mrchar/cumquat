@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue';
 import type { Ref } from 'vue';
+import type { MountTarget } from '../types';
 
 let toastId = 0;
 
@@ -13,6 +14,8 @@ export interface ToastItem<T = unknown> {
   duration: number;
   /** 自定义载荷（动作文案、图标等渲染所需数据） */
   meta?: T;
+  /** 本条消息的挂载目标，优先于渲染容器配置 */
+  target?: MountTarget;
   /** 悬停暂停期间剩余时长，关闭后为 0 */
   remaining: number;
   /** 是否常驻（duration <= 0），需手动关闭 */
@@ -24,7 +27,7 @@ export interface UseToastQueueOptions {
   duration?: number;
   /** 同时存在的最大条数，超出挤出最早项，默认 5 */
   max?: number;
-  /** 去重：相同 type+content 时不重复入队，默认 true */
+  /** 去重：相同 type+content+target 时不重复入队，默认 true */
   dedupe?: boolean;
 }
 
@@ -33,6 +36,8 @@ export interface PushToastOptions<T = unknown> {
   title?: string;
   meta?: T;
   closable?: boolean;
+  /** 本条消息的挂载目标 */
+  target?: MountTarget;
 }
 
 export interface UseToastQueueReturn<T = unknown> {
@@ -93,7 +98,10 @@ export function useToastQueue<T = unknown>(
     const duration = pushOptions.duration ?? defaultDuration;
 
     if (dedupe) {
-      const existed = items.value.find((item) => item.type === type && item.content === content);
+      const existed = items.value.find(
+        (item) =>
+          item.type === type && item.content === content && item.target === pushOptions.target,
+      );
       if (existed) return existed;
     }
 
@@ -104,6 +112,7 @@ export function useToastQueue<T = unknown>(
       title: pushOptions.title,
       duration,
       meta: pushOptions.meta,
+      target: pushOptions.target,
       remaining: duration,
       closable: pushOptions.closable ?? true,
     };

@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import type { ActionHandler, FetchHandler, SubscribeHandler } from '@cumquat/core';
 import {
   useActionValue,
   useFetchResource,
   useRovingFocus,
-  useSubscribe,
+  useSubscribeResource,
   useTreeModel,
   useTypeahead,
   type TreeFlatNode,
 } from '@cumquat/composables';
-import type { ActionLike, Fetch, SubscribeHandler } from '@cumquat/composables';
-import CqButton from '../basic/Button.vue';
+import { computed, ref } from 'vue';
+
+import CqButton from '../general/Button.vue';
 
 export interface TreeNode {
   key: string;
@@ -31,16 +32,16 @@ const props = withDefaults(
     checked?: string[];
     /**
      * 统一远程请求：挂载拉取根节点；展开未加载节点时以
-     * { filters: { parentKey } } 拉取子级，返回节点数组或 { list, total }
+     * { filters: { parentKey } } 拉取子级，返回节点数组或 { list, page, size, total }
      */
-    fetch?: Fetch<TreeNode>;
+    fetch?: FetchHandler<TreeNode>;
     /**
      * 订阅数据：挂载时调用，resolve 出的节点用于渲染（完整树，非懒加载）。
      * 优先级：subscribe > fetch > nodes
      */
     subscribe?: SubscribeHandler<TreeNode[]>;
     /** 勾选动作：新值先乐观应用，动作失败自动回退旧值；执行期间禁用勾选 */
-    action?: ActionLike;
+    action?: ActionHandler;
   }>(),
   {
     nodes: () => [],
@@ -108,7 +109,7 @@ const {
 });
 
 /* ---------------- subscribe：订阅型数据（完整树） ---------------- */
-const { state: subState } = useSubscribe<TreeNode[]>(() => props.subscribe);
+const { state: subState } = useSubscribeResource<TreeNode[]>(() => props.subscribe);
 
 const sourceNodes = computed<TreeNode[]>(() => {
   if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];

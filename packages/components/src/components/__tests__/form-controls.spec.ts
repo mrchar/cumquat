@@ -1,3 +1,6 @@
+import type { FieldRenderer } from '../../index';
+import type { View } from '@cumquat/core';
+import type { SelectOption } from '../data-entry/Select.vue';
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { h, nextTick } from 'vue';
@@ -20,8 +23,7 @@ import {
   VoiceButton,
   registerField,
 } from '../../index';
-import type { FieldRenderer, FormFieldMeta } from '../../index';
-import type { SelectOption } from '../form-controls/Select.vue';
+import { mockFetch } from './helpers';
 
 const wait = (ms = 0) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -252,36 +254,24 @@ describe('AutoComplete', () => {
     expect(items[0].text()).toBe('banana');
   });
 
-  it('统一 fetch 接收 FetchQuery 并支持分页结果', async () => {
-    const fetcher = vi.fn(
-      async (query: { keyword?: string }) =>
-        ({ list: [`${query.keyword ?? ''}-1`, `${query.keyword ?? ''}-2`], total: 2 }) as const,
+  it('fetch 工厂以 FetchQuery 驱动 execute 并支持分页结果', async () => {
+    const fetcher = mockFetch(
+      async (query) =>
+        [`${query.keyword ?? ''}-1`, `${query.keyword ?? ''}-2`] as string[],
     );
     const wrapper = mount(AutoComplete, { props: { fetch: fetcher } });
     await wrapper.find('input').setValue('x');
     await wait(350);
-    const lastCall = fetcher.mock.calls.at(-1)?.[0] as { keyword?: string };
-    expect(lastCall.keyword).toBe('x');
+    expect(fetcher.queries.at(-1)?.keyword).toBe('x');
     const items = wrapper.findAll('.cumquat-autocomplete__option');
     expect(items.map((item) => item.text())).toEqual(['x-1', 'x-2']);
   });
 
-  it('兼容旧签名 (keyword) => Promise<string[]>', async () => {
-    const fetcher = vi.fn(async (word: string) => [word.toUpperCase()]);
-    const wrapper = mount(AutoComplete, { props: { fetch: fetcher } });
-    await wrapper.find('input').setValue('ab');
-    await wait(350);
-    // 旧函数收到的参数字符串方法依旧可用
-    const arg = fetcher.mock.calls.at(-1)?.[0];
-    expect(String(arg).trim()).toBe('ab');
-    expect(wrapper.find('.cumquat-autocomplete__option').text()).toBe('AB');
-  });
-
   it('远程失败展示重试并可恢复', async () => {
     let failed = true;
-    const fetcher = vi.fn(async (word: string) => {
+    const fetcher = mockFetch(async (query) => {
       if (failed) throw new Error('boom');
-      return [`ok-${word}`];
+      return [`ok-${query.keyword}`];
     });
     const wrapper = mount(AutoComplete, { props: { fetch: fetcher } });
     await wrapper.find('input').setValue('q');
@@ -291,6 +281,16 @@ describe('AutoComplete', () => {
     await wrapper.find('.cumquat-autocomplete__retry').trigger('mousedown');
     await wait(350);
     expect(wrapper.find('.cumquat-autocomplete__option').text()).toBe('ok-q');
+  });
+
+  it('卸载时 abort 资源对象', async () => {
+    const fetcher = mockFetch(async () => ['a']);
+    const wrapper = mount(AutoComplete, { props: { fetch: fetcher } });
+    await wrapper.find('input').setValue('a');
+    await wait(350);
+    expect(fetcher.abortCount).toBe(0);
+    wrapper.unmount();
+    expect(fetcher.abortCount).toBe(1);
   });
 });
 
@@ -324,20 +324,20 @@ describe('Select', () => {
   });
 
   it('fetch 挂载即请求并渲染远程选项', async () => {
-    const fetcher = vi.fn(async () => [
+    const fetcher = mockFetch(async () => [
       { label: '远程一', value: 'r1' },
       { label: '远程二', value: 'r2' },
     ]);
     const wrapper = mount(Select, { props: { fetch: fetcher } });
     await wait();
     await wrapper.find('.cumquat-select__trigger').trigger('click');
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(fetcher.mock.calls[0][0].keyword).toBe('');
+    expect(fetcher.queries).toHaveLength(1);
+    expect(fetcher.queries[0]?.keyword).toBe('');
     expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(2);
   });
 
   it('输入关键词防抖重取并携带 keyword', async () => {
-    const fetcher = vi.fn(async (query: { keyword?: string }) =>
+    const fetcher = mockFetch(async (query) =>
       query.keyword
         ? [{ label: `匹配-${query.keyword}`, value: 'x' }]
         : [{ label: '默认项', value: 'd' }],
@@ -347,7 +347,7 @@ describe('Select', () => {
     await wrapper.find('.cumquat-select__trigger').trigger('click');
     await wrapper.find('.cumquat-select__search').setValue('北');
     await wait(350);
-    expect(fetcher.mock.calls.at(-1)?.[0].keyword).toBe('北');
+    expect(fetcher.queries.at(-1)?.keyword).toBe('北');
     await wait();
     expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(1);
     expect(wrapper.find('.cumquat-select__option').text()).toContain('匹配-北');
@@ -355,7 +355,7 @@ describe('Select', () => {
 
   it('加载失败展示重试，点击后恢复', async () => {
     let failed = true;
-    const fetcher = vi.fn(async () => {
+    const fetcher = mockFetch(async () => {
       if (failed) throw new Error('boom');
       return [{ label: '恢复项', value: 'ok' }];
     });
@@ -380,8 +380,8 @@ describe('Select', () => {
   }
 
   function makePagedFetcher(totalPerPage = 2) {
-    return vi.fn(async (query: { pagination?: { currentPage: number } }) => {
-      const page = query.pagination?.currentPage ?? 1;
+    return mockFetch(async (query) => {
+      const page = query.page ?? 1;
       return {
         list: Array.from({ length: totalPerPage }, (_, i) => ({
           label: `第${page}页第${i + 1}项`,
@@ -392,16 +392,16 @@ describe('Select', () => {
     });
   }
 
-  it('fetch 注入分页参数：首页 currentPage 1，pageSize 可配置', async () => {
+  it('fetch 注入分页参数：首页 page 1，size 可配置', async () => {
     const fetcher = makePagedFetcher();
-    mount(Select, { props: { fetch: fetcher, pageSize: 10 } });
+    mount(Select, { props: { fetch: fetcher, size: 10 } });
     await wait();
-    expect(fetcher.mock.calls[0][0].pagination).toEqual({ currentPage: 1, pageSize: 10 });
+    expect(fetcher.queries[0]).toMatchObject({ page: 1, size: 10 });
   });
 
   it('滚动触底以递增页码取下一页并累积，取完后不再请求', async () => {
     const fetcher = makePagedFetcher();
-    const wrapper = mount(Select, { props: { fetch: fetcher, pageSize: 2 } });
+    const wrapper = mount(Select, { props: { fetch: fetcher, size: 2 } });
     await wait();
     await wrapper.find('.cumquat-select__trigger').trigger('click');
     expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(2);
@@ -419,12 +419,12 @@ describe('Select', () => {
     // total 已取满，再触底不应产生新请求
     await scrollToBottom(element, () => dropdown.trigger('scroll'));
     await wait();
-    expect(fetcher.mock.calls.map((call) => call[0].pagination?.currentPage)).toEqual([1, 2, 3]);
+    expect(fetcher.queries.map((query) => query.page)).toEqual([1, 2, 3]);
   });
 
   it('跨页重复 value 自动去重', async () => {
-    const fetcher = vi.fn(async (query: { pagination?: { currentPage: number } }) => {
-      const page = query.pagination?.currentPage ?? 1;
+    const fetcher = mockFetch(async (query) => {
+      const page = query.page ?? 1;
       return {
         list:
           page === 1
@@ -436,7 +436,7 @@ describe('Select', () => {
         total: 3,
       };
     });
-    const wrapper = mount(Select, { props: { fetch: fetcher, pageSize: 1 } });
+    const wrapper = mount(Select, { props: { fetch: fetcher, size: 1 } });
     await wait();
     await wrapper.find('.cumquat-select__trigger').trigger('click');
     const dropdown = wrapper.find('.cumquat-select__dropdown');
@@ -447,7 +447,7 @@ describe('Select', () => {
 
   it('关面板回到第 1 页并丢弃累积的翻页数据', async () => {
     const fetcher = makePagedFetcher();
-    const wrapper = mount(Select, { props: { fetch: fetcher, pageSize: 2 } });
+    const wrapper = mount(Select, { props: { fetch: fetcher, size: 2 } });
     await wait();
     await wrapper.find('.cumquat-select__trigger').trigger('click');
     const dropdown = wrapper.find('.cumquat-select__dropdown');
@@ -459,7 +459,7 @@ describe('Select', () => {
     await wait();
     await wrapper.find('.cumquat-select__trigger').trigger('click');
     await wait();
-    expect(fetcher.mock.calls.at(-1)?.[0].pagination?.currentPage).toBe(1);
+    expect(fetcher.queries.at(-1)?.page).toBe(1);
     expect(wrapper.findAll('.cumquat-select__option')).toHaveLength(2);
   });
 
@@ -506,14 +506,14 @@ describe('Select', () => {
   });
 
   it('多选 + fetch：渲染搜索框且过滤交由服务端', async () => {
-    const fetcher = vi.fn(async () => [{ label: '项一', value: 'x1' }]);
+    const fetcher = mockFetch(async () => [{ label: '项一', value: 'x1' }]);
     const wrapper = mount(Select, { props: { multiple: true, fetch: fetcher } });
     await wait();
     await wrapper.find('.cumquat-select__trigger').trigger('click');
     expect(wrapper.find('.cumquat-select__search').exists()).toBe(true);
     await wrapper.find('.cumquat-select__search').setValue('项');
     await wait(350);
-    expect(fetcher.mock.calls.at(-1)?.[0].keyword).toBe('项');
+    expect(fetcher.queries.at(-1)?.keyword).toBe('项');
   });
 
   it('条目达到阈值切虚拟滚动：仅渲染可视窗口并以占位撑高', async () => {
@@ -554,7 +554,7 @@ describe('TreeSelect', () => {
       label: string;
       leaf?: boolean;
     }
-    const fetcher = vi.fn(async ({ filters }: { filters?: { parentKey?: string } }) =>
+    const fetcher = mockFetch(async ({ filters }) =>
       filters?.parentKey
         ? ([{ key: 'a1', label: '远程子节点', leaf: true }] as Node[])
         : ([{ key: 'a', label: '远程父节点' }] as Node[]),
@@ -566,31 +566,42 @@ describe('TreeSelect', () => {
     await wrapper.find('.cumquat-tree-select__expander').trigger('click');
     await wait();
     await wait();
-    expect(fetcher.mock.calls.at(-1)?.[0].filters).toEqual({ parentKey: 'a' });
+    expect(fetcher.queries.at(-1)?.filters).toEqual({ parentKey: 'a' });
     const nodes = wrapper.findAll('.cumquat-tree-select__leaf');
     expect(nodes.some((node) => node.text().includes('远程子节点'))).toBe(true);
   });
 });
 
-describe('Form 字段竞选', () => {
-  const baseProperties: FormFieldMeta[] = [
-    { name: 'name', label: '姓名', type: 'string' },
-    { name: 'age', label: '年龄', type: 'number' },
-    { name: 'active', label: '启用', type: 'boolean' },
-    {
-      name: 'status',
-      label: '状态',
-      type: 'enum',
-      options: [
-        { label: '启用', value: 'active' },
-        { label: '禁用', value: 'disabled' },
-      ],
-    },
-    { name: 'birthday', label: '生日', type: 'date' },
-  ];
+describe('Form 字段视图', () => {
+  /** 字段视图：label / component / validation 三要素 */
+  const view = (name: string, label: string, extra: Partial<View> = {}): View => ({
+    name,
+    label,
+    component: 'input',
+    validation: { required: false, rules: [] },
+    ...extra,
+  });
 
-  it('type 推断：string→输入框、number→数值、boolean→开关、enum→下拉、date→日期', () => {
-    const wrapper = mount(Form, { props: { properties: baseProperties } });
+  it('component 决定控件：input / number / switch / select / date', () => {
+    const wrapper = mount(Form, {
+      props: {
+        properties: [
+          view('name', '姓名'),
+          view('age', '年龄', { component: 'number' }),
+          view('active', '启用', { component: 'switch' }),
+          view('status', '状态', {
+            component: 'select',
+            props: {
+              options: [
+                { label: '启用', value: 'active' },
+                { label: '禁用', value: 'disabled' },
+              ],
+            },
+          }),
+          view('birthday', '生日', { component: 'date' }),
+        ],
+      },
+    });
     const items = wrapper.findAll('.cumquat-form-item');
     expect(items).toHaveLength(5);
     expect(items[0].find('.cumquat-form-item__label').text()).toContain('姓名');
@@ -601,14 +612,14 @@ describe('Form 字段竞选', () => {
     expect(items[4].find('.cumquat-date-picker').exists()).toBe(true);
   });
 
-  it('format 推断：textarea 多行、email/uri/password 原生输入类型', () => {
+  it('props.format 决定原生输入类型与多行（转换器把格式投影到 props）', () => {
     const wrapper = mount(Form, {
       props: {
         properties: [
-          { name: 'bio', label: '简介', type: 'string', format: 'textarea' },
-          { name: 'email', label: '邮箱', type: 'string', format: 'email' },
-          { name: 'site', label: '主页', type: 'string', format: 'uri' },
-          { name: 'pwd', label: '密码', type: 'string', format: 'password' },
+          view('bio', '简介', { props: { format: 'textarea' } }),
+          view('email', '邮箱', { props: { format: 'email' } }),
+          view('site', '主页', { props: { format: 'uri' } }),
+          view('pwd', '密码', { props: { format: 'password' } }),
         ],
       },
     });
@@ -619,10 +630,10 @@ describe('Form 字段竞选', () => {
     expect(items[3].find('input[type="password"]').exists()).toBe(true);
   });
 
-  it('required 派生校验：空提交报错，录入修正即时清除', async () => {
+  it('validation.required 派生校验：空提交报错，录入修正即时清除', async () => {
     const wrapper = mount(Form, {
       props: {
-        properties: [{ name: 'name', label: '姓名', type: 'string', required: true }],
+        properties: [view('name', '姓名', { validation: { required: true, rules: [] } })],
       },
     });
     await wrapper.find('form').trigger('submit');
@@ -635,17 +646,61 @@ describe('Form 字段竞选', () => {
     expect(wrapper.find('.cumquat-form-item__error').exists()).toBe(false);
   });
 
+  it('action：校验通过后由组件自行调用，submit 事件照常触发', async () => {
+    const action = vi.fn(() => Promise.resolve({ status: 'success' }));
+    const wrapper = mount(Form, {
+      props: {
+        properties: [view('name', '姓名', { validation: { required: true, rules: [] } })],
+        action,
+      },
+    });
+    // 校验失败：不执行 action
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(action).not.toHaveBeenCalled();
+
+    // 校验通过：组件自行执行 action，入参为整表值
+    await wrapper.find('input').setValue('Amber');
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(action).toHaveBeenCalledTimes(1);
+    expect(action.mock.calls[0][0]).toMatchObject({ name: 'Amber' });
+    expect(wrapper.emitted('submit')).toHaveLength(1);
+  });
+
+  it('action 执行期间组件自持 submitting 状态并禁用整表', async () => {
+    let release: () => void = () => {};
+    const action = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ status: 'success' });
+        }),
+    );
+    const wrapper = mount(Form, {
+      props: {
+        properties: [view('name', '姓名', { validation: { required: false, rules: [] } })],
+        action,
+      },
+    });
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(wrapper.classes()).toContain('cumquat-form--disabled');
+    expect((wrapper.vm as unknown as { submitting: boolean }).submitting).toBe(true);
+    release();
+    await wait();
+    expect(wrapper.classes()).not.toContain('cumquat-form--disabled');
+    expect((wrapper.vm as unknown as { submitting: boolean }).submitting).toBe(false);
+  });
+
   it('自注册控件（Select）同样继承派生必填规则', async () => {
     const wrapper = mount(Form, {
       props: {
         properties: [
-          {
-            name: 'status',
-            label: '状态',
-            type: 'enum',
-            required: true,
-            options: [{ label: '启用', value: 'active' }],
-          },
+          view('status', '状态', {
+            component: 'select',
+            props: { options: [{ label: '启用', value: 'active' }] },
+            validation: { required: true, rules: [] },
+          }),
         ],
       },
     });
@@ -657,7 +712,7 @@ describe('Form 字段竞选', () => {
   it('宿主 rules 按字段名叠加在派生规则之后', async () => {
     const wrapper = mount(Form, {
       props: {
-        properties: [{ name: 'name', label: '姓名', type: 'string', required: true }],
+        properties: [view('name', '姓名', { validation: { required: true, rules: [] } })],
         rules: {
           name: (value: unknown) => (value === 'bad' ? '不允许该值' : true),
         },
@@ -669,10 +724,15 @@ describe('Form 字段竞选', () => {
     expect(wrapper.find('.cumquat-form-item__error').text()).toBe('不允许该值');
   });
 
-  it('显式指定 control 跳过竞选', () => {
+  it('component 显式指定跳过竞选', () => {
     const wrapper = mount(Form, {
       props: {
-        properties: [{ name: 'status', label: '状态', type: 'enum', control: 'input' }],
+        properties: [
+          view('status', '状态', {
+            component: 'input',
+            props: { options: [{ label: '启用', value: 'active' }] },
+          }),
+        ],
       },
     });
     expect(wrapper.find('.cumquat-select').exists()).toBe(false);
@@ -680,19 +740,27 @@ describe('Form 字段竞选', () => {
   });
 
   it('bias 加成可翻转竞选结果', () => {
+    const theme: FieldRenderer = {
+      name: 'theme',
+      fitness: () => 50,
+      render: (_value, _field, ctx) =>
+        h('div', { class: 'cumquat-field--theme', onClick: () => ctx.setValue('dark') }),
+    };
     const wrapper = mount(Form, {
       props: {
-        properties: [{ name: 'active', label: '启用', type: 'boolean', bias: { select: 100 } }],
+        properties: [
+          view('active', '启用', { component: 'unknown', props: { bias: { theme: 100 } } }),
+        ],
+        controls: [theme],
       },
     });
-    // switch（90）原本胜出，加成后 select（100）反超
-    expect(wrapper.find('[aria-checked]').exists()).toBe(false);
-    expect(wrapper.find('.cumquat-select').exists()).toBe(true);
+    // 未注册 component 回落竞选；theme（50 + 100）反超默认输入框
+    expect(wrapper.find('.cumquat-field--theme').exists()).toBe(true);
   });
 
   it('字段插槽优先级最高', () => {
     const wrapper = mount(Form, {
-      props: { properties: [{ name: 'name', label: '姓名', type: 'string' }] },
+      props: { properties: [view('name', '姓名')] },
       slots: { 'field-name': '<div class="custom-field">自定义</div>' },
     });
     expect(wrapper.find('.custom-field').exists()).toBe(true);
@@ -703,30 +771,33 @@ describe('Form 字段竞选', () => {
     const wrapper = mount(Form, {
       props: {
         modelValue: { name: '' },
-        properties: [{ name: 'name', label: '姓名', type: 'string' }],
+        properties: [view('name', '姓名')],
       },
     });
     await wrapper.find('input').setValue('Amber');
     await wait();
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([{ name: 'Amber' }]);
     const disabledForm = mount(Form, {
-      props: { disabled: true, properties: [{ name: 'name', label: '姓名', type: 'string' }] },
+      props: { disabled: true, properties: [view('name', '姓名')] },
     });
     expect(disabledForm.find('input').attributes('disabled')).toBeDefined();
   });
 
-  it('局部 controls 参与竞选，ResourceField 附加字段（scope）无害', async () => {
+  it('局部 controls 参与竞选，自定义 props 可驱动评分', async () => {
     const colorField: FieldRenderer = {
       name: 'color',
-      fitness: (field) => (field.format === 'color' ? 95 : 0),
+      fitness: (field) => (field.props?.format === 'color' ? 95 : 0),
       render: (_value, _field, ctx) =>
         h('div', { class: 'cumquat-field--color-custom', onClick: () => ctx.setValue('#ff0000') }),
     };
-    // ResourceField 形状：额外 scope 字段结构兼容
-    const properties = [
-      { name: 'theme', label: '主题色', type: 'string', format: 'color', scope: { create: true } },
-    ] as unknown as FormFieldMeta[];
-    const wrapper = mount(Form, { props: { properties, controls: [colorField] } });
+    const wrapper = mount(Form, {
+      props: {
+        properties: [
+          view('theme', '主题色', { component: 'unknown', props: { format: 'color' } }),
+        ],
+        controls: [colorField],
+      },
+    });
     expect(wrapper.find('.cumquat-field--color-custom').exists()).toBe(true);
     await wrapper.find('.cumquat-field--color-custom').trigger('click');
     await wait();
@@ -736,25 +807,110 @@ describe('Form 字段竞选', () => {
   it('registerField 同名覆盖内建实现，全局生效', () => {
     registerField({
       name: 'switch',
-      fitness: (field) => (field.type === 'boolean' ? 90 : 0),
+      fitness: () => 90,
       render: (_value, _field, ctx) =>
         h('div', { class: 'cumquat-field--switch-custom', onClick: () => ctx.setValue(true) }),
     });
+    try {
+      const wrapper = mount(Form, {
+        props: { properties: [view('active', '启用', { component: 'switch' })] },
+      });
+      expect(wrapper.find('.cumquat-field--switch-custom').exists()).toBe(true);
+    } finally {
+      // 还原内建实现，避免影响同文件后续用例
+      registerField({
+        name: 'switch',
+        fitness: (field) => (field.component === 'switch' ? 90 : 0),
+        render: (value, _field, ctx) =>
+          h(Switch, {
+            modelValue: value === true,
+            'onUpdate:modelValue': (next: boolean) => ctx.setValue(next),
+            disabled: ctx.disabled,
+          }),
+      });
+    }
+  });
+
+  it('schema 渲染字段与必填星号，提交后按规则校验', async () => {
     const wrapper = mount(Form, {
-      props: { properties: [{ name: 'active', label: '启用', type: 'boolean' }] },
+      props: {
+        schema: {
+          type: 'object',
+          required: ['name'],
+          properties: {
+            name: { type: 'string', title: '姓名', minLength: 2 },
+            age: { type: 'number', title: '年龄', minimum: 18 },
+          },
+        },
+      },
     });
-    expect(wrapper.find('.cumquat-field--switch-custom').exists()).toBe(true);
-    // 还原内建实现，避免影响同文件后续用例
-    registerField({
-      name: 'switch',
-      fitness: (field) => (field.type === 'boolean' ? 90 : 0),
-      render: (value, _field, ctx) =>
-        h(Switch, {
-          modelValue: value === true,
-          'onUpdate:modelValue': (next: boolean) => ctx.setValue(next),
-          disabled: ctx.disabled,
-        }),
+    const items = wrapper.findAll('.cumquat-form-item');
+    expect(items).toHaveLength(2);
+    expect(items[0].find('.cumquat-form-item__required').exists()).toBe(true);
+    expect(items[1].find('.cumquat-form-item__required').exists()).toBe(false);
+
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(wrapper.findAll('.cumquat-form-item__error').map((node) => node.text())).toEqual([
+      '姓名不能为空',
+    ]);
+    expect(wrapper.emitted('invalid')).toHaveLength(1);
+
+    await wrapper.find('input').setValue('A');
+    await wait();
+    expect(wrapper.find('.cumquat-form-item__error').text()).toBe('姓名长度不能少于2个字符');
+
+    await wrapper.find('input').setValue('Amber');
+    await wait();
+    expect(wrapper.find('.cumquat-form-item__error').exists()).toBe(false);
+  });
+
+  it('schema 下显式 rules 优先执行，且不与派生规则重复报错', async () => {
+    const wrapper = mount(Form, {
+      props: {
+        schema: {
+          type: 'object',
+          required: ['name'],
+          properties: { name: { type: 'string', title: '姓名' } },
+        },
+        rules: {
+          name: (value: unknown) => (value === 'bad' ? '不允许该值' : true),
+        },
+      },
     });
+    await wrapper.find('input').setValue('bad');
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(wrapper.findAll('.cumquat-form-item__error')).toHaveLength(1);
+    expect(wrapper.find('.cumquat-form-item__error').text()).toBe('不允许该值');
+  });
+
+  it('schema 跨字段检查在整表提交时生效', async () => {
+    const wrapper = mount(Form, {
+      props: {
+        modelValue: { password: 'abc123', confirm: 'abc' },
+        schema: {
+          type: 'object',
+          properties: {
+            password: { type: 'string', title: '密码' },
+            confirm: { type: 'string', title: '确认密码' },
+          },
+        },
+        validation: {
+          checks: [
+            {
+              fields: ['password', 'confirm'],
+              validate: (values) =>
+                values.password === values.confirm ? true : '两次输入的密码不一致',
+            },
+          ],
+        },
+      },
+    });
+    await wrapper.find('form').trigger('submit');
+    await wait();
+    expect(wrapper.find('.cumquat-form-item__error').text()).toBe('两次输入的密码不一致');
+    expect(wrapper.emitted('invalid')).toHaveLength(1);
   });
 
   it('未绑定 properties 时保持既有插槽用法', () => {

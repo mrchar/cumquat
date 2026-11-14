@@ -12,6 +12,7 @@ title: Loading 加载
 | text       | `string`               | `''`    | 文案                                            |
 | active     | `boolean`              | `true`  | 局部加载是否激活（非全屏形态使用）              |
 | fullscreen | `boolean`              | `false` | 全屏遮罩形态：可见性与全局 loading 服务计数联动 |
+| appendTo   | [`MountTarget`](/types/basics/overlay#mounttarget)          | -       | 全屏形态的 Teleport 目标；继承配置，最终回退 body |
 
 Expose：`service`（全局 loading 服务，可 `service.show() / hide()`）。
 

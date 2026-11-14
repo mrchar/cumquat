@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, h } from 'vue';
-import { useFetchResource, useSubscribe } from '@cumquat/composables';
-import type { Fetch, SubscribeHandler } from '@cumquat/composables';
-import CqButton from '../basic/Button.vue';
+import type { FetchHandler, Option, SubscribeHandler } from '@cumquat/core';
+import { useFetchResource, useSubscribeResource } from '@cumquat/composables';
+
+import CqButton from '../general/Button.vue';
 import { resolveCell } from './cells';
 import type { CellColumn, CellRenderer } from './cells';
 
@@ -13,12 +14,14 @@ import type { CellColumn, CellRenderer } from './cells';
 export interface DescriptionProperty {
   key: string;
   label: string;
-  /** 保存格式提示：string / number / boolean / date / datetime / enum */
+  /** 类型提示：JSON Schema 子集 */
   type?: CellColumn['type'];
-  /** 内容格式提示：email / uri / tag / status…（原样透传文档声明） */
+  /** 内容格式提示：date / date-time / email / uri / tag / status…（原样透传） */
   format?: string;
+  /** 枚举值：单元格据此识别枚举列 */
+  enum?: CellColumn['enum'];
   /** 枚举选项：enum 形态据此显示 label */
-  options?: Array<{ label: string; value: string | number }>;
+  options?: Option[];
   /** 显式指定单元格渲染器名称，跳过竞选 */
   cell?: string;
   /** 竞选加成：对指定渲染器加减分 */
@@ -41,7 +44,7 @@ const props = withDefaults(
     /**
      * 统一远程请求：挂载即拉取数据对象，返回 Record
      */
-    fetch?: Fetch<Record<string, unknown>>;
+    fetch?: FetchHandler<Record<string, unknown>>;
     /**
      * 订阅数据：挂载时调用，resolve 出的数据对象用于渲染。
      * 优先级：subscribe > fetch > data
@@ -66,7 +69,7 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<Record<str
 );
 
 /* ---------------- subscribe：订阅型数据 ---------------- */
-const { state: subState } = useSubscribe<Record<string, unknown>>(() => props.subscribe);
+const { state: subState } = useSubscribeResource<Record<string, unknown>>(() => props.subscribe);
 
 const sourceData = computed<Record<string, unknown> | undefined>(() => {
   if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? {};
@@ -99,6 +102,7 @@ function toCellColumn(property: DescriptionProperty): CellColumn {
     title: property.label,
     type: property.type,
     format: property.format,
+    enum: property.enum,
     options: property.options,
     cell: property.cell,
     bias: property.bias,

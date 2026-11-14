@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import { useControllableModel } from '../core/useControllableModel';
 import { useTimeoutFn } from '../core/useTimeoutFn';
-import type { ControlledProps } from '../types';
+import type { ControlledProps } from '../core/useControllableModel';
 
 export interface UseOpenOptions extends ControlledProps<boolean> {
   /** 打开延迟（毫秒），默认 0 */

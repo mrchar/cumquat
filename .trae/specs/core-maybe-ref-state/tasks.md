@@ -1,0 +1,25 @@
+# Tasks：core 异步契约字段统一为 MaybeRefOrGetter
+
+- [x] 1. core 类型改造
+  - [x] `status.ts`：`AsyncResult` 四字段改 `MaybeRefOrGetter`
+  - [x] `fetch.ts`：`FetchResult` 四字段改 `MaybeRefOrGetter`
+- [x] 2. core 解包助手
+  - [x] `result.ts` 的 `extractAsyncFailure` / `asyncErrorText` 使用 `toValue`
+  - [x] `result.test.ts` 增加 ref / getter 用例
+- [x] 3. composables 适配
+  - [x] `data/fetch.ts` 全部字段读取改 `toValue`
+  - [x] `data/useSubscribe.ts` 状态判断与 data 写入改 `toValue`
+  - [x] `data/useChat.ts` 字段读取改 `toValue`
+- [x] 4. components 适配
+  - [x] `Mention.vue`、`AutoComplete.vue` 的 handle 字段读取改 `toValue`
+  - [x] `Button.vue` 的成功文案读取改 `toValue`
+- [x] 5. 测试与构建
+  - [x] 修正测试中的 `.status.value` / `.data.value` 等访问
+  - [x] 重建 core、composables dist
+  - [x] core / composables / components 测试（`--pool=threads`）
+- [x] 6. 类型检查
+  - [x] core、composables、components、cumquat 四包 `vp check --no-fmt`
+- [x] 7. 文档与技能同步
+  - [x] `docs/types/basics/core.md`、`docs/composables/fetch.md`、`docs/state.md`
+  - [x] `docs/types/basics/common.md`、`skills/cumquat-composables/SKILL.md`、`skills/cumquat-components/SKILL.md`
+  - [x] `docs` vitepress build

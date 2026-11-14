@@ -114,7 +114,7 @@ title: 组件清单与优先级
 >
 > - **内联逻辑**：仅该组件使用、与组件强绑定的逻辑，直接在组件 `<script setup>` 中按需实现，
 >   不抽取为组合函数、不另建 `useXxx` 文件；其中无响应式行为的纯计算可写为组件内普通函数。
-> - **复用组合函数**：跨组件复用或宿主可脱离组件独立使用的逻辑，统一来自 `@mrchar/cumquat/composables`
+> - **复用组合函数**：跨组件复用或宿主可脱离组件独立使用的逻辑，统一由主包 `@mrchar/cumquat` 导出
 >   （完整清单见 [组合函数文档](./composables/index.md)）。
 >
 > 标注"纯展示"的组件没有专属逻辑，模板直接渲染插槽与语义结构。
@@ -249,7 +249,7 @@ title: 组件清单与优先级
 - **Descriptions 描述列表**：纯展示
 - **List 列表**
   - 内联逻辑：数据驱动与插槽编排双模式、渲染降级链（插槽 > 映射器驱动 Meta > 文本兜底）、分页触底累积加载、四态渲染
-  - 复用组合函数：`useFetchResource`、`useSubscribe`
+  - 复用组合函数：`useFetchResource`、`useSubscribeResource`
 - **Layout 布局**
   - 内联逻辑：侧栏折叠状态、布局区块编排
   - 复用组合函数：`useToggle`、`useMediaQuery`

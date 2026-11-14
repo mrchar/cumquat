@@ -35,6 +35,7 @@
   --color-cumquat-surface: #ffffff;
   --color-cumquat-surface-2: #f8fafc;
   --color-cumquat-surface-3: #f1f5f9;
+  --color-cumquat-hover: #f5f5f5;
 
   /* 描边 */
   --color-cumquat-border: #e2e8f0;
@@ -110,7 +111,7 @@
     @apply text-cumquat-text;
   }
   .cumquat-button--ghost:hover {
-    @apply bg-cumquat-surface-3;
+    @apply bg-cumquat-hover;
   }
   .cumquat-button--sm {
     @apply h-8 px-3 text-xs;
@@ -133,7 +134,19 @@
 
   /* ---------- Icon ---------- */
   .cumquat-icon {
-    @apply size-4 shrink-0;
+    @apply shrink-0;
+  }
+
+  .cumquat-icon--sm {
+    @apply size-4;
+  }
+
+  .cumquat-icon--md {
+    @apply size-5;
+  }
+
+  .cumquat-icon--lg {
+    @apply size-6;
   }
 
   /* ---------- Input ---------- */
@@ -213,7 +226,7 @@
     @apply h-0 border-t border-dashed border-cumquat-border bg-transparent;
   }
   .cumquat-divider--vertical .cumquat-divider__line {
-    @apply w-px bg-cumquat-border;
+    @apply h-full w-px flex-none bg-cumquat-border;
   }
   .cumquat-divider--vertical.cumquat-divider--dashed .cumquat-divider__line {
     @apply w-0 border-l border-dashed border-cumquat-border bg-transparent;
@@ -1059,6 +1072,37 @@
   .cumquat-table__th-help-icon svg {
     @apply size-3.5;
   }
+  .cumquat-table__filter {
+    @apply relative inline-flex shrink-0;
+  }
+  .cumquat-table__filter-trigger {
+    @apply inline-flex size-5 cursor-pointer items-center justify-center rounded text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-table__filter-trigger:hover,
+  .cumquat-table__filter-trigger--active {
+    @apply text-cumquat-accent;
+  }
+  .cumquat-table__filter-trigger svg {
+    @apply size-3.5;
+  }
+  .cumquat-table__filter-panel {
+    @apply absolute top-full right-0 z-20 mt-1 min-w-32 list-none rounded-cumquat border border-cumquat-border bg-cumquat-surface p-1 font-normal shadow-cumquat-overlay;
+  }
+  .cumquat-table__filter-panel li label {
+    @apply flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm whitespace-nowrap text-cumquat-text;
+  }
+  .cumquat-table__filter-panel li label:hover {
+    @apply bg-cumquat-surface-2;
+  }
+  .cumquat-table__filter-state {
+    @apply px-2 py-1 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-table__filter-clear {
+    @apply w-full cursor-pointer rounded px-2 py-1 text-left text-xs text-cumquat-accent;
+  }
+  .cumquat-table__filter-clear:hover {
+    @apply bg-cumquat-surface-2;
+  }
   .cumquat-table__th--left,
   .cumquat-table__td--left {
     @apply text-left;
@@ -1095,6 +1139,11 @@
   }
   .cumquat-table__errorbar {
     @apply flex items-center gap-2 border-b border-cumquat-border px-4 py-2 text-sm text-cumquat-danger;
+  }
+  /* 失败重试：ghost 按钮收成链接样式（无内边距与背景，主色文字，悬停下划线） */
+  .cumquat-table__retry {
+    @apply h-auto px-0 text-cumquat-accent underline-offset-2;
+    @apply hover:bg-transparent hover:text-cumquat-accent-hover hover:underline;
   }
   .cumquat-table__checkbox {
     @apply size-4 cursor-pointer accent-cumquat-accent;
@@ -1692,6 +1741,13 @@
  */
 @layer components {
   /* ---------- Message ---------- */
+  .cumquat-message-container {
+    @apply fixed left-1/2 top-6 z-[9999] flex w-[min(92vw,28rem)] -translate-x-1/2 flex-col gap-2;
+    pointer-events: none;
+  }
+  .cumquat-message-container > .cumquat-message {
+    pointer-events: auto;
+  }
   .cumquat-message {
     @apply flex items-center gap-2.5 rounded-cumquat px-4 py-2.5 text-sm shadow-cumquat-overlay;
   }
@@ -2151,7 +2207,7 @@
     @apply flex w-full cursor-pointer items-center justify-between rounded px-3 py-2 text-sm font-medium text-cumquat-text transition-colors;
   }
   .cumquat-menu__group:hover {
-    @apply bg-cumquat-surface-2;
+    @apply bg-cumquat-hover;
   }
   .cumquat-menu__chevron {
     @apply size-3.5 text-cumquat-text-muted transition-transform;
@@ -2168,11 +2224,14 @@
   .cumquat-menu__item--active {
     @apply bg-cumquat-accent-soft font-medium text-cumquat-accent;
   }
+  .cumquat-menu__item--active:hover {
+    @apply bg-cumquat-accent-soft;
+  }
   .cumquat-menu__item--inactive {
     @apply text-cumquat-text-muted;
   }
   .cumquat-menu__item--inactive:hover {
-    @apply bg-cumquat-surface-2 text-cumquat-text;
+    @apply bg-cumquat-hover text-cumquat-text;
   }
   .cumquat-menu__state {
     @apply px-3 py-4 text-sm text-cumquat-text-muted;

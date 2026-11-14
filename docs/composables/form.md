@@ -6,6 +6,8 @@ title: 表单模型
 
 无头表单：字段注册、校验、提交、重置与脏检查。Form / FormItem 组件就是它的默认渲染壳；宿主也可以脱离组件做无头表单。
 
+需要脱离表单单独做数据校验时，使用[数据校验](/composables/validation)的 `createValidator` / `useValidator`；校验器产出的 `rules` 可直接交给 `useForm`，两者共用同一套校验语义。
+
 ## useForm
 
 ```ts
@@ -29,7 +31,7 @@ await submit(); // 内部先 validate，通过才调 onSubmit
 | ------------------------------------- | ------------------------------------------------------- |
 | `modelValue`                          | 受控整表值（`MaybeRefOrGetter<T>`）                     |
 | `defaultValue`                        | 非受控初始值                                            |
-| `rules`                               | 字段规则（`FormRules<T>`），支持同步返回 / 异步 Promise |
+| `rules`                               | 字段规则（[`FormRules`](/types/model/form#formrules)`<T>`），支持同步返回 / 异步 Promise |
 | `disabled` / `labelPosition`          | 整表态，经上下文下发给控件                              |
 | `onChange` / `onSubmit` / `onInvalid` | 值变化 / 校验通过提交 / 校验失败回调                    |
 
@@ -44,6 +46,47 @@ await submit(); // 内部先 validate，通过才调 onSubmit
 | `registerField` / `context`              | 字段注册与上下文（供 FormItem / 控件消费） |
 
 配套 `provideForm(context)` / `injectForm()` / `provideFormField()` / `injectFormField()` 完成跨层级联动。
+
+### 表单上下文 API
+
+`useForm` 返回的 `context` 就是 [`FormContext`](/types/model/form#formcontext)；Form 组件通过 `provideForm` 下发，FormItem 与内部控件通过 `injectForm` 注入。未处于表单中时注入结果为 `undefined`。
+
+```ts
+interface FormContext {
+  values: Record<string, unknown>;
+  errors: Record<string, string | undefined>;
+  registerField: (name: string | number, controller: FormFieldController) => () => void;
+  getFieldRules?: (name: string | number) => unknown;
+  submit: () => Promise<void>;
+  reset: () => void;
+  setFieldValue?: (name: string | number, value: unknown) => void;
+  disabled?: boolean;
+  labelPosition?: 'left' | 'right' | 'top';
+}
+```
+
+`registerField` 返回注销函数；字段控制器 [`FormFieldController`](/types/model/form#formfieldcontroller) 包含 `validate / reset / clearValidate`，可选的 `getValue / setValue` 用于表单侧读取与回写字段值。
+
+```ts
+function provideForm(context: FormContext): void;
+function injectForm(): FormContext | undefined;
+function provideFormField(context: FormFieldContext): void;
+function injectFormField(): FormFieldContext | undefined;
+```
+
+字段上下文 [`FormFieldContext`](/types/model/form#formfieldcontext) 用于向具体控件传递 `name`、`error`、`touched`、`fieldId`（label / aria 关联）以及 `setError`：
+
+```ts
+interface FormFieldContext {
+  name: string | number;
+  error?: string;
+  touched: boolean;
+  fieldId: string;
+  setError?: (error: string | undefined) => void;
+}
+```
+
+FormItem 负责 `provideFormField`；Checkbox / Radio / Input 等控件通过 `injectFormField` 读取所属字段，完成错误展示与 aria 关联。自定义控件也可以直接注入这两个上下文接入表单，无需依赖 Form / FormItem 的渲染结构。
 
 ## useFormField
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Avatar from '../basic/Avatar.vue';
+import Avatar from './Avatar.vue';
 
 /**
  * List.Item.Meta：列表项的三段式头部（头像 + 标题 + 描述）。

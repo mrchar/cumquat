@@ -1,8 +1,9 @@
 import { computed, onScopeDispose, ref, toValue } from 'vue';
 import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import { useControllableModel } from '../core/useControllableModel';
-import type { ActionLike } from '../types';
-import { actionErrorText, useActionState } from './useActionState';
+import type { ActionHandler } from '@cumquat/core';
+import { asyncErrorText } from '@cumquat/core';
+import { useActionState } from './useActionState';
 import type { VoiceGesture, VoiceReleasePayload } from './useVoiceButton';
 
 /**
@@ -199,7 +200,7 @@ export function useChatInput(options: UseChatInputOptions = {}): UseChatInputRet
 
   // 发送：统一走 action 协议，失败保留草稿（错误归一展示），成功清空并回发 send
   let lastPayload: ChatInputPayload | null = null;
-  const actionState = useActionState(options.action as ActionLike | undefined, {
+  const actionState = useActionState(options.action as ActionHandler | undefined, {
     disabled: () => options.disabled?.() === true,
     onSuccess: () => {
       draft.value = '';
@@ -219,7 +220,7 @@ export function useChatInput(options: UseChatInputOptions = {}): UseChatInputRet
     () => options.disabled?.() === true || actionState.disabled.value || !canSend.value,
   );
   const sendError = computed(() =>
-    actionState.error.value == null ? null : actionErrorText(actionState.error.value, '发送失败'),
+    actionState.error.value == null ? null : asyncErrorText(actionState.error.value, '发送失败'),
   );
 
   /** 录音会话：识别器经协议启停，reset 保证每轮转录独立 */

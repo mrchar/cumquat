@@ -22,6 +22,15 @@ title: Empty 空状态
 
 ---
 
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<string>` | `undefined` | 订阅空状态描述；挂载时调用，优先于 `description` |
+| errorText | `string` | `undefined` | 订阅失败时的错误文案；未提供时使用组件内建兜底 |
+
+`subscribe` 与本地 `description` 同时存在时优先使用订阅结果；订阅失败时描述回退到 `description`，并在提供 `errorText` 时额外展示错误条。
+
 ## 交互演示
 
 ### 自定义描述

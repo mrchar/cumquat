@@ -6,12 +6,12 @@ title: Cascader 级联选择
 
 多级联动选择。
 
-`CascaderOption` 结构：`{ label: string; value: string | number; disabled?: boolean; children?: CascaderOption[] }`。
+[`CascaderOption`](/types/view/data-entry#cascaderoption) 结构：`{ label: string; value: string | number; disabled?: boolean; children?: `[`CascaderOption`](/types/view/data-entry#cascaderoption)`[] }`。
 
 | Prop           | 类型                                                  | 默认值     | 说明                                                        |
 | -------------- | ----------------------------------------------------- | ---------- | ----------------------------------------------------------- |
-| options        | `CascaderOption[]`                                    | -          | 级联数据（绑定 fetch 时可省略）                             |
-| fetch          | `Fetch<CascaderOption>`                               | -          | 远程级联：展开列时以 `query.filters.parentKey` 懒加载下一列 |
+| options        | [`CascaderOption`](/types/view/data-entry#cascaderoption)`[]`                                    | -          | 级联数据（绑定 fetch 时可省略）                             |
+| fetch          | [`FetchHandler`](/types/basics/core#fetchhandler)`<`[`CascaderOption`](/types/view/data-entry#cascaderoption)`>`                               | -          | 远程级联：展开列时以 `query.filters.parentKey` 懒加载下一列 |
 | modelValue     | `string \| number \| Array<string \| number> \| null` | -          | 叶子 value；emitPath 时为路径数组                           |
 | placeholder    | `string`                                              | `'请选择'` | 占位文本                                                    |
 | disabled       | `boolean`                                             | `false`    | 禁用                                                        |
@@ -27,6 +27,19 @@ title: Cascader 级联选择
 <Cascader v-model="region" :options="regions" />
 <Cascader v-model="path" :options="regions" emit-path change-on-select />
 ```
+
+## 补充：订阅与交互动作
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<`[`CascaderOption`](/types/view/data-entry#cascaderoption)`[]>` | `undefined` | 订阅级联数据；挂载时调用，优先于 `fetch` / `options` |
+| action | [`ActionHandler`](/types/basics/core#actionhandler) | `undefined` | 交互动作；执行期间进入 pending/禁用状态，失败时回退并 emit `actionError` |
+
+| 事件 | 参数 | 说明 |
+| --- | --- | --- |
+| actionError | `error: unknown` | 动作失败（reject 或返回值导出错误）时触发 |
+
+优先级：`subscribe > fetch > 本地数据`。动作失败时回退到原选中值；`T` 为级联选项类型。
 
 ## 交互演示
 

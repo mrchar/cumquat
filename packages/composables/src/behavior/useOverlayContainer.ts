@@ -1,15 +1,14 @@
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import type { Ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref, toValue, watch } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import { isClient } from '../internal/dom';
+import type { MountTarget } from '../types';
 
 export interface OverlayContainerOptions {
   /**
-   * Teleport 目标：
-   * - 选择器字符串（'#app' / '.xxx'）
-   * - 元素引用
-   * - 不传时使用 document.body
+   * Teleport 目标：支持响应式值或 getter，目标变化后重新解析。
+   * 不传时使用 document.body。
    */
-  to?: string | HTMLElement;
+  to?: MaybeRefOrGetter<MountTarget | undefined>;
   /** 选择器 / 元素不存在时是否回退到 body，默认 true */
   fallbackToBody?: boolean;
 }
@@ -26,18 +25,24 @@ export function useOverlayContainer(options: OverlayContainerOptions = {}): {
   const { to, fallbackToBody = true } = options;
   const container = ref<HTMLElement | null>(null);
 
-  onMounted(() => {
+  const resolve = () => {
     if (!isClient) return;
-    if (!to) {
+    const target = toValue(to);
+    if (!target) {
       container.value = document.body;
       return;
     }
-    if (typeof to === 'string') {
-      const found = document.querySelector<HTMLElement>(to);
+    if (typeof target === 'string') {
+      const found = document.querySelector<HTMLElement>(target);
       container.value = found ?? (fallbackToBody ? document.body : null);
     } else {
-      container.value = to;
+      container.value = target;
     }
+  };
+
+  onMounted(() => {
+    resolve();
+    watch(() => toValue(to), resolve);
   });
 
   onBeforeUnmount(() => {

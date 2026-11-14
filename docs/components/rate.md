@@ -26,6 +26,18 @@ title: Rate 评分
 <Rate :model-value="4" readonly />
 ```
 
+## 补充：交互动作
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| action | [`ActionHandler`](/types/basics/core#actionhandler) | `undefined` | 交互动作；执行期间进入 pending/禁用状态，失败时 emit `actionError` |
+
+| 事件 | 参数 | 说明 |
+| --- | --- | --- |
+| actionError | `error: unknown` | 动作失败（reject 或返回值导出错误）时触发 |
+
+动作失败时回退到原评分值，并 emit `actionError`。
+
 ## 交互演示
 
 ### 评分与禁用

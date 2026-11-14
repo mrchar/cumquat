@@ -1,8 +1,10 @@
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 import { useTimeoutFn } from '../core/useTimeoutFn';
+import type { Status } from '@cumquat/core';
 
-export type SuggestStatus = 'idle' | 'pending' | 'success' | 'error';
+/** 建议源状态：与统一 Status 同义 */
+export type SuggestStatus = Status;
 
 export interface UseAsyncSuggestOptions<S> {
   /** 异步建议源：输入关键词返回候选列表 */

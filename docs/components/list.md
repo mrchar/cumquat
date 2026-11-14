@@ -33,9 +33,9 @@ title: List 列表
 | Prop | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
 | items | `unknown[]` | `[]` | 本地数据：对象或原始值均可 |
-| data | `AsyncStateLike<unknown[]>` | - | 远程数据状态：传入后 items 由其派生 |
-| fetch | `Fetch<unknown>` | - | 统一远程请求：返回数组即普通列表，返回 `{ list, total }` 自动启用加载更多 |
-| subscribe | `SubscribeHandler<unknown[]>` | - | 订阅数据；优先级 subscribe > fetch > data > items |
+| data | `{ status, data?, error?, retry? }`（`unknown[]`） | - | 远程数据状态：传入后 items 由其派生 |
+| fetch | [`FetchHandler`](/types/basics/core#fetchhandler)`<unknown>` | - | 统一远程资源工厂：`data` 写数组即普通列表，写 `{ list, page, size, total }` 自动启用加载更多 |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<unknown[]>` | - | 订阅数据；优先级 subscribe > fetch > data > items |
 | header | `string` | `''` | 头部文本；`#header` 插槽优先 |
 | footer | `string` | `''` | 底部文本；`#footer` 插槽优先 |
 | emptyText | `string` | `'暂无数据'` | 空态文案 |
@@ -45,7 +45,7 @@ title: List 列表
 | rowKey | `(item, index) => string \| number` | - | 列表项唯一键 |
 | defaultExpandAll | `boolean` | `false` | 默认展开全部含 `children` 的列表项（缺省收起） |
 | height | `string` | `''` | 最大高度：设置后容器内部滚动，触底自动加载下一页 |
-| pageSize | `number` | `20` | 每页条数（分页结果时生效） |
+| size | `number` | `20` | 每页条数（分页结果时生效） |
 
 插槽：`#item { item, index, depth, hasChildren, expanded, toggle }` 数据模式下整行接管、`#header`、`#footer`。
 
@@ -79,7 +79,7 @@ title: List 列表
 
 ### 分页触底加载
 
-fetch 返回 `{ list, total }` 即自动启用「加载更多」；设置 `height` 后容器内部滚动，触底自动加载下一页。
+fetch 返回 `{ list, page, size, total }` 即自动启用「加载更多」；设置 `height` 后容器内部滚动，触底自动加载下一页。
 
 <CodeCard v-model:code="pagedCode" editable title="分页触底">
   <LiveDemo :code="pagedCode" :scope="pagedScope" />
@@ -141,20 +141,35 @@ const pagedCode = ref(`
     :title="(item) => item.name"
     :description="(item) => item.sign"
     height="240px"
-    :page-size="4"
+    :size="4"
     class="max-w-xl"
   />
 `);
 
-/** 模拟远程分页接口 */
-const fetchUsers = async ({ pagination }: { pagination?: { currentPage?: number } }) => {
-  const all = Array.from({ length: 11 }, (_, index) => ({
-    name: `成员 ${index + 1}`,
-    sign: `成员签名 ${index + 1}`,
-  }));
-  const page = pagination?.currentPage ?? 1;
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  return { list: all.slice((page - 1) * 4, page * 4), total: all.length };
+/** 模拟远程分页资源工厂：组件挂载时创建一次，加载更多只调 execute */
+const fetchUsers = () => {
+  const status = ref('idle');
+  const data = ref();
+  const error = ref();
+  const message = ref();
+  return {
+    status,
+    data,
+    error,
+    message,
+    async execute({ page: requested = 1 }: { page?: number; size?: number }) {
+      status.value = 'pending';
+      const all = Array.from({ length: 11 }, (_, index) => ({
+        name: `成员 ${index + 1}`,
+        sign: `成员签名 ${index + 1}`,
+      }));
+      const page = requested;
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      data.value = { list: all.slice((page - 1) * 4, page * 4), page, size: 4, total: all.length };
+      status.value = 'success';
+    },
+    abort() {},
+  };
 };
 
 const pagedScope = { fetchUsers, pagedCode };

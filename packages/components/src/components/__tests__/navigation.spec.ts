@@ -1,3 +1,8 @@
+import type { BreadcrumbItem } from '../navigation/Breadcrumb.vue';
+import type { MenuItem } from '../navigation/Menu.vue';
+import type { AnchorItem } from '../navigation/Anchor.vue';
+import type { TransferItem } from '../data-entry/Transfer.vue';
+import type { FloatAction } from '../other/FloatButton.vue';
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import {
@@ -17,11 +22,7 @@ import {
   Grid,
   Space,
 } from '../../index';
-import type { BreadcrumbItem } from '../navigation/Breadcrumb.vue';
-import type { MenuItem } from '../navigation/Menu.vue';
-import type { AnchorItem } from '../navigation/Anchor.vue';
-import type { TransferItem } from '../navigation/Transfer.vue';
-import type { FloatAction } from '../navigation/FloatButton.vue';
+import { mockFetch } from './helpers';
 
 const wait = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -59,13 +60,13 @@ describe('Menu', () => {
   });
 
   it('fetch：挂载即拉菜单项并渲染', async () => {
-    const fetcher = vi.fn(async () => [
+    const fetcher = mockFetch(async () => [
       { key: 'dashboard', label: '仪表盘' },
       { key: 'settings', label: '设置' },
     ]);
     const wrapper = mount(Menu, { props: { fetch: fetcher } });
     await wait();
-    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.queries).toHaveLength(1);
     expect(wrapper.findAll('.cumquat-menu__item')).toHaveLength(2);
     expect(wrapper.findAll('.cumquat-menu__item')[0].text()).toContain('仪表盘');
   });
@@ -177,15 +178,15 @@ describe('Calendar', () => {
   });
 
   it('fetch：挂载携带区间 filters.range，切月自动重取', async () => {
-    const fetcher = vi.fn(async () => []);
+    const fetcher = mockFetch(async () => []);
     const wrapper = mount(Calendar, { props: { fetch: fetcher } });
     await wait();
-    const firstRange = fetcher.mock.calls[0][0].filters.range as string[];
+    const firstRange = fetcher.queries[0]!.filters!.range as string[];
     expect(firstRange).toHaveLength(2);
     expect(firstRange[0] < firstRange[1]).toBe(true);
     await wrapper.find('button[aria-label="下一个"]').trigger('click');
     await wait();
-    const nextRange = fetcher.mock.calls.at(-1)?.[0].filters.range as string[];
+    const nextRange = fetcher.queries.at(-1)!.filters!.range as string[];
     expect(nextRange[1]).not.toBe(firstRange[1]);
   });
 });
@@ -271,26 +272,23 @@ describe('VirtualList', () => {
     expect(wrapper.findAll('.cumquat-virtual-list__item')).toHaveLength(3);
   });
 
-  it('fetch：首页挂载即拉，触底以递增 pagination 累积', async () => {
-    const fetcher = vi.fn(
-      async ({ pagination }: { pagination: { currentPage: number; pageSize: number } }) => ({
-        list: Array.from(
-          { length: pagination.currentPage === 1 ? 20 : 5 },
-          (_, i) => `item-${(pagination.currentPage - 1) * 20 + i + 1}`,
-        ),
+  it('fetch：首页挂载即拉，触底以递增 page 累积', async () => {
+    const fetcher = mockFetch(
+      async ({ page = 1 }) => ({
+        list: Array.from({ length: page === 1 ? 20 : 5 }, (_, i) => `item-${(page - 1) * 20 + i + 1}`),
         total: 25,
       }),
     );
     const wrapper = mount(VirtualList, { props: { fetch: fetcher } });
     await wait();
-    expect(fetcher.mock.calls[0][0].pagination).toEqual({ currentPage: 1, pageSize: 20 });
+    expect(fetcher.queries[0]).toMatchObject({ page: 1, size: 20 });
     expect(wrapper.find('.cumquat-virtual-list__inner').attributes('style')).toContain(
       'height: 800px',
     );
     await wrapper.find('.cumquat-virtual-list').trigger('scroll');
     await wait();
     await wait();
-    expect(fetcher.mock.calls.at(-1)?.[0].pagination).toEqual({ currentPage: 2, pageSize: 20 });
+    expect(fetcher.queries.at(-1)).toMatchObject({ page: 2, size: 20 });
     expect(wrapper.find('.cumquat-virtual-list__inner').attributes('style')).toContain(
       'height: 1000px',
     );

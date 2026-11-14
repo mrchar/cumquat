@@ -6,20 +6,20 @@ title: Dropdown 下拉菜单
 
 悬停 / 点击触发的操作菜单。
 
-`DropdownItem` 结构：`{ key: string; label: string; disabled?: boolean; divider?: boolean }`，`divider: true` 渲染为分隔线。
+[`DropdownItem`](/types/view/navigation#dropdownitem) 结构：`{ key: string; label: string; disabled?: boolean; divider?: boolean }`，`divider: true` 渲染为分隔线。
 
 | Prop      | 类型             | 默认值           | 说明                              |
 | --------- | ---------------- | ---------------- | --------------------------------- |
-| items     | `DropdownItem[]` | `[]`             | 数据驱动菜单项；不传时用默认插槽  |
+| items     | [`DropdownItem`](/types/view/navigation#dropdownitem)`[]` | `[]`             | 数据驱动菜单项；不传时用默认插槽  |
 | trigger   | `PopoverTrigger` | `'click'`        | 触发方式（click / hover / focus） |
-| placement | `Placement`      | `'bottom-start'` | 菜单位置                          |
+| placement | [`Placement`](/types/basics/overlay#placement)      | `'bottom-start'` | 菜单位置                          |
 | open      | `boolean`        | -                | 开合（v-model:open）              |
 | disabled  | `boolean`        | `false`          | 禁用                              |
 
 | 事件        | 参数                 | 说明       |
 | ----------- | -------------------- | ---------- |
 | update:open | `value: boolean`     | 开合更新   |
-| select      | `item: DropdownItem` | 选中菜单项 |
+| select      | `item: `[`DropdownItem`](/types/view/navigation#dropdownitem) | 选中菜单项 |
 
 | 插槽    | 说明                          |
 | ------- | ----------------------------- |

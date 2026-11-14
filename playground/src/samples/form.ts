@@ -15,7 +15,7 @@ export const formSamples: Sample[] = [
       clearable
       filterable
       :fetch="loadFruits"
-      :page-size="20"
+      :size="20"
       placeholder="请选择水果"
       class="w-72"
     />
@@ -25,20 +25,45 @@ export const formSamples: Sample[] = [
     scope: () => ({
       value: ref<string[]>([]),
       // 远程分页：滚动到面板底部自动取下一页，搜索词变化回到第 1 页
-      loadFruits: async (query: {
-        keyword?: string;
-        pagination?: { currentPage: number; pageSize: number };
-      }) => {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        // 共 160 条：滚动到底部逐页加载，累积到 100 条以上自动切换为虚拟滚动
-        const all = Array.from({ length: 160 }, (_, i) => ({
-          value: `f${i}`,
-          label: `水果 ${i + 1}`,
-        }));
-        const matched = query.keyword ? all.filter((o) => o.label.includes(query.keyword!)) : all;
-        const size = query.pagination?.pageSize ?? 10;
-        const start = ((query.pagination?.currentPage ?? 1) - 1) * size;
-        return { list: matched.slice(start, start + size), total: matched.length };
+      loadFruits: () => {
+        const status = ref<'idle' | 'pending' | 'success' | 'error'>('idle');
+        const data = ref<{
+          list: Array<{ value: string; label: string }>;
+          page: number;
+          size: number;
+          total: number;
+        }>();
+        const error = ref<unknown>();
+        const message = ref<string>();
+        return {
+          status,
+          data,
+          error,
+          message,
+          async execute(query: { keyword?: string; page?: number; size?: number }) {
+            status.value = 'pending';
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            // 共 160 条：滚动到底部逐页加载，累积到 100 条以上自动切换为虚拟滚动
+            const all = Array.from({ length: 160 }, (_, i) => ({
+              value: `f${i}`,
+              label: `水果 ${i + 1}`,
+            }));
+            const matched = query.keyword
+              ? all.filter((o) => o.label.includes(query.keyword!))
+              : all;
+            const size = query.size ?? 10;
+            const page = query.page ?? 1;
+            const start = (page - 1) * size;
+            data.value = {
+              list: matched.slice(start, start + size),
+              page,
+              size,
+              total: matched.length,
+            };
+            status.value = 'success';
+          },
+          abort() {},
+        };
       },
     }),
   },

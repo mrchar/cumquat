@@ -15,7 +15,7 @@ title: Dialog 对话框
 | maskClosable | `boolean`               | `true`    | 点击遮罩关闭               |
 | escClosable  | `boolean`               | `true`    | ESC 关闭                   |
 | lockScroll   | `boolean`               | `true`    | 锁定背景滚动               |
-| appendTo     | `string \| HTMLElement` | -         | Teleport 目标（默认 body） |
+| appendTo     | [`MountTarget`](/types/basics/overlay#mounttarget)           | -         | Teleport 目标；继承配置，最终回退 body |
 
 | 事件        | 参数             | 说明     |
 | ----------- | ---------------- | -------- |
@@ -40,6 +40,24 @@ Expose：`open()` / `close()`。
   </template>
 </Dialog>
 ```
+
+## 补充：异步确认与多动作
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| action | [`ActionHandler`](/types/basics/core#actionhandler)` \| `[`DialogAction`](/types/view/feedback#dialogaction) | `undefined` | 单个确认动作；函数形态使用 `confirmText` 作为按钮文案 |
+| actions | [`DialogAction`](/types/view/feedback#dialogaction)`[]` | `undefined` | 多动作；每项渲染为独立按钮，独立 pending |
+| confirmText | `string` | `'确认'` | 默认确认按钮文案 |
+| cancelText | `string` | `'取消'` | 默认取消按钮文案 |
+| errorText | `string` | `undefined` | 动作失败时的回退文案 |
+
+| 事件 | 参数 | 说明 |
+| --- | --- | --- |
+| confirm | - | 动作成功后触发（`closeOnSuccess: false` 时不触发）；`closeOnFail: true` 时失败也触发 |
+| cancel | - | 点击默认取消按钮时触发 |
+| actionError | `error: unknown` | 动作失败时触发 |
+
+[`DialogAction`](/types/view/feedback#dialogaction) 支持 `key / label / handler / type / closeOnSuccess / closeOnFail / errorText / disabled`。默认 `closeOnSuccess: true`、`closeOnFail: false`；失败时保持打开并展示错误条。未提供 `footer` 插槽且配置了 `action` / `actions` 时，组件渲染默认底部按钮。
 
 ## 交互演示
 

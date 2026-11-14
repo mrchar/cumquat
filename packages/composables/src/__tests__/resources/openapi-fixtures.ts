@@ -1,4 +1,4 @@
-import type { ResourceSchema } from '../../resources/types';
+import type { Registry } from '@cumquat/core';
 
 /**
  * 完整 OpenAPI 3.0 测试文档：
@@ -158,8 +158,14 @@ export const openApiDoc = {
         type: 'object',
         required: ['name'],
         properties: {
-          name: { type: 'string', title: '姓名', description: '用户姓名' },
-          email: { type: 'string', title: '邮箱', description: '联系邮箱' },
+          name: {
+            type: 'string',
+            title: '姓名',
+            description: '用户姓名',
+            minLength: 2,
+            maxLength: 20,
+          },
+          email: { type: 'string', format: 'email', title: '邮箱', description: '联系邮箱' },
           status: {
             type: 'string',
             enum: ['active', 'disabled'],
@@ -268,34 +274,43 @@ export const swaggerDoc = {
   },
 } as const;
 
-/** 直接传 schema 的池测试样例 */
-export const userSchema: ResourceSchema = {
+/** 直接传 registry 的池测试样例 */
+export const userRegistry: Registry = {
   resources: {
     users: {
+      name: 'users',
       list: { method: 'GET', path: '/users' },
       detail: { method: 'GET', path: '/users/{id}' },
       create: { method: 'POST', path: '/users' },
       update: { method: 'PUT', path: '/users/{id}' },
       remove: { method: 'DELETE', path: '/users/{id}' },
-      queryNames: { currentPage: 'pageNo' },
+      queryNames: { page: 'pageNo' },
       response: { list: 'records', total: 'total' },
-      fields: [
-        { name: 'id', label: 'ID', type: 'number', scope: { list: true } },
-        {
-          name: 'name',
-          label: '姓名',
-          type: 'string',
-          required: true,
-          scope: { list: true, create: true, update: true },
+      schema: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          id: { type: 'integer', title: 'ID' },
+          name: {
+            type: 'string',
+            title: '姓名',
+            minLength: 2,
+          },
+          status: {
+            type: 'integer',
+            enum: [1],
+            title: '状态',
+          },
         },
-        {
-          name: 'status',
-          label: '状态',
-          type: 'enum',
-          options: [{ label: '启用', value: 1 }],
+      },
+      hints: {
+        id: { scope: { list: true } },
+        name: { scope: { list: true, create: true, update: true } },
+        status: {
           scope: { list: true, filter: true },
+          enumLabels: ['启用'],
         },
-      ],
+      },
     },
   },
 };

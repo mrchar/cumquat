@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import type { Ref } from 'vue';
-import type { AsyncStateLike } from '../types';
+import type { Snapshot } from '../state';
 
 export interface UseAsyncStateOptions<T, A extends unknown[]> {
   /** 初始 data，默认 undefined */
@@ -9,7 +9,7 @@ export interface UseAsyncStateOptions<T, A extends unknown[]> {
   immediate?: boolean;
   /** 立即执行时的参数 */
   immediateArgs?: A;
-  /** 重新拉取时保留旧数据并标记 isStale，默认 true */
+  /** 重新拉取时保留旧数据，默认 true */
   preserveDataOnRefresh?: boolean;
   /** 成功回调 */
   onSuccess?: (data: T, ...args: A) => void;
@@ -18,8 +18,8 @@ export interface UseAsyncStateOptions<T, A extends unknown[]> {
 }
 
 export interface UseAsyncStateReturn<T, A extends unknown[]> {
-  state: Ref<AsyncStateLike<T>>;
-  /** 手动执行请求；再次执行时已有成功数据会标记 isStale */
+  state: Ref<Snapshot<T>>;
+  /** 手动执行请求；再次执行时保留已有成功数据 */
   run: (...args: A) => Promise<T | undefined>;
   /** 以最近一次参数重试 */
   retry: () => Promise<T | undefined>;
@@ -28,8 +28,8 @@ export interface UseAsyncStateReturn<T, A extends unknown[]> {
 }
 
 /**
- * 将外部异步函数包装为标准 AsyncStateLike：
- * 管理 pending/success/error 三态、重试与 stale 标记。
+ * 将外部异步函数包装为组合函数自有的 Snapshot：
+ * 管理 idle/pending/success/error 四态与重试。
  * 函数自身不发起任何业务请求——请求函数由宿主提供。
  *
  * @param fetcher 返回 Promise 的数据获取函数
@@ -48,12 +48,12 @@ export function useAsyncState<T, A extends unknown[] = []>(
     onError,
   } = options;
 
-  const state = ref<AsyncStateLike<T>>({
-    status: 'pending',
-    data: initialData as T,
-  }) as Ref<AsyncStateLike<T>>;
+  const state = ref<Snapshot<T>>({
+    status: 'idle',
+    data: initialData,
+  }) as Ref<Snapshot<T>>;
 
-  const loading = ref(true);
+  const loading = ref(immediate);
   const error = ref<unknown>(undefined);
   let lastArgs: A | undefined = immediateArgs;
   let requestId = 0;
@@ -61,11 +61,12 @@ export function useAsyncState<T, A extends unknown[] = []>(
   const run = async (...args: A): Promise<T | undefined> => {
     const currentId = ++requestId;
     lastArgs = args;
-    const hadSuccess = state.value.status === 'success';
+    const previous = state.value;
+    const hadSuccess = previous.status === 'success';
+    const previousData = previous.status === 'success' ? previous.data : initialData;
     state.value = {
       status: 'pending',
-      data: hadSuccess && preserveDataOnRefresh ? state.value.data : (initialData as T),
-      isStale: hadSuccess,
+      data: hadSuccess && preserveDataOnRefresh ? previousData : initialData,
       retry: () => retry(),
     };
     loading.value = true;
@@ -77,7 +78,6 @@ export function useAsyncState<T, A extends unknown[] = []>(
       state.value = {
         status: 'success',
         data,
-        isStale: false,
         retry: () => retry(),
       };
       error.value = undefined;
@@ -89,7 +89,6 @@ export function useAsyncState<T, A extends unknown[] = []>(
         status: 'error',
         data: state.value.data,
         error: err,
-        isStale: false,
         retry: () => retry(),
       };
       error.value = err;
@@ -102,15 +101,14 @@ export function useAsyncState<T, A extends unknown[] = []>(
 
   const retry = () => run(...((lastArgs ?? []) as A));
 
-  if (immediate) {
-    run(...((immediateArgs ?? []) as A));
-  } else {
-    loading.value = false;
+  if (!immediate) {
     state.value = {
-      status: 'success',
-      data: initialData as T,
+      status: 'idle',
+      data: initialData,
       retry: () => retry(),
     };
+  } else {
+    run(...((immediateArgs ?? []) as A));
   }
 
   return { state, run, retry, loading, error };

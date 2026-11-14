@@ -28,6 +28,8 @@ export interface UseFormReturn<T extends Record<string, unknown>> {
   touched: Record<string, boolean>;
   valid: ReturnType<typeof computed<boolean>>;
   dirty: ReturnType<typeof computed<boolean>>;
+  /** 提交进行中：action 执行期间为 true，组件据此禁用控件与提交按钮 */
+  submitting: ReturnType<typeof ref<boolean>>;
   registerField: (name: string | number, controller: FormFieldController) => () => void;
   validateField: (name: string | number) => Promise<string | true>;
   validate: () => Promise<boolean>;
@@ -186,6 +188,7 @@ export function useForm<T extends Record<string, unknown>>(
     touched,
     valid: validState,
     dirty,
+    submitting,
     registerField,
     validateField,
     validate,

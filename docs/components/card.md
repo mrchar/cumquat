@@ -25,6 +25,15 @@ title: Card 卡片
 </Card>
 ```
 
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<{ title?: string; content?: string }>` | `undefined` | 订阅卡片数据；挂载时调用，`title` / `content` 用于渲染 |
+| errorText | `string` | `undefined` | 订阅失败时的错误文案；未提供时使用组件内建兜底 |
+
+`subscribe` 与本地 `title` 同时存在时优先使用订阅结果；`content` 只来自订阅数据。订阅失败时标题回退到 `title`，并在提供 `errorText` 时额外展示错误条。
+
 ## 交互演示
 
 ### 悬浮与无边框

@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { parseOpenApi } from '../../resources/parse-open-api';
-import type { ResourceSchema } from '../../resources/types';
+import type { Registry, Schema } from '@cumquat/core';
 import { openApiDoc, swaggerDoc } from './openapi-fixtures';
 
+/** 资源属性表转名称索引 */
+function propsOf(registry: Registry, name: string): Record<string, Schema> {
+  return registry.resources[name].schema.properties ?? {};
+}
+
 describe('parseOpenApi（OpenAPI 3.x）', () => {
-  const schema: ResourceSchema = parseOpenApi(openApiDoc, { server: 'https://api.example.com/v1' });
+  const registry: Registry = parseOpenApi(openApiDoc, { server: 'https://api.example.com/v1' });
 
   it('按 tag 聚合资源并归类五个操作', () => {
-    const users = schema.resources.users;
+    const users = registry.resources.users;
+    expect(users.name).toBe('users');
     expect(users.list).toEqual({ method: 'GET', path: '/users' });
     expect(users.detail).toEqual({ method: 'GET', path: '/users/{id}' });
     expect(users.create).toEqual({ method: 'POST', path: '/users' });
@@ -16,7 +22,7 @@ describe('parseOpenApi（OpenAPI 3.x）', () => {
   });
 
   it('只读资源仅含声明过的操作', () => {
-    const orders = schema.resources.orders;
+    const orders = registry.resources.orders;
     expect(orders.list).toEqual({ method: 'GET', path: '/orders' });
     expect(orders.detail).toEqual({ method: 'GET', path: '/orders/{id}' });
     expect(orders.remove).toEqual({ method: 'DELETE', path: '/orders/{id}' });
@@ -25,70 +31,151 @@ describe('parseOpenApi（OpenAPI 3.x）', () => {
   });
 
   it('从列表查询参数识别统一片段命名（分页 / 关键词 / 排序）', () => {
-    expect(schema.resources.users.queryNames).toEqual({
-      currentPage: 'page',
-      pageSize: 'pageSize',
+    expect(registry.resources.users.queryNames).toEqual({
+      page: 'page',
+      size: 'pageSize',
       keyword: 'keyword',
     });
-    expect(schema.resources.orders.queryNames).toEqual({
-      currentPage: 'current',
-      pageSize: 'size',
+    expect(registry.resources.orders.queryNames).toEqual({
+      page: 'current',
+      size: 'size',
       sorter: 'sortBy',
     });
   });
 
-  it('识别信封响应：数组属性与总数属性的路径', () => {
-    expect(schema.resources.users.response).toEqual({ list: 'records', total: 'total' });
-    expect(schema.resources.orders.response).toEqual({ list: 'items', total: 'total' });
+  it('识别信封响应：数组、页码、页大小与总数属性的路径', () => {
+    expect(registry.resources.users.response).toEqual({
+      list: 'records',
+      page: undefined,
+      size: undefined,
+      total: 'total',
+    });
+    expect(registry.resources.orders.response).toEqual({
+      list: 'items',
+      page: undefined,
+      size: undefined,
+      total: 'total',
+    });
   });
 
-  it('列名优先 title、缺失回落字段名；帮助提示由 description 与 example 合成', () => {
-    const byName = Object.fromEntries(
-      (schema.resources.users.fields ?? []).map((field) => [field.name, field]),
-    );
-    // title 作为列名，description 不再参与命名
-    expect(byName.id.label).toBe('用户ID');
-    expect(byName.email.label).toBe('邮箱');
-    // description + example 合成帮助提示
-    expect(byName.id.help).toBe('用户唯一标识（示例：1001）');
-    expect(byName.email.help).toBe('联系邮箱（示例：zhangsan@example.com）');
-    // 仅 description 或仅 example 时降级合成
-    expect(byName.status.help).toBe('账号状态');
-    expect(byName.createdAt.help).toBeUndefined();
-
-    const orderFields = Object.fromEntries(
-      (schema.resources.orders.fields ?? []).map((field) => [field.name, field]),
-    );
-    expect(orderFields.amount.help).toBe('订单金额（示例：99.5）');
-    expect(orderFields.status.help).toBe('订单当前状态（示例：1）');
-    // 未声明 title 时回落字段名
-    expect(orderFields.id.label).toBe('id');
-    expect(orderFields.id.help).toBeUndefined();
+  it('属性定义保留 title / description / example，视图层再据此生成 label 与 help', () => {
+    const users = propsOf(registry, 'users');
+    expect(users.id.title).toBe('用户ID');
+    expect(users.id.description).toBe('用户唯一标识');
+    expect(users.id.example).toBe(1001);
+    expect(users.email.title).toBe('邮箱');
+    expect(users.email.description).toBe('联系邮箱');
+    expect(users.email.example).toBe('zhangsan@example.com');
+    // 未声明 title 时不补造，label 由视图层回落字段名
+    expect(propsOf(registry, 'orders').id.title).toBeUndefined();
   });
 
-  it('fieldHelp 支持对象类型的 example（序列化为 JSON 文本）', () => {
-    const doc = {
-      paths: {
-        '/things': {
-          get: {
-            tags: ['things'],
-            responses: {
-              '200': {
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'array',
-                      items: {
+  it('类型定义严格使用 JSON Schema 词汇并保留 format', () => {
+    const users = propsOf(registry, 'users');
+    expect(users.id).toMatchObject({ type: 'integer' });
+    expect(users.email).toMatchObject({ type: 'string', format: 'email' });
+    expect(users.website).toMatchObject({ type: 'string', format: 'uri' });
+    expect(users.score).toMatchObject({ type: 'number', format: 'int64' });
+    expect(users.createdAt).toMatchObject({ type: 'string', format: 'date-time' });
+    expect(users.birthday).toMatchObject({ type: 'string', format: 'date' });
+    expect(users.active).toMatchObject({ type: 'boolean' });
+    // 结构型字段保留原始类型，不再被丢弃
+    expect(users.profile).toMatchObject({ type: 'object', description: '扩展信息' });
+    expect(users.name.format).toBeUndefined();
+  });
+
+  it('约束定义保留在字段上，不再翻译为独立规则表', () => {
+    const users = propsOf(registry, 'users');
+    expect(users.name).toMatchObject({ type: 'string', minLength: 2, maxLength: 20 });
+    expect(users.status.enum).toEqual(['active', 'disabled']);
+    expect('rules' in registry.resources.users.schema).toBe(false);
+  });
+
+  it('场景标记：列表响应、创建 / 更新请求体、查询参数筛选', () => {
+    const hints = registry.resources.users.hints;
+    expect(hints?.name?.scope).toEqual({ list: true, create: true, update: true });
+    expect(hints?.email?.scope).toEqual({ list: true, create: true, update: true });
+    expect(hints?.status?.scope).toEqual({
+      list: true,
+      filter: true,
+      create: true,
+      update: true,
+    });
+    expect(hints?.id?.scope).toEqual({ list: true });
+    expect(hints?.createdAt?.scope).toEqual({ list: true });
+  });
+
+  it('对象级 required 汇总 create / update 请求体，取并集', () => {
+    expect(registry.resources.users.schema.required).toEqual(['name']);
+  });
+
+  it('兼容 OpenAPI 3.0 布尔与 3.1 数值排他边界', () => {
+    const parse = (schema: Record<string, unknown>) =>
+      parseOpenApi(
+        {
+          openapi: '3.0.3',
+          paths: {
+            '/things': {
+              post: {
+                tags: ['things'],
+                requestBody: {
+                  content: {
+                    'application/json': {
+                      schema: {
                         type: 'object',
-                        properties: {
-                          tags: {
-                            type: 'string',
-                            title: '标签',
-                            example: ['a', 'b'],
-                          },
-                          meta: {
-                            type: 'string',
-                            example: { level: 1 },
+                        required: ['price'],
+                        properties: { price: schema },
+                      },
+                    },
+                  },
+                },
+                responses: { '200': { description: 'ok' } },
+              },
+            },
+          },
+        },
+        { server: 'https://api.test' },
+      );
+
+    const v30 = parse({
+      type: 'number',
+      minimum: 0,
+      maximum: 100,
+      exclusiveMinimum: true,
+      exclusiveMaximum: false,
+    });
+    expect(v30.resources.things.schema.properties?.price).toMatchObject({
+      type: 'number',
+      exclusiveMinimum: 0,
+      maximum: 100,
+    });
+    expect(v30.resources.things.schema.required).toEqual(['price']);
+
+    const v31 = parse({ type: 'number', exclusiveMinimum: 0, exclusiveMaximum: 100 });
+    expect(v31.resources.things.schema.properties?.price).toMatchObject({
+      exclusiveMinimum: 0,
+      exclusiveMaximum: 100,
+    });
+  });
+
+  it('type 数组归一为单类型 + nullable', () => {
+    const registry = parseOpenApi(
+      {
+        openapi: '3.1.0',
+        paths: {
+          '/things': {
+            get: {
+              tags: ['things'],
+              responses: {
+                '200': {
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            note: { type: ['string', 'null'], title: '备注' },
                           },
                         },
                       },
@@ -100,90 +187,30 @@ describe('parseOpenApi（OpenAPI 3.x）', () => {
           },
         },
       },
-    };
-    const thingSchema = parseOpenApi(doc, { server: 'https://api.test' });
-    const byName = Object.fromEntries(
-      (thingSchema.resources.things.fields ?? []).map((field) => [field.name, field]),
+      { server: 'https://api.test' },
     );
-    expect(byName.tags.help).toBe('示例：["a","b"]');
-    expect(byName.meta.help).toBe('示例：{"level":1}');
-  });
-
-  it('字段元数据：名称 / 展示名 / 类型映射 / 枚举选项，非原始类型跳过', () => {
-    const fields = schema.resources.users.fields ?? [];
-    expect(fields.map((field) => field.name)).toEqual([
-      'id',
-      'name',
-      'email',
-      'status',
-      'createdAt',
-      'birthday',
-      'active',
-      'score',
-      'website',
-    ]);
-    const byName = Object.fromEntries(fields.map((field) => [field.name, field]));
-    expect(byName.id).toMatchObject({ label: '用户ID', type: 'number', required: true });
-    expect(byName.createdAt).toMatchObject({ label: '创建时间', type: 'datetime' });
-    expect(byName.birthday).toMatchObject({ label: '生日', type: 'date' });
-    expect(byName.active).toMatchObject({ label: '是否启用', type: 'boolean' });
-    expect(byName.status).toMatchObject({
-      label: '状态',
-      type: 'enum',
-      options: [
-        { label: 'active', value: 'active' },
-        { label: 'disabled', value: 'disabled' },
-      ],
+    expect(registry.resources.things.schema.properties?.note).toMatchObject({
+      type: 'string',
+      nullable: true,
     });
   });
 
-  it('format 原样透传：内容格式与保存格式并存，互不覆盖', () => {
-    const byName = Object.fromEntries(
-      (schema.resources.users.fields ?? []).map((field) => [field.name, field]),
-    );
-    expect(byName.email).toMatchObject({ type: 'string', format: 'email' });
-    expect(byName.website).toMatchObject({ type: 'string', format: 'uri' });
-    expect(byName.score).toMatchObject({ type: 'number', format: 'int64' });
-    expect(byName.createdAt).toMatchObject({ type: 'datetime', format: 'date-time' });
-    expect(byName.birthday).toMatchObject({ type: 'date', format: 'date' });
-    // 未声明 format 的字段不携带该键
-    expect(byName.name.format).toBeUndefined();
-  });
-
-  it('场景标记：列表响应、创建 / 更新请求体、查询参数筛选与 required', () => {
-    const byName = Object.fromEntries(
-      (schema.resources.users.fields ?? []).map((field) => [field.name, field]),
-    );
-    expect(byName.name.scope).toEqual({ list: true, create: true, update: true });
-    expect(byName.name.required).toBe(true);
-    expect(byName.email.scope).toEqual({ list: true, create: true, update: true });
-    expect(byName.status.scope).toEqual({ list: true, filter: true, create: true, update: true });
-    expect(byName.id.scope).toEqual({ list: true });
-    expect(byName.createdAt.scope).toEqual({ list: true });
-  });
-
   it('未在响应 schema 出现的筛选参数新建为筛选字段', () => {
-    // orders 的 status 查询参数与响应字段同名，走合并；此处验证 orders 字段场景
-    const orders = schema.resources.orders;
-    const byName = Object.fromEntries((orders.fields ?? []).map((field) => [field.name, field]));
-    expect(byName.status.scope).toEqual({ list: true, filter: true });
-    expect(byName.status.options).toEqual([
-      { label: '0', value: 0 },
-      { label: '1', value: 1 },
-      { label: '2', value: 2 },
-    ]);
-    // 无描述的字段回落字段名
-    expect(byName.id.label).toBe('id');
+    const orders = registry.resources.orders;
+    const byName = propsOf(registry, 'orders');
+    expect(orders.hints?.status?.scope).toEqual({ list: true, filter: true });
+    expect(byName.status.enum).toEqual([0, 1, 2]);
+    expect(orders.schema.required).toBeUndefined();
   });
 });
 
 describe('parseOpenApi（Swagger 2.0）', () => {
-  const schema: ResourceSchema = parseOpenApi(swaggerDoc, {
+  const registry: Registry = parseOpenApi(swaggerDoc, {
     server: 'https://petstore.example.com',
   });
 
   it('支持 definitions 引用与 in:body 请求参数', () => {
-    const pets = schema.resources.pets;
+    const pets = registry.resources.pets;
     expect(pets.list).toEqual({ method: 'GET', path: '/pets' });
     expect(pets.detail).toEqual({ method: 'GET', path: '/pets/{petId}' });
     expect(pets.create).toEqual({ method: 'POST', path: '/pets' });
@@ -192,20 +219,17 @@ describe('parseOpenApi（Swagger 2.0）', () => {
   });
 
   it('识别 limit 命名与 kind 枚举筛选', () => {
-    const pets = schema.resources.pets;
-    expect(pets.queryNames).toEqual({ currentPage: 'page', pageSize: 'limit' });
-    const byName = Object.fromEntries((pets.fields ?? []).map((field) => [field.name, field]));
-    expect(byName.kind.scope).toEqual({ list: true, filter: true, create: true });
-    expect(byName.kind.options).toEqual([
-      { label: 'cat', value: 'cat' },
-      { label: 'dog', value: 'dog' },
-    ]);
-    expect(byName.name.scope).toEqual({ list: true, create: true });
-    expect(byName.name.required).toBe(true);
-    // 数组与对象类型不进入元数据
-    expect(pets.fields?.map((field) => field.name)).toEqual(['id', 'name', 'kind', 'homepage']);
+    const pets = registry.resources.pets;
+    expect(pets.queryNames).toEqual({ page: 'page', size: 'limit' });
+    const byName = propsOf(registry, 'pets');
+    expect(pets.hints?.kind?.scope).toEqual({ list: true, filter: true, create: true });
+    expect(byName.kind.enum).toEqual(['cat', 'dog']);
+    expect(pets.hints?.name?.scope).toEqual({ list: true, create: true });
     expect(byName.homepage).toMatchObject({ type: 'string', format: 'uri' });
+    expect(byName.tags).toMatchObject({ type: 'array', items: { type: 'string' } });
+    expect(byName.owner).toMatchObject({ type: 'object' });
     expect(pets.response).toEqual({ list: 'records', total: 'total' });
+    expect(pets.schema.required).toEqual(['name']);
   });
 });
 

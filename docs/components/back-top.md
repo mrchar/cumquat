@@ -22,6 +22,14 @@ title: BackTop 回到顶部
 <BackTop :visibility-height="200" />
 ```
 
+## 补充：局部挂载
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| mount | `boolean` | `false` | 挂载到最近定位祖先（`position: absolute`）而非视口，用于局部滚动容器 |
+
+开启 `mount` 时，滚动监听仍读取窗口滚动；局部容器场景需确保祖先元素已建立定位上下文。
+
 ## 交互演示
 
 ### 回到顶部
@@ -35,9 +43,9 @@ title: BackTop 回到顶部
 import { ref } from 'vue';
 
 const backTopCode = ref(`
-  <div class="flex flex-wrap items-center gap-3">
-    <BackTop />
-    <span class="text-sm text-cumquat-text-muted">点击按钮返回页面顶部。</span>
+  <div class="relative h-40 rounded-md border border-dashed border-cumquat-border p-4">
+    <BackTop mount :right="16" :bottom="16" />
+    <span class="text-sm text-cumquat-text-muted">按钮挂载在当前演示区域，点击后返回页面顶部。</span>
   </div>
 `);
 

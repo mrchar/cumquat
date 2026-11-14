@@ -18,9 +18,12 @@
   },
   "dependencies": {
     "@cumquat/composables": "workspace:*",
+    "@cumquat/core": "workspace:*",
     "@shikijs/langs": "catalog:",
     "@shikijs/themes": "catalog:",
-    "shiki": "catalog:"
+    "@vue/compiler-sfc": "^3.5.0",
+    "shiki": "catalog:",
+    "sucrase": "^3.35.1"
   },
   "devDependencies": {
     "@vue/test-utils": "catalog:",

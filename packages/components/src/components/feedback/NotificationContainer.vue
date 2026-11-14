@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import type { MountTarget, NotificationApi } from '@cumquat/composables';
+import { notification, useOverlayContainer } from '@cumquat/composables';
 /**
  * 命令式通知服务的全局渲染层：在应用根部挂载一次，
  * `notification.success(...)` 等调用即按角落方向堆叠呈现。
  */
-import { computed } from 'vue';
-import { notification } from '@cumquat/composables';
-import type { NotificationApi } from '@cumquat/composables';
+
+import { useCumquatConfig } from '../../config';
 
 type Placement = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 
@@ -14,11 +16,19 @@ const props = withDefaults(
     /** 可传入自建服务（默认共享全局单例） */
     api?: NotificationApi;
     placement?: Placement;
+    /** Teleport 目标；未传时继承 ConfigProvider 或应用配置，默认 body */
+    target?: MountTarget;
   }>(),
-  { api: () => notification, placement: 'top-right' },
+  { api: () => notification, placement: 'top-right', target: undefined },
 );
 
 type Entry = NotificationApi['items']['value'][number];
+
+const config = useCumquatConfig();
+const { container } = useOverlayContainer({
+  to: () => props.target ?? config.value.overlay?.appendTo,
+});
+const teleportTarget = computed<MountTarget>(() => container.value ?? 'body');
 
 const groups = computed(() => {
   const map = new Map<Placement, Entry[]>();
@@ -33,7 +43,7 @@ const groups = computed(() => {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport :to="teleportTarget">
     <div
       v-for="group in groups"
       :key="group.placement"

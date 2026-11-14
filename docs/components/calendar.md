@@ -6,7 +6,7 @@ title: Calendar 日历
 
 日期面板与日程展示，支持范围选择。
 
-`CalendarEvent` 结构：`{ date: string; label?: string }`（`date` 为 `yyyy-MM-dd`）。
+[`CalendarEvent`](/types/view/data-display#calendarevent) 结构：`{ date: string; label?: string }`（`date` 为 `yyyy-MM-dd`）。
 
 | Prop           | 类型                                                       | 默认值  | 说明                                                                         |
 | -------------- | ---------------------------------------------------------- | ------- | ---------------------------------------------------------------------------- |
@@ -17,8 +17,8 @@ title: Calendar 日历
 | disabledDate   | `(date: Date) => boolean`                                  | -       | 禁用日期谓词                                                                 |
 | minDate        | `string \| Date`                                           | -       | 最小可选日期                                                                 |
 | maxDate        | `string \| Date`                                           | -       | 最大可选日期                                                                 |
-| events         | `CalendarEvent[]`                                          | `[]`    | 日程 / 事项标记                                                              |
-| fetch          | `Fetch<CalendarEvent>`                                     | -       | 远程日程：自动以 `query.filters.range`（当前面板首尾日期）重取，切月自动加载 |
+| events         | [`CalendarEvent`](/types/view/data-display#calendarevent)`[]`                                          | `[]`    | 日程 / 事项标记                                                              |
+| fetch          | [`FetchHandler`](/types/basics/core#fetchhandler)`<`[`CalendarEvent`](/types/view/data-display#calendarevent)`>`                                     | -       | 远程日程：自动以 `query.filters.range`（当前面板首尾日期）重取，切月自动加载 |
 
 | 事件              | 参数                                                        | 说明         |
 | ----------------- | ----------------------------------------------------------- | ------------ |
@@ -31,6 +31,14 @@ title: Calendar 日历
 <Calendar v-model="date" :events="schedule" />
 <Calendar v-model:range-value="range" range :disabled-date="isWeekend" />
 ```
+
+## 补充：订阅数据源
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| subscribe | [`SubscribeHandler`](/types/basics/core#subscribehandler)`<`[`CalendarEvent`](/types/view/data-display#calendarevent)`[]>` | `undefined` | 订阅日程标记；挂载时调用，优先于 `fetch` / `events` |
+
+`subscribe` 与 `fetch` / 本地 `events` 同时存在时优先使用 `subscribe`；订阅失败时回退到 `fetch` / `events`。
 
 ## 交互演示
 

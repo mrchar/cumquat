@@ -6,11 +6,11 @@ title: FloatButton 悬浮按钮
 
 页面悬浮操作入口，可展开动作组。
 
-`FloatAction` 结构：`{ key: string; label: string; disabled?: boolean }`。
+[`FloatAction`](/types/view/other#floataction) 结构：`{ key: string; label: string; disabled?: boolean }`。
 
 | Prop      | 类型              | 默认值  | 说明                   |
 | --------- | ----------------- | ------- | ---------------------- |
-| actions   | `FloatAction[]`   | `[]`    | 展开的动作列表         |
+| actions   | [`FloatAction`](/types/view/other#floataction)`[]`   | `[]`    | 展开的动作列表         |
 | open      | `boolean`         | -       | 展开态（v-model:open） |
 | placement | `'top' \| 'left'` | `'top'` | 展开方向               |
 
@@ -28,6 +28,14 @@ title: FloatButton 悬浮按钮
   @select="onAction"
 />
 ```
+
+## 补充：局部挂载
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| mount | `boolean` | `false` | 挂载到最近定位祖先（`position: absolute`）而非视口，用于局部容器 |
+
+局部容器场景需确保祖先元素已建立定位上下文。
 
 ## 交互演示
 

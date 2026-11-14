@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useControllableModel, useFetchResource, useSubscribe } from '@cumquat/composables';
-import type { Fetch, SubscribeHandler } from '@cumquat/composables';
-import CqButton from '../basic/Button.vue';
+import type { FetchHandler, SubscribeHandler } from '@cumquat/core';
+import { useControllableModel, useFetchResource, useSubscribeResource } from '@cumquat/composables';
+
+import CqButton from '../general/Button.vue';
 
 export interface CollapseItem {
   key: string;
@@ -19,8 +20,8 @@ const props = withDefaults(
     defaultActiveKeys?: string[];
     /** 手风琴：同时至多展开一个面板 */
     accordion?: boolean;
-    /** 统一远程请求：挂载即拉取面板项，返回数组或 { list, total } */
-    fetch?: Fetch<CollapseItem>;
+    /** 统一远程请求：挂载即拉取面板项，返回数组或 { list, page, size, total } */
+    fetch?: FetchHandler<CollapseItem>;
     /**
      * 订阅数据：挂载时调用，resolve 出的面板项用于渲染。
      * 优先级：subscribe > fetch > items
@@ -72,7 +73,7 @@ const { enabled: fetchEnabled, state: fetchState } = useFetchResource<CollapseIt
 );
 
 /* ---------------- subscribe：订阅型数据 ---------------- */
-const { state: subState } = useSubscribe<CollapseItem[]>(() => props.subscribe);
+const { state: subState } = useSubscribeResource<CollapseItem[]>(() => props.subscribe);
 
 const sourceItems = computed<CollapseItem[]>(() => {
   if (props.subscribe && subState.value.status === 'success') return subState.value.data ?? [];

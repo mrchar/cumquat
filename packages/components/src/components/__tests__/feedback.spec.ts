@@ -1,9 +1,13 @@
+import {
+  Message, MessageContainer, Alert, Notification, NotificationContainer, Loading, Skeleton, Result, Upload, Chat, ChatInput, } from '../../index';
 import { describe, expect, it, vi } from 'vitest';
 import { nextTick, reactive, ref } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
-import { Message, Alert, Notification, Loading, Skeleton, Result, Upload, Chat, ChatInput } from '../../index';
 import type { ChatInputAttachment, ChatMessage } from '@cumquat/composables';
-import type { UploadFile } from '../feedback/Upload.vue';
+import { createMessage, createNotification } from '@cumquat/composables';
+
+import type { UploadFile } from '../data-entry/Upload.vue';
+import { mockFetch } from './helpers';
 
 describe('Message', () => {
   it('closable 点击后隐藏', async () => {
@@ -15,6 +19,37 @@ describe('Message', () => {
     expect(wrapper.find('.cumquat-message').classes()).toContain('cumquat-message--success');
     await wrapper.find('.cumquat-message__close').trigger('click');
     expect(wrapper.find('.cumquat-message').exists()).toBe(false);
+  });
+});
+
+describe('MessageContainer', () => {
+  it('按目标分组、跨目标不去重，并在目标变化时迁移消息', async () => {
+    const api = createMessage({ duration: 0 });
+    const first = document.createElement('div');
+    const second = document.createElement('div');
+    document.body.append(first, second);
+    api.push('相同', { target: first, duration: 0 });
+    api.push('相同', { target: second, duration: 0 });
+    api.push('相同', { target: second, duration: 0 });
+    api.push('其他', { target: first, duration: 0 });
+    const wrapper = mount(MessageContainer, { props: { api } });
+    await nextTick();
+
+    expect(first.querySelectorAll('.cumquat-message')).toHaveLength(2);
+    expect(second.querySelectorAll('.cumquat-message')).toHaveLength(1);
+
+    api.items.value[0].target = second;
+    await nextTick();
+    expect(first.querySelectorAll('.cumquat-message')).toHaveLength(1);
+    expect(second.querySelectorAll('.cumquat-message')).toHaveLength(2);
+
+    (second.querySelector('.cumquat-message__close') as HTMLButtonElement).click();
+    await nextTick();
+    expect(api.items.value).toHaveLength(2);
+    wrapper.unmount();
+    api.clear();
+    first.remove();
+    second.remove();
   });
 });
 
@@ -42,11 +77,38 @@ describe('Notification', () => {
   });
 });
 
+describe('NotificationContainer', () => {
+  it('使用局部 target 挂载通知', async () => {
+    const api = createNotification({ duration: 0 });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    api.success('已保存');
+    const wrapper = mount(NotificationContainer, { props: { api, target } });
+    await nextTick();
+    expect(target.querySelector('.cumquat-notification__title')?.textContent).toBe('已保存');
+    wrapper.unmount();
+    api.clear();
+    target.remove();
+  });
+});
+
 describe('Loading', () => {
   it('渲染 spinner 与文案', () => {
     const wrapper = mount(Loading, { props: { text: '加载中' } });
     expect(wrapper.find('.cumquat-loading__spinner').exists()).toBe(true);
     expect(wrapper.find('.cumquat-loading__text').text()).toBe('加载中');
+  });
+
+  it('全屏 Loading 使用局部 appendTo', async () => {
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    const wrapper = mount(Loading, { props: { fullscreen: true, appendTo: target } });
+    wrapper.vm.service.start();
+    await nextTick();
+    expect(target.querySelector('.cumquat-loading--fullscreen')).not.toBeNull();
+    wrapper.vm.service.clear();
+    wrapper.unmount();
+    target.remove();
   });
 });
 
@@ -79,13 +141,13 @@ describe('Upload', () => {
 
 describe('Chat', () => {
   it('fetch 加载历史并渲染气泡方向', async () => {
+    const fetch = mockFetch<ChatMessage>(async () => [
+      { id: 1, sender: 'Alice', content: '早' },
+      { id: 2, content: '晚', self: true },
+    ]);
     const wrapper = mount(Chat, {
       props: {
-        fetch: async () =>
-          [
-            { id: 1, sender: 'Alice', content: '早' },
-            { id: 2, content: '晚', self: true },
-          ] as ChatMessage[],
+        fetch,
       },
     });
     await flushPromises();

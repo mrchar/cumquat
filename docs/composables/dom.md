@@ -87,6 +87,26 @@ start(1000); // 可改延迟重启
 const { pause, resume, isActive } = useIntervalFn(tick, 1000, { immediate: true });
 ```
 
+## useDebounceFn
+
+连续调用只执行最后一次，可取消或立即执行；卸载自动清理。
+
+```ts
+const { run, cancel, flush, isPending } = useDebounceFn(search, 300);
+run(keyword); // 300ms 内的重复调用只保留最后一次
+```
+
+## useOnceFn
+
+只执行第一次调用并缓存返回值（返回值可以是 Promise），后续调用直接返回同一结果；需要重新执行时手动 `reset`。
+
+```ts
+const { run, reset, called } = useOnceFn(() => loadDetail(id));
+const detail = run(); // 首次调用执行并缓存
+const same = run(); // 直接返回首次结果
+reset(); // 允许下次重新执行
+```
+
 ## useClipboard
 
 复制文本与成功反馈。
@@ -132,6 +152,25 @@ const { rendered, visible, onAfterLeave } = useTransitionVisible(isOpen);
 全局浮层层级递增。
 
 ```ts
-const { currentZIndex, nextZIndex } = useZIndex();
+const { currentZIndex, nextZIndex, getGlobalZIndex } = useZIndex();
 nextZIndex(); // 每次打开浮层取新层级
+getGlobalZIndex(); // 读取当前全局最大值（供初始化样式参考）
 ```
+
+| 成员 | 类型 | 说明 |
+| --- | --- | --- |
+| `currentZIndex` | `Ref<number>` | 当前实例分配到的层级 |
+| `nextZIndex` | `() => number` | 取下一个层级，并同步到 `currentZIndex` |
+| `getGlobalZIndex` | `() => number` | 读取当前全局最大值，不消耗层级 |
+
+`useZIndex(initial?)` 可传入初始层级；缺省从全局计数读取。
+
+### resetGlobalZIndex
+
+把全局浮层层级计数重置回基准值（默认 `2000`），返回 `void`。仅供测试隔离使用。
+
+```ts
+function resetGlobalZIndex(value = BASE_Z_INDEX): void;
+```
+
+`useZIndex` 与 `resetGlobalZIndex` 共享同一份模块级计数；重置只影响后续 `nextZIndex()` 的起点，不会修改已打开浮层已取得的 `z-index`。

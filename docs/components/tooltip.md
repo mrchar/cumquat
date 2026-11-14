@@ -9,7 +9,7 @@ title: Tooltip 文字提示
 | Prop       | 类型        | 默认值  | 说明           |
 | ---------- | ----------- | ------- | -------------- |
 | content    | `string`    | `''`    | 提示文本       |
-| placement  | `Placement` | `'top'` | 气泡位置       |
+| placement  | [`Placement`](/types/basics/overlay#placement) | `'top'` | 气泡位置       |
 | openDelay  | `number`    | `0`     | 打开延迟（ms） |
 | closeDelay | `number`    | `0`     | 关闭延迟（ms） |
 | disabled   | `boolean`   | `false` | 禁用           |

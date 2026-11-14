@@ -16,7 +16,7 @@ title: Drawer 抽屉
 | maskClosable | `boolean`                                | `true`    | 点击遮罩关闭                   |
 | escClosable  | `boolean`                                | `true`    | ESC 关闭                       |
 | lockScroll   | `boolean`                                | `true`    | 锁定背景滚动                   |
-| appendTo     | `string \| HTMLElement`                  | -         | Teleport 目标                  |
+| appendTo     | [`MountTarget`](/types/basics/overlay#mounttarget)                            | -         | Teleport 目标；继承配置，最终回退 body |
 
 | 事件        | 参数             | 说明     |
 | ----------- | ---------------- | -------- |
@@ -36,6 +36,23 @@ Expose：`open()` / `close()`。
   <Form v-model="profile">…</Form>
 </Drawer>
 ```
+
+## 补充：异步确认
+
+| Prop | 类型 | 默认值 | 说明 |
+| --- | --- | --- | --- |
+| action | [`ActionHandler`](/types/basics/core#actionhandler) | `undefined` | 确认动作；失败时保持打开并展示错误条 |
+| confirmText | `string` | `'确认'` | 默认确认按钮文案 |
+| cancelText | `string` | `'取消'` | 默认取消按钮文案 |
+| errorText | `string` | `undefined` | 动作失败时的回退文案 |
+
+| 事件 | 参数 | 说明 |
+| --- | --- | --- |
+| confirm | - | 动作成功后触发 |
+| cancel | - | 点击默认取消按钮时触发 |
+| actionError | `error: unknown` | 动作失败时触发 |
+
+未提供 `footer` 插槽且配置了 `action` 时，组件渲染默认底部按钮；失败时不会关闭，错误文案按 `error.message → errorText` 回退。
 
 ## 交互演示
 

@@ -1,5 +1,6 @@
 import * as Library from '@cumquat/components';
 import DefaultTheme from 'vitepress/theme';
+import Layout from './Layout.vue';
 import './custom.css';
 
 function isComponentDefinition(value) {
@@ -9,6 +10,7 @@ function isComponentDefinition(value) {
 
 export default {
   extends: DefaultTheme,
+  Layout,
   enhanceApp({ app }) {
     // 组件库具名导出全局注册：markdown 正文中的示例标签可直接渲染，
     // LiveDemo 随具名导出一并注册

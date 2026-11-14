@@ -28,6 +28,16 @@ describe('useToastQueue', () => {
     expect(queue2.count.value).toBe(2);
   });
 
+  it('同目标去重，不同 target 的同文案消息分别入队', () => {
+    const queue = withScope(() => useToastQueue());
+    const first = queue.push('success', '完成', { target: '#first' });
+    const duplicate = queue.push('success', '完成', { target: '#first' });
+    const second = queue.push('success', '完成', { target: '#second' });
+    expect(duplicate.id).toBe(first.id);
+    expect(second.id).not.toBe(first.id);
+    expect(queue.items.value.map((item) => item.target)).toEqual(['#first', '#second']);
+  });
+
   it('超过 max 挤出最早项', () => {
     const queue = withScope(() => useToastQueue({ max: 2, duration: 0 }));
     const first = queue.push('info', '1', { duration: 0 });

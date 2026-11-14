@@ -1,13 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { defineComponent, h, resolveComponent } from 'vue';
+import { defineComponent, h, nextTick, resolveComponent } from 'vue';
 import { Cumquat, Button, Watermark, Tour, QRCode, CodeCard, LiveDemo } from '../../index';
-import { getCodeHighlighter } from '../extras/codeHighlighter';
+import { getCodeHighlighter } from '../internal/codeHighlighter';
 
 describe('Cumquat 全量安装', () => {
   it('app.use(Cumquat) 后 <c-button> 可解析', () => {
     const Host = defineComponent({
       render: () => h(resolveComponent('c-button')),
+    });
+    const wrapper = mount(Host, { global: { plugins: [Cumquat] } });
+    expect(wrapper.find('.cumquat-button').exists()).toBe(true);
+  });
+
+  it('全量安装注册 ConfigProvider', () => {
+    const Host = defineComponent({
+      render: () =>
+        h(resolveComponent('c-config-provider'), () => h(resolveComponent('c-button'))),
     });
     const wrapper = mount(Host, { global: { plugins: [Cumquat] } });
     expect(wrapper.find('.cumquat-button').exists()).toBe(true);
@@ -46,6 +55,16 @@ describe('Tour', () => {
     expect(wrapper.find('.cumquat-tour__title').text()).toBe('第二步');
     await wrapper.find('.cumquat-tour__next').trigger('click');
     expect(wrapper.emitted('update:open')?.[0]).toEqual([false]);
+  });
+
+  it('使用局部 appendTo 挂载', async () => {
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    const wrapper = mount(Tour, { props: { steps, open: true, appendTo: target } });
+    await nextTick();
+    expect(target.querySelector('.cumquat-tour__card')).not.toBeNull();
+    wrapper.unmount();
+    target.remove();
   });
 });
 
@@ -142,7 +161,7 @@ describe('LiveDemo', () => {
 
   it('模板语法错误时渲染编译失败提示', () => {
     const wrapper = mount(LiveDemo, { props: { code: '<Button' } });
-    expect(wrapper.text()).toContain('模板编译失败');
+    expect(wrapper.text()).toContain('编译失败');
   });
 });
 
