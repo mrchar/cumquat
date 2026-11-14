@@ -39,7 +39,8 @@ jobs:
 
       # pnpm pack 会把 workspace:* 依赖替换为真实版本号（npm 做不到）
       - name: Pack aggregate package
-        run: pnpm --filter @mrchar/cumquat pack --pack-destination ./dist-pkg
+        working-directory: packages/cumquat
+        run: pnpm pack --pack-destination ../../dist-pkg
 
       # npm >= 11.5.1 支持 Trusted Publishing（Node 24 内置 npm 11）
       - name: Setup Node 24 for npm publish
