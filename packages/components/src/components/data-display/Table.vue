@@ -132,6 +132,11 @@ const props = withDefaults(
     sorter?: { key: string; order: 'asc' | 'desc' | null };
     /** 筛选状态（受控，v-model:filters）；不传为组件内部状态 */
     filters?: FilterValues;
+    /**
+     * 是否启用内置列筛选（表头面板与本地过滤），默认开启。
+     * 关闭后可自行编写筛选表单，把条件闭包进 fetch 方法，Table 只传分页与排序参数
+     */
+    filterable?: boolean;
     /** 初始排序字段（非受控） */
     defaultSort?: { key: string; order: 'asc' | 'desc' };
     /** 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先 */
@@ -161,6 +166,7 @@ const props = withDefaults(
     size: 10,
     sizes: () => [10, 20, 50],
     defaultSort: undefined,
+    filterable: true,
     cells: undefined,
     responsive: false,
     cardBreakpoint: '768px',
@@ -278,7 +284,7 @@ function clearFilter(column: TableColumn) {
 const processedRows = computed<Row[]>(() => {
   let list = sourceRows.value;
 
-  if (!isRemote.value) {
+  if (!isRemote.value && props.filterable) {
     for (const column of tableColumns.value) {
       const picked = filterValues.value[column.key];
       if (picked && picked.length > 0) {
@@ -346,6 +352,7 @@ const {
   state: fetchState,
   total: fetchTotal,
   pageInfo,
+  refresh: refreshFetch,
 } = useFetchResource<Row[]>(() => props.fetch, {
   getQuery: () => ({
     page: page.value,
@@ -354,7 +361,8 @@ const {
       sorterState.value.key && sorterState.value.order
         ? { key: sorterState.value.key, order: sorterState.value.order }
         : undefined,
-    filters: { ...filterValues.value },
+    // 关闭内置筛选时不向 fetch 注入 filters：条件由宿主闭包进资源工厂
+    ...(props.filterable ? { filters: { ...filterValues.value } } : {}),
   }),
   initialData: [] as Row[],
 });
@@ -410,6 +418,7 @@ watch(size, () => emitChange());
 watch(
   filterValues,
   () => {
+    if (!props.filterable) return;
     if (page.value !== 1) go(1);
     else emitChange();
   },
@@ -420,7 +429,7 @@ function emitChange() {
   emit('change', {
     pagination: { page: page.value, size: size.value },
     sorter: { ...sorterState.value },
-    filters: { ...filterValues.value },
+    filters: props.filterable ? { ...filterValues.value } : {},
   });
 }
 
@@ -429,6 +438,9 @@ const rootEl = ref<HTMLElement | null>(null);
 useClickOutside(rootEl, () => {
   openFilterKey.value = null;
 });
+
+/** 命令式重取：关闭内置筛选后，可由外部筛选表单提交时触发 */
+defineExpose({ refresh: refreshFetch });
 
 /* ---------------- 选择（跨页汇总） ---------------- */
 const selectedKeys = ref<Array<string | number>>([]);
@@ -586,7 +598,7 @@ const CellView = (cellProps: {
                   <path d="m8 9 4-4 4 4M8 15l4 4 4-4" />
                 </svg>
               </button>
-              <span v-if="col.options" class="cumquat-table__filter">
+              <span v-if="filterable && col.options" class="cumquat-table__filter">
                 <button
                   type="button"
                   aria-label="筛选"

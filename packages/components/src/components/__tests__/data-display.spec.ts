@@ -268,6 +268,37 @@ describe('Table', () => {
     expect(wrapper.emitted('update:filters')?.at(-1)?.[0]).toEqual({ role: [] });
   });
 
+  it('filterable: false：隐藏筛选入口、跳过本地过滤、不向 fetch 注入 filters', async () => {
+    const filterColumns: TableColumn[] = [
+      { key: 'name', title: '名称' },
+      {
+        key: 'role',
+        title: '角色',
+        options: [
+          { label: '前端', value: 'front' },
+          { label: '后端', value: 'back' },
+        ],
+      },
+    ];
+    const list = [
+      { name: 'Amber', role: 'front' },
+      { name: 'Bolt', role: 'back' },
+    ];
+
+    // 本地模式：即使传入 filters 也不过滤，筛选入口不渲染
+    const local = mount(Table, {
+      props: { columns: filterColumns, rows: list, filters: { role: ['front'] }, filterable: false },
+    });
+    expect(local.find('.cumquat-table__filter-trigger').exists()).toBe(false);
+    expect(local.findAll('.cumquat-table__row')).toHaveLength(2);
+
+    // 远程模式：查询参数中不包含 filters
+    const fetcher = mockFetch(async () => list);
+    mount(Table, { props: { columns: filterColumns, fetch: fetcher, filterable: false } });
+    await wait();
+    expect(fetcher.queries.at(-1)?.filters).toBeUndefined();
+  });
+
   it('空数据显示空态', () => {
     const wrapper = mount(Table, { props: { columns, rows: [] } });
     expect(wrapper.find('.cumquat-table__empty').text()).toBe('暂无数据');

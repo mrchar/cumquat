@@ -26,6 +26,7 @@ title: Table 表格
 | sizes          | `number[]`                                        | `[10, 20, 50]` | 每页条数选项                                                                                        |
 | sorter         | `{ key: string; order: 'asc' \| 'desc' \| null }` | -              | 排序状态（受控，`v-model:sorter`）；不传为组件内部状态                                              |
 | filters        | `Record<string, Array<string \| number \| boolean \| null>>` | -   | 筛选状态（受控，`v-model:filters`）；不传为组件内部状态                                             |
+| filterable     | `boolean`                                         | `true`         | 是否启用内置列筛选；关闭后不渲染表头筛选入口、不本地过滤，也不向 `fetch` 注入 `filters`              |
 | defaultSort    | `{ key: string; order: 'asc' \| 'desc' }`         | -              | 初始排序（非受控）                                                                                  |
 | fetch          | [`FetchHandler`](/types/basics/core#fetchhandler)`<Row>`                                      | -              | 远程数据资源工厂：自动注入 pagination/sorter/filters 调 `execute`；`data` 写 `{ list, page, size, total }` 自动分页，写数组按全量渲染 |
 | cells          | [`CellRenderer`](/types/model/rendering#cellrenderer)`[]`                                  | -              | 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先                              |
@@ -173,6 +174,56 @@ const remoteColumns: TableColumn[] = [
 - **本地数据**（`rows`）：组件内部过滤，无需额外处理。
 - **远程数据**（`fetch`）：筛选值写入查询的 `filters`，自动重取；资源对象里直接读 `query.filters`。
 - **`data` 状态模式**：筛选变化通过 `change` 事件的 `filters` 字段回发，由外层发请求。
+
+### 自定义筛选表单
+
+如果更习惯用独立表单承载筛选条件，可设置 `filterable: false` 关闭表格的筛选机制：表头不再出现筛选入口，本地不再过滤，`fetch` 的查询参数里也不再包含 `filters`。筛选条件直接闭包进资源工厂，Table 只负责分页与排序参数：
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { Table, Form } from '@mrchar/cumquat';
+import type { FetchHandler, Status } from '@mrchar/cumquat';
+
+const tableRef = ref<InstanceType<typeof Table>>();
+const filterForm = ref({ status: '' });
+
+// 工厂闭包直接读取表单条件；query 只含 page / size / sorter
+const fetchUsers: FetchHandler<UserRow> = () => {
+  const status = ref<Status>('idle');
+  // ...data / error / message
+  return {
+    status,
+    // ...
+    async execute(query) {
+      const res = await api.users({
+        page: query.page,
+        size: query.size,
+        status: filterForm.value.status,
+      });
+      // ...写回 data / status
+    },
+    abort() {},
+  };
+};
+
+// 表单提交后命令式重取（refresh 使用当前分页与排序）
+const search = () => tableRef.value?.refresh();
+</script>
+
+<template>
+  <Form v-model="filterForm" :properties="filterProperties" @submit="search" />
+  <Table
+    ref="tableRef"
+    :columns="columns"
+    :fetch="fetchUsers"
+    :filterable="false"
+    pagination
+  />
+</template>
+```
+
+需要回到第 1 页时，配合 `v-model:page` 将页码置为 `1` 再调用 `refresh()`。
 
 筛选变化会自动回到第 1 页。受控用法：
 
