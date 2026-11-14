@@ -150,7 +150,7 @@ export const feedbackSamples: Sample[] = [
       @send="onSend"
     />
     <p class="mt-2 text-sm text-cumquat-text-muted">
-      {{ lastSent ? \`已发送：\${lastSent.text || '（仅附件）'}，附件 \${lastSent.attachments.length} 个\` : '长按输入框或语音键说话；左滑输入框进入纯语音模式' }}
+      {{ lastSent ? \`已发送：\${lastSent.text || '（仅附件）'}，附件 \${lastSent.attachments.length} 个\` : '长按输入框或语音键说话；左滑语音键进入纯语音模式' }}
     </p>
   </div>
 `,

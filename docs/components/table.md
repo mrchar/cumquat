@@ -27,6 +27,7 @@ title: Table 表格
 | sorter         | `{ key: string; order: 'asc' \| 'desc' \| null }` | -              | 排序状态（受控，`v-model:sorter`）；不传为组件内部状态                                              |
 | filters        | `Record<string, Array<string \| number \| boolean \| null>>` | -   | 筛选状态（受控，`v-model:filters`）；不传为组件内部状态                                             |
 | filterable     | `boolean`                                         | `true`         | 是否启用内置列筛选；关闭后不渲染表头筛选入口、不本地过滤，也不向 `fetch` 注入 `filters`              |
+| resizable      | `boolean`                                         | `false`        | 是否允许拖动表头分隔条调整列宽；列上的 `width` 作为初始宽度                                          |
 | defaultSort    | `{ key: string; order: 'asc' \| 'desc' }`         | -              | 初始排序（非受控）                                                                                  |
 | fetch          | [`FetchHandler`](/types/basics/core#fetchhandler)`<Row>`                                      | -              | 远程数据资源工厂：自动注入 pagination/sorter/filters 调 `execute`；`data` 写 `{ list, page, size, total }` 自动分页，写数组按全量渲染 |
 | cells          | [`CellRenderer`](/types/model/rendering#cellrenderer)`[]`                                  | -              | 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先                              |
@@ -232,6 +233,19 @@ const search = () => tableRef.value?.refresh();
 ```
 
 `filters` 形状为 `Record<string, Array<string | number | boolean | null>>`；面板内的「清空」只清除当前列的筛选。
+
+## 列宽拖拽
+
+开启 `resizable` 后，表头每个数据列右侧出现分隔条，按住左右拖动即可调整列宽：
+
+```vue
+<Table :columns="columns" :rows="rows" resizable />
+```
+
+- 最小列宽为 `60px`，拖动过程中实时生效，无需额外配置。
+- 列上的 `width` 作为初始宽度（如 `{ key: 'name', title: '姓名', width: '200px' }`），未声明时按当前渲染宽度开始拖动。
+- 拖拽状态保存在 Table 内部，按列 `key` 记录；重新渲染或翻页不会丢失。
+- 选择列、操作列不参与拖拽。
 
 ## 单元格竞选
 

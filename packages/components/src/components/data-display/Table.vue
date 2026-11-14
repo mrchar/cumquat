@@ -14,7 +14,7 @@ import {
   usePagination,
   useSubscribeResource,
 } from '@cumquat/composables';
-import { computed, getCurrentInstance, ref, watch } from 'vue';
+import { computed, getCurrentInstance, onScopeDispose, reactive, ref, watch } from 'vue';
 import type { VNodeChild } from 'vue';
 
 import CqButton from '../general/Button.vue';
@@ -137,6 +137,8 @@ const props = withDefaults(
      * 关闭后可自行编写筛选表单，把条件闭包进 fetch 方法，Table 只传分页与排序参数
      */
     filterable?: boolean;
+    /** 是否允许拖动表头分隔条调整列宽，默认关闭；列上的 width 作为初始宽度 */
+    resizable?: boolean;
     /** 初始排序字段（非受控） */
     defaultSort?: { key: string; order: 'asc' | 'desc' };
     /** 局部单元格渲染器：与全局注册共同参与竞选，同名显式指定与同分时局部优先 */
@@ -167,6 +169,7 @@ const props = withDefaults(
     sizes: () => [10, 20, 50],
     defaultSort: undefined,
     filterable: true,
+    resizable: false,
     cells: undefined,
     responsive: false,
     cardBreakpoint: '768px',
@@ -442,6 +445,48 @@ useClickOutside(rootEl, () => {
 /** 命令式重取：关闭内置筛选后，可由外部筛选表单提交时触发 */
 defineExpose({ refresh: refreshFetch });
 
+/* ---------------- 列宽拖拽 ---------------- */
+const columnWidths = reactive<Record<string, number>>({});
+
+let resizing: { key: string; startX: number; startWidth: number } | null = null;
+
+function widthOf(column: ResolvedTableColumn): string | undefined {
+  const width = columnWidths[column.key];
+  return width ? `${width}px` : column.width;
+}
+
+function onResizeMove(event: PointerEvent) {
+  if (!resizing) return;
+  columnWidths[resizing.key] = Math.max(
+    60,
+    resizing.startWidth + event.clientX - resizing.startX,
+  );
+}
+
+function stopResize() {
+  if (!resizing) return;
+  resizing = null;
+  window.removeEventListener('pointermove', onResizeMove);
+  window.removeEventListener('pointerup', stopResize);
+  document.body.style.removeProperty('cursor');
+  document.body.style.removeProperty('user-select');
+}
+
+function startResize(event: PointerEvent, column: ResolvedTableColumn) {
+  const th = (event.currentTarget as HTMLElement).closest('th');
+  resizing = {
+    key: column.key,
+    startX: event.clientX,
+    startWidth: columnWidths[column.key] ?? th?.getBoundingClientRect().width ?? 0,
+  };
+  window.addEventListener('pointermove', onResizeMove);
+  window.addEventListener('pointerup', stopResize);
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+}
+
+onScopeDispose(stopResize);
+
 /* ---------------- 选择（跨页汇总） ---------------- */
 const selectedKeys = ref<Array<string | number>>([]);
 watch(selectedKeys, (keys) => emit('update:selectedKeys', keys), { deep: true });
@@ -567,7 +612,7 @@ const CellView = (cellProps: {
             :key="col.key"
             class="cumquat-table__th"
             :class="`cumquat-table__th--${col.align ?? 'left'}`"
-            :style="col.width ? { width: col.width } : undefined"
+            :style="{ width: widthOf(col) }"
           >
             <span class="cumquat-table__th-title">
               <span class="cumquat-table__th-text" :title="col.title">{{ col.title }}</span>
@@ -623,6 +668,15 @@ const CellView = (cellProps: {
                 />
               </span>
             </span>
+            <span
+              v-if="resizable"
+              class="cumquat-table__resizer"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="调整列宽"
+              @click.stop
+              @pointerdown.stop.prevent="startResize($event, col)"
+            />
           </th>
           <th v-if="hasActions" class="cumquat-table__th cumquat-table__th--right">
             <span class="cumquat-table__th-title">

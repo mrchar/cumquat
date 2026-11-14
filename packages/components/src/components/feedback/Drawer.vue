@@ -15,8 +15,14 @@ const props = withDefaults(
     title?: string;
     /** 滑出方向 */
     direction?: 'left' | 'right' | 'top' | 'bottom';
-    /** 面板尺寸（左右为宽度，上下为高度） */
+    /** 滑出轴尺寸（左右滑出为宽度，上下滑出为高度） */
     size?: string;
+    /** 面板宽度：缺省时左右滑出取 size，上下滑出铺满 */
+    width?: string;
+    /** 面板高度：缺省时上下滑出取 size，左右滑出铺满 */
+    height?: string;
+    /** 非滑出轴对齐：上下滑出控制水平位置，左右滑出控制垂直位置 */
+    align?: 'start' | 'center' | 'end';
     closable?: boolean;
     maskClosable?: boolean;
     escClosable?: boolean;
@@ -37,6 +43,9 @@ const props = withDefaults(
     title: '',
     direction: 'right',
     size: '24rem',
+    width: undefined,
+    height: undefined,
+    align: 'center',
     closable: true,
     maskClosable: true,
     escClosable: true,
@@ -115,9 +124,25 @@ const { container } = useOverlayContainer({
 });
 const teleportTarget = computed<MountTarget>(() => container.value ?? 'body');
 
-const panelStyle = computed(() => {
-  if (props.direction === 'left' || props.direction === 'right') return { width: props.size };
-  return { height: props.size };
+/** 非滑出轴对齐：start 贴起始边，center 居中，end 贴结束边（自动外边距实现，不干扰滑入位移） */
+function crossAlign(axis: 'x' | 'y', align: 'start' | 'center' | 'end') {
+  if (axis === 'x') {
+    if (align === 'start') return { left: '0', right: 'auto' };
+    if (align === 'end') return { left: 'auto', right: '0' };
+    return { left: '0', right: '0', marginLeft: 'auto', marginRight: 'auto' };
+  }
+  if (align === 'start') return { top: '0', bottom: 'auto' };
+  if (align === 'end') return { top: 'auto', bottom: '0' };
+  return { top: '0', bottom: '0', marginTop: 'auto', marginBottom: 'auto' };
+}
+
+const panelStyle = computed<Record<string, string>>(() => {
+  const horizontal = props.direction === 'left' || props.direction === 'right';
+  const width = props.width ?? (horizontal ? props.size : '100%');
+  const height = props.height ?? (horizontal ? '100%' : props.size);
+  return horizontal
+    ? { width, height, ...crossAlign('y', props.align) }
+    : { width, height, ...crossAlign('x', props.align) };
 });
 
 defineExpose({ open: setOpen, close });

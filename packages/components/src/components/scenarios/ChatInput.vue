@@ -11,9 +11,10 @@ import VoiceButton from './VoiceButton.vue';
  * 聊天输入条：左侧附件按钮、中间文本框、右侧语音键（有文字时替换为发送键）。
  *
  * 语音识别经 voice 属性注入（VoiceRecognizer 协议），两条入口共享会话：
- * - 长按输入框说话：转录实时展示在输入框位置，松手写入输入框，手动发送
+ * - 长按输入框说话：录音中在输入条上方的气泡预览实时转录，松手后才写入输入框，手动发送
  * - 按住语音键说话：松手即把转录并入草稿发送；输入框上滑取消本次转录
- * - 左滑输入框进入纯语音模式（语音键全宽），全宽键右滑恢复输入框
+ * - 语音键左滑进入纯语音模式（语音键全宽），全宽键右滑恢复输入框
+ * 横向手势只由语音键承担，输入框保留原生文字选择。
  * 发送走 action 协议：执行中禁用，失败展示错误条并保留草稿。
  */
 const props = withDefaults(
@@ -30,8 +31,6 @@ const props = withDefaults(
     placeholder?: string;
     /** 长按输入框触发语音的时长阈值（ms） */
     holdDelay?: number;
-    /** 左滑切换纯语音模式的触发距离（px） */
-    swipeDistance?: number;
     /** 禁用整条输入 */
     disabled?: boolean;
   }>(),
@@ -42,7 +41,6 @@ const props = withDefaults(
     action: undefined,
     placeholder: '输入消息…',
     holdDelay: 300,
-    swipeDistance: 48,
     disabled: false,
   },
 );
@@ -60,7 +58,6 @@ const input = useChatInput({
   voice: () => props.voice,
   action: (...args: unknown[]) => props.action?.(args[0] as ChatInputPayload),
   holdDelay: () => props.holdDelay,
-  swipeDistance: () => props.swipeDistance,
   disabled: () => props.disabled,
   emitUpdate: (value) => emit('update:modelValue', value),
   emitAttachments: (value) => emit('update:attachments', value),
@@ -97,13 +94,24 @@ watch(recording, (active) => {
   if (active) inputRef.value?.blur();
 });
 
-// 右侧窄语音键：复用手势状态机（原地松手发送、上滑取消），取消提示镜像到录音浮层
+/** 左滑语音键：结束本次会话（丢弃转录）并进入纯语音模式 */
+const switchToVoiceMode = async () => {
+  await handleVoiceRelease({ result: 'cancel' });
+  mode.value = 'voice';
+};
+
+// 右侧窄语音键：原地松手发送、上滑取消、左滑进入纯语音模式
+const voiceActions = [{ key: 'expand', label: '切换纯语音模式', direction: 'left' as const }];
 const voiceTrigger = useVoiceButton(
-  () => [],
+  () => voiceActions,
   {
     disabled: () => props.disabled || !hasVoice.value || input.sending.value,
     onPressStart: () => void startVoiceSession(),
     onRelease: (payload) => {
+      if (payload.result === 'action' && payload.key === 'expand') {
+        void switchToVoiceMode();
+        return;
+      }
       mirrorGesture(payload.result);
       void handleVoiceRelease(payload);
     },
@@ -118,10 +126,16 @@ const onFileChange = (event: Event) => {
   target.value = '';
 };
 
-/** 录音浮层提示：跟随手势区切换 */
-const recordingHint = computed(() =>
-  sessionGesture.value === 'cancel' ? '松开取消' : '松开写入输入框',
-);
+/** 录音气泡提示：输入框长按看手势区，语音键长按看按钮手势（含左滑功能项） */
+const recordingHint = computed(() => {
+  if (voiceTrigger.holding.value) {
+    const gesture = voiceTrigger.gesture.value;
+    if (gesture === 'cancel') return '松开取消';
+    if (gesture === 'action') return `松开${voiceTrigger.activeAction.value?.label ?? ''}`;
+    return '松开发送';
+  }
+  return sessionGesture.value === 'cancel' ? '松开取消' : '松开写入输入框';
+});
 
 /** 输入框回车发送（IME 组合中不触发） */
 const onEnter = (event: KeyboardEvent) => {
@@ -199,14 +213,13 @@ defineExpose({ input });
           aria-hidden="true"
           @change="onFileChange"
         />
-        <!-- 输入框：轻点聚焦，长按语音，上滑取消，左滑切换纯语音模式 -->
+        <!-- 输入框：轻点聚焦，长按语音，上滑取消；横向滑动留给原生文字选择 -->
         <div
           class="cumquat-chat-input__field"
           @pointerdown="onFieldPointerDown"
           @pointermove="onFieldPointerMove"
           @pointerup="onFieldPointerUp"
           @pointercancel="onFieldPointerCancel"
-          @contextmenu.prevent
         >
           <input
             ref="inputRef"
@@ -217,20 +230,6 @@ defineExpose({ input });
             :disabled="disabled"
             @keydown.enter="onEnter"
           />
-          <div v-if="recording" class="cumquat-chat-input__recording" aria-live="polite">
-            <span v-if="level !== undefined" class="cumquat-chat-input__meter" aria-hidden="true">
-              <i
-                v-for="(factor, index) in [0.55, 1, 0.8, 0.65]"
-                :key="index"
-                class="cumquat-chat-input__meter-bar"
-                :style="{ height: `${Math.round(6 + 14 * Math.min(1, Math.max(0, level ?? 0)) * factor)}px` }"
-              />
-            </span>
-            <span class="cumquat-chat-input__recording-text">{{
-              liveText.trim() || '请说话…'
-            }}</span>
-            <span class="cumquat-chat-input__recording-hint">{{ recordingHint }}</span>
-          </div>
         </div>
         <!-- 有可发送内容时语音键替换为发送键：同尺寸圆形实心钮，切换无形状跳变 -->
         <Button
@@ -295,6 +294,27 @@ defineExpose({ input });
         @pressstart="startVoiceSession"
         @release="handleVoiceRelease"
       />
+    </div>
+    <!-- 语音气泡：录音中在上方预览实时转录，松手后才写入输入框（纯语音模式由全宽键自带的提示承担） -->
+    <div
+      v-if="recording && mode === 'text'"
+      class="cumquat-chat-input__recording"
+      :class="sessionGesture === 'cancel' ? 'cumquat-chat-input__recording--cancel' : ''"
+      role="status"
+      aria-live="polite"
+    >
+      <span v-if="level !== undefined" class="cumquat-chat-input__meter" aria-hidden="true">
+        <i
+          v-for="(factor, index) in [0.55, 1, 0.8, 0.65]"
+          :key="index"
+          class="cumquat-chat-input__meter-bar"
+          :style="{ height: `${Math.round(6 + 14 * Math.min(1, Math.max(0, level ?? 0)) * factor)}px` }"
+        />
+      </span>
+      <span class="cumquat-chat-input__recording-text">{{
+        liveText.trim() || '请说话…'
+      }}</span>
+      <span class="cumquat-chat-input__recording-hint">{{ recordingHint }}</span>
     </div>
   </div>
 </template>

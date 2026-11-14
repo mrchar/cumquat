@@ -11,9 +11,9 @@ import type { VoiceGesture, VoiceReleasePayload } from './useVoiceButton';
  *
  * 语音识别经 VoiceRecognizer 协议注入（组件不耦合任何识别实现），
  * 两条语音入口共享同一会话语义：
- * - 长按输入框说话：转录实时写入输入框位置展示，松手后转录写入输入框，需手动发送
+ * - 长按输入框说话：录音中实时转录仅经 liveText 供气泡预览，松手后才写入输入框，需手动发送
  * - 按住语音键说话（输入框为空时右侧窄键 / 左滑后的全宽键）：松手即把转录并入草稿发送
- * 输入框上滑取消本次转录；左滑隐藏输入框进入纯语音模式（语音键全宽，右滑恢复）。
+ * 输入框上滑取消本次转录；纯语音模式切换由语音键左右滑承担（输入框不占用横向手势，保留原生文字选择）。
  * 发送统一走 action 协议：执行中禁用，失败展示错误条并保留草稿（语音转录落回输入框可重试）。
  */
 
@@ -40,7 +40,7 @@ export interface ChatInputPayload {
 export interface VoiceRecognizer {
   /** 实时转录文本（含中间结果） */
   transcript: Ref<string>;
-  /** 实时音量 0~1（可选）：提供后录音浮层展示声波条 */
+  /** 实时音量 0~1（可选）：提供后录音气泡展示声波条 */
   level?: Ref<number>;
   start: () => void | Promise<void>;
   stop: () => void | Promise<void>;
@@ -62,8 +62,6 @@ export interface UseChatInputOptions {
   action?: (payload: ChatInputPayload) => Promise<unknown>;
   /** 长按输入框触发语音的时长阈值（ms），默认 300 */
   holdDelay?: MaybeRefOrGetter<number>;
-  /** 输入框左滑切换语音模式的触发距离（px），默认 48 */
-  swipeDistance?: MaybeRefOrGetter<number>;
   /** 录音中上滑取消的触发距离（px），默认 48 */
   cancelDistance?: MaybeRefOrGetter<number>;
   disabled?: () => boolean;
@@ -137,7 +135,6 @@ function appendText(base: string, addition: string): string {
 
 export function useChatInput(options: UseChatInputOptions = {}): UseChatInputReturn {
   const holdDelay = () => toValue(options.holdDelay ?? 300);
-  const swipeDistance = () => toValue(options.swipeDistance ?? 48);
   const cancelDistance = () => toValue(options.cancelDistance ?? 48);
 
   const { value: draft } = useControllableModel<string>({
@@ -284,13 +281,11 @@ export function useChatInput(options: UseChatInputOptions = {}): UseChatInputRet
     if (recording.value) sessionGesture.value = gesture === 'action' ? 'confirm' : gesture;
   };
 
-  // 输入框手势：轻点聚焦（不拦截默认行为）；长按越阈进入录音；
-  // 录音中上滑取消；未录音时左滑越过阈值立即切换纯语音模式并吞掉本次按压
+  // 输入框手势：轻点聚焦（不拦截默认行为）；长按越阈进入录音；录音中上滑取消。
+  // 横向滑动属于原生文字选择，输入框不接管；纯语音模式切换由语音键承担。
   let pressTimer: ReturnType<typeof setTimeout> | null = null;
-  let startX = 0;
   let startY = 0;
   let pressed = false;
-  let swipedOut = false;
 
   const clearHold = () => {
     if (pressTimer) {
@@ -300,9 +295,8 @@ export function useChatInput(options: UseChatInputOptions = {}): UseChatInputRet
   };
 
   const onFieldPointerDown = (event: FieldPointerLike) => {
-    if (options.disabled?.() || recording.value || swipedOut) return;
+    if (options.disabled?.() || recording.value) return;
     pressed = true;
-    startX = event.clientX ?? 0;
     startY = event.clientY ?? 0;
     try {
       const el = event.currentTarget as HTMLElement | null;
@@ -317,29 +311,15 @@ export function useChatInput(options: UseChatInputOptions = {}): UseChatInputRet
   };
 
   const onFieldPointerMove = (event: FieldPointerLike) => {
-    if (!pressed || swipedOut) return;
-    const dx = (event.clientX ?? 0) - startX;
+    if (!pressed || !recording.value) return;
+    // 录音中：上滑进入取消区，回中复位
     const dy = (event.clientY ?? 0) - startY;
-    if (recording.value) {
-      // 录音中：纵向主导判定取消区，回中复位
-      if (Math.abs(dy) >= Math.abs(dx) && dy <= -cancelDistance()) sessionGesture.value = 'cancel';
-      else sessionGesture.value = 'confirm';
-      return;
-    }
-    if (Math.abs(dx) > Math.abs(dy) && dx <= -swipeDistance()) {
-      swipedOut = true;
-      clearHold();
-      mode.value = 'voice';
-    }
+    sessionGesture.value = dy <= -cancelDistance() ? 'cancel' : 'confirm';
   };
 
   const settleField = async (fallback: VoiceGesture) => {
     pressed = false;
     clearHold();
-    if (swipedOut) {
-      swipedOut = false;
-      return;
-    }
     if (!recording.value) return;
     const spoken = (await finishSession(fallback)).trim();
     // 长按输入框：转录写入输入框，由用户手动发送

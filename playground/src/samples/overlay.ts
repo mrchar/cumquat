@@ -22,12 +22,23 @@ export const overlaySamples: Sample[] = [
     code: `
   <div class="flex flex-wrap items-center gap-3">
     <Button @click="open = true">打开抽屉</Button>
+    <Button @click="bottomOpen = true">底部抽屉</Button>
     <Drawer v-model:open="open" title="详情" direction="right" size="320px">
       <p class="text-sm text-cumquat-text-muted">从右侧滑出的面板内容。</p>
     </Drawer>
+    <Drawer
+      v-model:open="bottomOpen"
+      title="快捷操作"
+      direction="bottom"
+      size="40vh"
+      width="32rem"
+      align="end"
+    >
+      <p class="text-sm text-cumquat-text-muted">底部滑出，宽 32rem，靠右对齐。</p>
+    </Drawer>
   </div>
 `,
-    scope: () => ({ open: ref(false) }),
+    scope: () => ({ open: ref(false), bottomOpen: ref(false) }),
   },
   {
     key: 'dropdown',

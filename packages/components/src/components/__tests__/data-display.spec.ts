@@ -299,6 +299,31 @@ describe('Table', () => {
     expect(fetcher.queries.at(-1)?.filters).toBeUndefined();
   });
 
+  it('resizable：拖动表头分隔条调整列宽，默认不渲染', async () => {
+    const resizeColumns: TableColumn[] = [
+      { key: 'name', title: '名称' },
+      { key: 'role', title: '角色' },
+    ];
+    const rows = [{ name: 'Amber', role: 'front' }];
+
+    expect(mount(Table, { props: { columns: resizeColumns, rows } }).find('.cumquat-table__resizer').exists()).toBe(false);
+
+    const wrapper = mount(Table, { props: { columns: resizeColumns, rows, resizable: true } });
+    const handles = wrapper.findAll('.cumquat-table__resizer');
+    expect(handles).toHaveLength(2);
+
+    const firstTh = wrapper.findAll('.cumquat-table__th')[0];
+    handles[0].element.dispatchEvent(
+      new MouseEvent('pointerdown', { clientX: 100, bubbles: true }),
+    );
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 180 }));
+    window.dispatchEvent(new MouseEvent('pointerup'));
+    await wrapper.vm.$nextTick();
+
+    // jsdom 中初始宽度为 0，向右拖动 80px 后取最小值 60px 与 80px 的较大者
+    expect(firstTh.attributes('style')).toContain('width: 80px');
+  });
+
   it('空数据显示空态', () => {
     const wrapper = mount(Table, { props: { columns, rows: [] } });
     expect(wrapper.find('.cumquat-table__empty').text()).toBe('暂无数据');

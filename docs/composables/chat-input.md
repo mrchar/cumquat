@@ -10,9 +10,9 @@ title: 聊天输入
 
 语音识别经 [`VoiceRecognizer`](/types/view/scenarios#voicerecognizer) 协议注入，组合函数不耦合任何识别实现。两条语音入口共享同一会话语义：
 
-- **长按输入框说话**：转录实时写入输入框位置展示，松手后转录写入输入框，需手动发送
+- **长按输入框说话**：录音中实时转录仅经 `liveText` 供气泡预览，松手后才写入输入框，需手动发送
 - **按住语音键说话**（输入框为空时右侧窄键 / 左滑后的全宽键）：松手即把转录并入草稿发送
-- 录音中上滑取消本次转录；未录音时左滑输入框切换纯语音模式，全宽语音键右滑恢复
+- 录音中上滑取消本次转录；纯语音模式由语音键左滑进入、全宽键右滑恢复（输入框横向滑动保留原生文字选择）
 
 ```ts
 const input = useChatInput({
@@ -37,7 +37,6 @@ await input.send();
 | voice           | `() => `[`VoiceRecognizer`](/types/view/scenarios#voicerecognizer)` \| undefined` | 识别器 getter，未提供时语音入口整体不渲染 |
 | action          | `(payload) => Promise<unknown>`      | 发送动作，抛错或返回 error 结果即失败    |
 | holdDelay       | `MaybeRefOrGetter<number>`           | 长按阈值 ms，默认 `300`                  |
-| swipeDistance   | `MaybeRefOrGetter<number>`           | 左滑切换距离 px，默认 `48`               |
 | cancelDistance  | `MaybeRefOrGetter<number>`           | 上滑取消距离 px，默认 `48`               |
 | disabled        | `() => boolean`                      | 禁用判定                                 |
 | emitUpdate      | `(text: string) => void`             | 文本变化回发（v-model）                  |

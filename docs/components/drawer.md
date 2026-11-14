@@ -11,7 +11,10 @@ title: Drawer 抽屉
 | open         | `boolean`                                | `false`   | 开合（v-model:open）           |
 | title        | `string`                                 | `''`      | 标题                           |
 | direction    | `'left' \| 'right' \| 'top' \| 'bottom'` | `'right'` | 滑出方向                       |
-| size         | `string`                                 | `'24rem'` | 面板尺寸（左右为宽，上下为高） |
+| size         | `string`                                 | `'24rem'` | 滑出轴尺寸（左右为宽，上下为高） |
+| width        | `string`                                 | -         | 面板宽度；左右滑出缺省取 `size`，上下滑出缺省铺满 |
+| height       | `string`                                 | -         | 面板高度；上下滑出缺省取 `size`，左右滑出缺省铺满 |
+| align        | `'start' \| 'center' \| 'end'`           | `'center'` | 非滑出轴对齐：上下滑出控制水平位置，左右滑出控制垂直位置 |
 | closable     | `boolean`                                | `true`    | 显示关闭按钮                   |
 | maskClosable | `boolean`                                | `true`    | 点击遮罩关闭                   |
 | escClosable  | `boolean`                                | `true`    | ESC 关闭                       |
@@ -34,6 +37,22 @@ Expose：`open()` / `close()`。
 ```vue
 <Drawer v-model:open="show" title="编辑资料" direction="right" size="20rem">
   <Form v-model="profile">…</Form>
+</Drawer>
+```
+
+## 尺寸与位置
+
+`size` 只决定滑出轴（左右滑出为宽度、上下滑出为高度），另一轴用 `width` / `height` 单独指定；`align` 决定面板在屏幕非滑出轴上的位置，`start` 贴起始边、`center` 居中、`end` 贴结束边。
+
+```vue
+<!-- 底部滑出：高 40vh，宽 32rem，靠右对齐 -->
+<Drawer v-model:open="show" direction="bottom" size="40vh" width="32rem" align="end">
+  …
+</Drawer>
+
+<!-- 右侧滑出：宽 24rem，高 60vh，垂直居中 -->
+<Drawer v-model:open="show" direction="right" height="60vh" align="center">
+  …
 </Drawer>
 ```
 

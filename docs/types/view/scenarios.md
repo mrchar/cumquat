@@ -69,7 +69,7 @@ export type ChatInputMode = 'text' | 'voice';
 export interface VoiceRecognizer {
   /** 实时转录文本（含中间结果） */
   transcript: Ref<string>;
-  /** 实时音量 0~1（可选）：提供后录音浮层展示声波条 */
+  /** 实时音量 0~1（可选）：提供后录音气泡展示声波条 */
   level?: Ref<number>;
   start: () => void | Promise<void>;
   stop: () => void | Promise<void>;

@@ -82,7 +82,7 @@
 
   /* ---------- Button ---------- */
   .cumquat-button {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-cumquat font-medium transition-colors;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-cumquat font-medium whitespace-nowrap transition-colors;
     @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cumquat-accent;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
   }
@@ -1051,7 +1051,18 @@
     @apply bg-cumquat-surface-2;
   }
   .cumquat-table__th {
-    @apply min-w-20 whitespace-nowrap border-b border-cumquat-border px-4 py-3 font-medium text-cumquat-text-muted;
+    @apply relative min-w-20 whitespace-nowrap border-b border-cumquat-border px-4 py-3 font-medium text-cumquat-text-muted;
+  }
+  .cumquat-table__resizer {
+    @apply absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize touch-none select-none;
+  }
+  .cumquat-table__resizer::after {
+    content: '';
+    @apply absolute top-1/2 right-0 h-4 w-px -translate-y-1/2 bg-cumquat-border;
+  }
+  .cumquat-table__resizer:hover::after,
+  .cumquat-table__resizer:active::after {
+    @apply bg-cumquat-accent;
   }
   .cumquat-table__th-title {
     @apply inline-flex max-w-full items-center gap-1 align-bottom;
@@ -2054,7 +2065,7 @@
 
   /* ---------- ChatInput 聊天输入条 ---------- */
   .cumquat-chat-input {
-    @apply flex w-full flex-col gap-2;
+    @apply relative flex w-full flex-col gap-2;
   }
   .cumquat-chat-input--disabled {
     @apply pointer-events-none opacity-60;
@@ -2122,7 +2133,9 @@
   }
   .cumquat-chat-input__field {
     @apply relative min-w-0 flex-1;
+    /* 纵向手势用于长按录音与上滑取消；横向仍交给浏览器做文字选择 */
     touch-action: none;
+    -webkit-touch-callout: none;
   }
   .cumquat-chat-input__input {
     @apply h-8 w-full bg-transparent px-2 text-sm text-cumquat-text outline-none;
@@ -2133,9 +2146,22 @@
   .cumquat-chat-input__input:disabled {
     @apply cursor-not-allowed;
   }
-  /* 录音浮层：覆盖输入框，展示实时转录与手势提示 */
+  /* 录音气泡：浮于输入条上方，预览实时转录与手势提示 */
   .cumquat-chat-input__recording {
-    @apply absolute inset-0 flex items-center gap-2 overflow-hidden rounded-cumquat bg-cumquat-surface px-2;
+    @apply pointer-events-none absolute bottom-full left-0 z-20 mb-2 flex w-full items-center gap-2 rounded-cumquat border border-cumquat-border bg-cumquat-surface px-3 py-2 shadow-cumquat-overlay;
+  }
+  .cumquat-chat-input__recording::after {
+    content: '';
+    @apply absolute -bottom-1 left-5 size-2 rotate-45 border-r border-b border-cumquat-border bg-cumquat-surface;
+  }
+  .cumquat-chat-input__recording--cancel {
+    @apply border-cumquat-danger;
+  }
+  .cumquat-chat-input__recording--cancel::after {
+    @apply border-cumquat-danger;
+  }
+  .cumquat-chat-input__recording--cancel .cumquat-chat-input__recording-hint {
+    @apply text-cumquat-danger;
   }
   .cumquat-chat-input__meter {
     @apply flex h-5 items-center gap-0.5;

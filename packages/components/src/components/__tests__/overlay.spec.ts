@@ -238,6 +238,26 @@ describe('Drawer', () => {
     await wrapper.find('.cumquat-drawer__close').trigger('click');
     expect(wrapper.emitted('update:open')?.[0]).toEqual([false]);
   });
+
+  it('上下滑出可配置宽度与水平对齐，左右滑出可配置高度', () => {
+    const bottom = mountWithStub(Drawer, {
+      props: { open: true, direction: 'bottom', width: '50%', align: 'end' },
+    });
+    const bottomPanel = bottom.find('.cumquat-drawer__panel').element as HTMLElement;
+    expect(bottomPanel.style.width).toBe('50%');
+    expect(bottomPanel.style.height).toBe('24rem');
+    expect(bottomPanel.style.left).toBe('auto');
+    expect(bottomPanel.style.right).toBe('0px');
+
+    const side = mountWithStub(Drawer, {
+      props: { open: true, direction: 'right', height: '30rem', align: 'start' },
+    });
+    const sidePanel = side.find('.cumquat-drawer__panel').element as HTMLElement;
+    expect(sidePanel.style.width).toBe('24rem');
+    expect(sidePanel.style.height).toBe('30rem');
+    expect(sidePanel.style.top).toBe('0px');
+    expect(sidePanel.style.bottom).toBe('auto');
+  });
 });
 
 describe('浮层挂载配置', () => {

@@ -282,6 +282,10 @@ describe('ChatInput', () => {
     expect(wrapper.find('.cumquat-chat-input__recording').exists()).toBe(true);
     expect(wrapper.find('.cumquat-chat-input__meter').exists()).toBe(true);
     voice.transcript.value = '会议纪要';
+    await nextTick();
+    // 录音中只在气泡预览，不写入输入框
+    expect(wrapper.find('.cumquat-chat-input__recording-text').text()).toBe('会议纪要');
+    expect((wrapper.find('.cumquat-chat-input__input').element as HTMLInputElement).value).toBe('');
     pointer(field, 'pointerup', 100, 100);
     vi.useRealTimers();
     await flushPromises();
@@ -308,12 +312,28 @@ describe('ChatInput', () => {
     expect(wrapper.find('.cumquat-chat-input__recording').exists()).toBe(false);
   });
 
-  it('输入框左滑进入纯语音模式，语音键全宽', async () => {
+  it('语音键左滑进入纯语音模式，输入框横向滑动不再切换', async () => {
     const wrapper = mount(ChatInput, { props: { voice: createRecognizer() } });
+    // 输入框横向滑动留给原生文字选择，不再切换模式
     const field = wrapper.find('.cumquat-chat-input__field').element;
     pointer(field, 'pointerdown', 200, 100);
     pointer(field, 'pointermove', 150, 100);
+    pointer(field, 'pointerup', 150, 100);
     await nextTick();
+    expect(wrapper.find('.cumquat-chat-input').classes()).not.toContain(
+      'cumquat-chat-input--voice',
+    );
+
+    // 左滑语音键：提示切换，松手进入纯语音模式
+    const voiceKey = wrapper.find('.cumquat-chat-input__voice').element;
+    pointer(voiceKey, 'pointerdown', 200, 100);
+    pointer(voiceKey, 'pointermove', 150, 100);
+    await nextTick();
+    expect(wrapper.find('.cumquat-chat-input__recording-hint').text()).toBe(
+      '松开切换纯语音模式',
+    );
+    pointer(voiceKey, 'pointerup', 150, 100);
+    await flushPromises();
     expect(wrapper.find('.cumquat-chat-input').classes()).toContain('cumquat-chat-input--voice');
     expect(wrapper.find('.cumquat-chat-input__voice-full').exists()).toBe(true);
     expect(wrapper.find('.cumquat-chat-input__input').exists()).toBe(false);
