@@ -248,6 +248,8 @@ describe('Drawer', () => {
     expect(bottomPanel.style.height).toBe('24rem');
     expect(bottomPanel.style.left).toBe('auto');
     expect(bottomPanel.style.right).toBe('0px');
+    // 非全宽：加悬浮圆角
+    expect(bottomPanel.classList).toContain('cumquat-drawer__panel--detached');
 
     const side = mountWithStub(Drawer, {
       props: { open: true, direction: 'right', height: '30rem', align: 'start' },
@@ -257,6 +259,13 @@ describe('Drawer', () => {
     expect(sidePanel.style.height).toBe('30rem');
     expect(sidePanel.style.top).toBe('0px');
     expect(sidePanel.style.bottom).toBe('auto');
+    expect(sidePanel.classList).toContain('cumquat-drawer__panel--detached');
+
+    // 铺满时保持直角
+    const full = mountWithStub(Drawer, { props: { open: true, direction: 'bottom' } });
+    expect(full.find('.cumquat-drawer__panel').classes()).not.toContain(
+      'cumquat-drawer__panel--detached',
+    );
   });
 });
 

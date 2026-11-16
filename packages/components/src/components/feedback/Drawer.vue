@@ -145,6 +145,13 @@ const panelStyle = computed<Record<string, string>>(() => {
     : { width, height, ...crossAlign('x', props.align) };
 });
 
+/** 非滑出轴未铺满时视为悬浮面板，给朝向内容的内侧加圆角 */
+const detached = computed(() => {
+  const horizontal = props.direction === 'left' || props.direction === 'right';
+  const cross = horizontal ? props.height : props.width;
+  return cross !== undefined && cross.trim() !== '100%';
+});
+
 defineExpose({ open: setOpen, close });
 </script>
 
@@ -164,6 +171,7 @@ defineExpose({ open: setOpen, close });
           role="dialog"
           aria-modal="true"
           class="cumquat-drawer__panel"
+          :class="detached ? 'cumquat-drawer__panel--detached' : ''"
           :style="panelStyle"
         >
           <header v-if="title || closable" class="cumquat-drawer__header">

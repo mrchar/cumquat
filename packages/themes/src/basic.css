@@ -912,6 +912,26 @@
   .cumquat-drawer--bottom .cumquat-drawer__panel {
     @apply inset-x-0 bottom-0 h-40 w-full border-t border-cumquat-border;
   }
+  /* 非全宽/全高的悬浮抽屉：朝向内容的一侧加圆角 */
+  .cumquat-drawer__panel--detached {
+    @apply overflow-hidden;
+  }
+  .cumquat-drawer--bottom .cumquat-drawer__panel--detached {
+    border-top-left-radius: var(--radius-cumquat);
+    border-top-right-radius: var(--radius-cumquat);
+  }
+  .cumquat-drawer--top .cumquat-drawer__panel--detached {
+    border-bottom-left-radius: var(--radius-cumquat);
+    border-bottom-right-radius: var(--radius-cumquat);
+  }
+  .cumquat-drawer--right .cumquat-drawer__panel--detached {
+    border-top-left-radius: var(--radius-cumquat);
+    border-bottom-left-radius: var(--radius-cumquat);
+  }
+  .cumquat-drawer--left .cumquat-drawer__panel--detached {
+    border-top-right-radius: var(--radius-cumquat);
+    border-bottom-right-radius: var(--radius-cumquat);
+  }
   /* Drawer 滑入滑出过渡：<Transition name="cumquat-drawer"> */
   .cumquat-drawer-enter-active,
   .cumquat-drawer-leave-active {
