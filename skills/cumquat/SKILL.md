@@ -368,6 +368,7 @@ const form = useForm({
 | usePopoverModel        | 弹层定位与触发（hover / click / focus）  |
 | message / notification | 命令式服务：`createMessage()` 后全局调用 |
 | useLoadingService      | 全局 loading 汇聚（并发请求计数）        |
+| useNotificationCenter  | 消息盒子：异步推送、未读计数、已读/删除   |
 | useToastQueue          | 队列化提示                               |
 
 ## 7. 数据展示与分页

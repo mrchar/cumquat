@@ -111,6 +111,14 @@ export type {
   UseToastQueueOptions,
   UseToastQueueReturn,
 } from './behavior/useToastQueue';
+export { useNotificationCenter } from './behavior/useNotificationCenter';
+export type {
+  NotificationCenterInput,
+  NotificationCenterItem,
+  NotificationCenterType,
+  UseNotificationCenterOptions,
+  UseNotificationCenterReturn,
+} from './behavior/useNotificationCenter';
 export { useOverlayContainer } from './behavior/useOverlayContainer';
 export type { OverlayContainerOptions } from './behavior/useOverlayContainer';
 export {

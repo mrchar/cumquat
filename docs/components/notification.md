@@ -4,7 +4,12 @@ title: Notification 通知
 
 # Notification 通知
 
-角落弹出的主动通知。声明式单条渲染，也可配合 NotificationContainer 命令式调用。
+角落弹出的主动通知，有两种用法：
+
+- **声明式**：`<Notification>` 渲染单条通知，由 `v-model:visible` 控制显隐。
+- **命令式**：在应用根部挂载一次 `<NotificationContainer />`，之后调用 `notification.success()` 等方法按角落堆叠展示、自动消失。
+
+## 声明式单条（Notification）
 
 | Prop     | 类型                                           | 默认值   | 说明                    |
 | -------- | ---------------------------------------------- | -------- | ----------------------- |
@@ -28,6 +33,26 @@ title: Notification 通知
   2.0 已发布，建议升级。
   <template #action><Button size="sm">查看</Button></template>
 </Notification>
+```
+
+## 命令式调用（NotificationContainer）
+
+| Prop      | 类型                                                           | 默认值                  | 说明                                       |
+| --------- | -------------------------------------------------------------- | ----------------------- | ------------------------------------------ |
+| api       | `NotificationApi`                                              | 全局单例 `notification` | 可传入 `createNotification()` 自建队列      |
+| placement | `'top-right' \| 'top-left' \| 'bottom-right' \| 'bottom-left'` | `'top-right'`           | 默认弹出角落，消息自身的 placement 优先     |
+| target    | [`MountTarget`](/types/basics/overlay#mounttarget)              | -                       | Teleport 目标；继承配置，最终回退 body      |
+
+```vue
+<!-- App.vue -->
+<NotificationContainer placement="top-right" />
+```
+
+```ts
+import { notification } from '@mrchar/cumquat';
+
+notification.success('导入完成', '共导入 128 条记录');
+notification.error('同步失败', '请检查网络后重试');
 ```
 
 ## 交互演示

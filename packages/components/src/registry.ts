@@ -77,6 +77,7 @@ import Loading from './components/feedback/Loading.vue';
 import Message from './components/feedback/Message.vue';
 import MessageContainer from './components/feedback/MessageContainer.vue';
 import Notification from './components/feedback/Notification.vue';
+import NotificationCenter from './components/feedback/NotificationCenter.vue';
 import NotificationContainer from './components/feedback/NotificationContainer.vue';
 import Popconfirm from './components/feedback/Popconfirm.vue';
 import Progress from './components/feedback/Progress.vue';
@@ -121,6 +122,7 @@ export const components = {
   Tag,
   Alert,
   Notification,
+  NotificationCenter,
   NotificationContainer,
   Loading,
   Menu,

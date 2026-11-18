@@ -43,6 +43,7 @@ title: 组件清单与优先级
 | Tag 标签              | 状态标记与分类，可关闭            |
 | Alert 警告提示        | 页面内的静态反馈条                |
 | Notification 通知     | 角落弹出的主动通知，命令式调用    |
+| NotificationCenter 消息盒子 | 铃铛入口 + 未读徽标 + 历史消息列表 |
 | Loading 加载          | 局部/全屏加载指示（Spin）         |
 | Upload 上传           | 文件选择、拖拽上传、列表管理      |
 | Popconfirm 气泡确认   | 轻量二次确认                      |
@@ -202,6 +203,9 @@ title: 组件清单与优先级
 - **Notification 通知**
   - 内联逻辑：通知项标题/描述/动作插槽渲染、关闭交互
   - 复用组合函数：`createNotification`（底座 `useToastQueue`）、`useZIndex`
+- **NotificationCenter 消息盒子**
+  - 内联逻辑：铃铛入口、未读徽标、面板开合、消息已读/删除交互与相对时间展示
+  - 复用组合函数：`useNotificationCenter`、`useControllableModel`、`useClickOutside`
 - **Loading 加载**
   - 内联逻辑：局部容器与全屏两种挂载形态、指示文案渲染
   - 复用组合函数：`useLoadingService`

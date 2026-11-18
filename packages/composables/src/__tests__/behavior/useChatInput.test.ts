@@ -148,13 +148,13 @@ describe('useChatInput', () => {
     expect(calls.start).toBe(0);
   });
 
-  it('输入框左滑越过阈值切换纯语音模式', () => {
+  it('输入框横向滑动不再切换纯语音模式', () => {
     const ctx = withScope(() => useChatInput());
     ctx.onFieldPointerDown({ clientX: 100, clientY: 100 });
     ctx.onFieldPointerMove({ clientX: 40, clientY: 100 });
-    expect(ctx.mode.value).toBe('voice');
+    expect(ctx.mode.value).toBe('text');
     void ctx.onFieldPointerUp();
-    expect(ctx.mode.value).toBe('voice');
+    expect(ctx.mode.value).toBe('text');
   });
 
   it('语音键松手确认：转录并入草稿立即发送，成功后清空并回发载荷', async () => {

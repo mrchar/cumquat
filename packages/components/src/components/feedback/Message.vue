@@ -1,5 +1,6 @@
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useControllableModel } from '@cumquat/composables';
 
 const props = withDefaults(
@@ -28,6 +29,11 @@ function closeMessage() {
   visibleState.value = false;
   emit('close');
 }
+
+/** 与 MessageContainer 保持一致：error 归一为 danger，loading 使用 info 配色 */
+const typeClass = computed(() =>
+  props.type === 'error' ? 'danger' : props.type === 'loading' ? 'info' : props.type,
+);
 </script>
 
 <template>
@@ -36,12 +42,9 @@ function closeMessage() {
       v-if="visibleState"
       role="status"
       class="cumquat-message"
-      :class="`cumquat-message--${type === 'danger' ? 'error' : type}`"
+      :class="`cumquat-message--${typeClass}`"
     >
-      <span
-        class="cumquat-message__dot"
-        :class="`cumquat-message__dot--${type === 'danger' ? 'error' : type}`"
-      />
+      <span class="cumquat-message__dot" :class="`cumquat-message__dot--${typeClass}`" />
       <span class="cumquat-message__body">
         <slot />
       </span>

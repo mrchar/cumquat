@@ -58,6 +58,7 @@ L0  工具原语   useEventListener / useControllableModel / useId ...
 ### 反馈与浮层
 
 - [消息服务](/composables/message)：createMessage / message / createNotification / notification / useLoadingService / useToastQueue
+- [消息盒子](/composables/notification-center)：useNotificationCenter（异步推送、未读计数、已读/删除）
 - [浮层模型](/composables/overlay)：useModal / usePopoverModel / useFloating / useOpen / useDismiss / useHoverIntent
 - [聊天输入 useChatInput](/composables/chat-input)
 

@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { message, notification } from '@cumquat/composables';
+import { message, notification, useNotificationCenter } from '@cumquat/composables';
 import type { Sample } from '../samples';
 
 /** 反馈 */
@@ -81,6 +81,31 @@ export const feedbackSamples: Sample[] = [
         );
       },
     }),
+  },
+  {
+    key: 'notification-center',
+    title: 'NotificationCenter 消息盒子',
+    code: `
+  <div class="flex items-center gap-3">
+    <NotificationCenter :api="center" />
+    <Button size="sm" @click="push">模拟服务端推送</Button>
+  </div>
+`,
+    scope: () => {
+      const center = useNotificationCenter();
+      let seq = 0;
+      return {
+        center,
+        push: () => {
+          seq += 1;
+          center.push({
+            type: seq % 2 ? 'success' : 'warning',
+            title: `推送消息 ${seq}`,
+            description: '来自 WebSocket / SSE 的异步通知',
+          });
+        },
+      };
+    },
   },
   {
     key: 'loading',

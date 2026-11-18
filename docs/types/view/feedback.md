@@ -8,6 +8,24 @@ title: 类型参考 · 反馈组件
 
 ## 反馈
 
+### NotificationCenterItem {#notificationcenteritem}
+
+[NotificationCenter 消息盒子](/components/notification-center) 的列表项与 `useNotificationCenter` 的数据结构。
+
+```ts
+export interface NotificationCenterItem {
+  id: number;
+  type: 'info' | 'success' | 'warning' | 'danger';
+  title: string;
+  description?: string;
+  /** 业务附带数据（跳转参数、原始推送体等） */
+  data?: unknown;
+  /** 创建时间戳（ms） */
+  time: number;
+  read: boolean;
+}
+```
+
 ### DialogAction {#dialogaction}
 
 [Dialog 对话框](/components/dialog) 的 `action` / `actions` 配置项。

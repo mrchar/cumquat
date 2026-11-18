@@ -1,10 +1,10 @@
 import {
-  Message, MessageContainer, Alert, Notification, NotificationContainer, Loading, Skeleton, Result, Upload, Chat, ChatInput, } from '../../index';
+  Message, MessageContainer, Alert, Notification, NotificationContainer, NotificationCenter, Loading, Skeleton, Result, Upload, Chat, ChatInput, } from '../../index';
 import { describe, expect, it, vi } from 'vitest';
 import { nextTick, reactive, ref } from 'vue';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { ChatInputAttachment, ChatMessage } from '@cumquat/composables';
-import { createMessage, createNotification } from '@cumquat/composables';
+import { createMessage, createNotification, useNotificationCenter } from '@cumquat/composables';
 
 import type { UploadFile } from '../data-entry/Upload.vue';
 import { mockFetch } from './helpers';
@@ -19,6 +19,15 @@ describe('Message', () => {
     expect(wrapper.find('.cumquat-message').classes()).toContain('cumquat-message--success');
     await wrapper.find('.cumquat-message__close').trigger('click');
     expect(wrapper.find('.cumquat-message').exists()).toBe(false);
+  });
+
+  it('danger / error 归一为 danger 配色，loading 使用 info', () => {
+    const danger = mount(Message, { props: { type: 'danger' }, slots: { default: 'x' } });
+    expect(danger.find('.cumquat-message').classes()).toContain('cumquat-message--danger');
+    const error = mount(Message, { props: { type: 'error' }, slots: { default: 'x' } });
+    expect(error.find('.cumquat-message').classes()).toContain('cumquat-message--danger');
+    const loading = mount(Message, { props: { type: 'loading' }, slots: { default: 'x' } });
+    expect(loading.find('.cumquat-message').classes()).toContain('cumquat-message--info');
   });
 });
 
@@ -86,9 +95,64 @@ describe('NotificationContainer', () => {
     const wrapper = mount(NotificationContainer, { props: { api, target } });
     await nextTick();
     expect(target.querySelector('.cumquat-notification__title')?.textContent).toBe('已保存');
+    // 堆叠层带定位所需的容器类与角落修饰类（样式由主题提供 fixed + z-index）
+    expect(target.querySelector('.cumquat-notification-container--top-right')).not.toBeNull();
     wrapper.unmount();
     api.clear();
     target.remove();
+  });
+});
+
+describe('NotificationCenter', () => {
+  it('未读徽标、列表、点击已读与全部已读', async () => {
+    const center = useNotificationCenter();
+    const wrapper = mount(NotificationCenter, {
+      props: { api: center },
+      global: { stubs: { teleport: true } },
+    });
+
+    await wrapper.find('.cumquat-notification-center__trigger').trigger('click');
+    expect(wrapper.find('.cumquat-notification-center__empty').text()).toBe('暂无通知');
+    expect(wrapper.find('.cumquat-notification-center__badge').exists()).toBe(false);
+
+    center.push({ title: '同步完成', description: '共 12 条', type: 'success' });
+    center.push({ title: '磁盘告警', type: 'warning' });
+    await nextTick();
+
+    expect(wrapper.find('.cumquat-notification-center__badge').text()).toBe('2');
+    expect(wrapper.findAll('.cumquat-notification-center__item')).toHaveLength(2);
+    expect(wrapper.find('.cumquat-notification-center__summary').text()).toBe('2 条未读');
+
+    await wrapper.findAll('.cumquat-notification-center__item-main')[0].trigger('click');
+    expect(center.unreadCount.value).toBe(1);
+    expect(wrapper.emitted('select')?.[0]?.[0]).toMatchObject({ title: '磁盘告警' });
+
+    await wrapper.find('.cumquat-notification-center__read-all').trigger('click');
+    expect(center.unreadCount.value).toBe(0);
+    expect(wrapper.find('.cumquat-notification-center__badge').exists()).toBe(false);
+    expect(
+      wrapper.find('.cumquat-notification-center__read-all').attributes('disabled'),
+    ).toBeDefined();
+  });
+
+  it('删除单条，点击外部关闭面板', async () => {
+    const center = useNotificationCenter();
+    const wrapper = mount(NotificationCenter, {
+      props: { api: center },
+      attachTo: document.body,
+      global: { stubs: { teleport: true } },
+    });
+    center.push({ title: '待删除' });
+    await nextTick();
+    await wrapper.find('.cumquat-notification-center__trigger').trigger('click');
+    await wrapper.find('.cumquat-notification-center__remove').trigger('click');
+    expect(center.items.value).toHaveLength(0);
+    expect(wrapper.find('.cumquat-notification-center__empty').exists()).toBe(true);
+
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    await nextTick();
+    expect(wrapper.find('.cumquat-notification-center__panel').exists()).toBe(false);
+    wrapper.unmount();
   });
 });
 

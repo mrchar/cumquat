@@ -1862,7 +1862,23 @@
 
   /* ---------- Notification ---------- */
   .cumquat-notification {
-    @apply w-80 rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4 shadow-cumquat-overlay;
+    @apply w-80 max-w-[calc(100vw-3rem)] rounded-cumquat border border-cumquat-border bg-cumquat-surface p-4 shadow-cumquat-overlay;
+  }
+  /* 命令式通知的堆叠层：Teleport 到 body 后靠 fixed 定位，缺一不可 */
+  .cumquat-notification-container {
+    @apply fixed z-[9999] flex flex-col gap-3;
+  }
+  .cumquat-notification-container--top-right {
+    @apply top-6 right-6;
+  }
+  .cumquat-notification-container--top-left {
+    @apply top-6 left-6;
+  }
+  .cumquat-notification-container--bottom-right {
+    @apply right-6 bottom-6;
+  }
+  .cumquat-notification-container--bottom-left {
+    @apply bottom-6 left-6;
   }
   .cumquat-notification__inner {
     @apply flex items-start gap-3;
@@ -1899,6 +1915,101 @@
   }
   .cumquat-notification__close-icon {
     @apply size-4;
+  }
+
+  /* ---------- NotificationCenter ---------- */
+  .cumquat-notification-center {
+    @apply relative inline-flex;
+  }
+  .cumquat-notification-center__trigger {
+    @apply relative inline-flex size-9 cursor-pointer items-center justify-center rounded-cumquat border border-cumquat-border bg-cumquat-surface text-cumquat-text-muted transition-colors;
+  }
+  .cumquat-notification-center__trigger:hover:not(:disabled) {
+    @apply bg-cumquat-hover text-cumquat-text;
+  }
+  .cumquat-notification-center__trigger:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+  .cumquat-notification-center__trigger svg {
+    @apply size-4;
+  }
+  .cumquat-notification-center__badge {
+    @apply absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full bg-cumquat-danger px-1 text-xs leading-4 font-medium text-cumquat-text-inverse;
+  }
+  .cumquat-notification-center__panel {
+    @apply z-50 flex flex-col overflow-hidden rounded-cumquat border border-cumquat-border bg-cumquat-surface shadow-cumquat-overlay;
+  }
+  .cumquat-notification-center__header {
+    @apply flex items-center justify-between gap-3 border-b border-cumquat-border px-4 py-3;
+  }
+  .cumquat-notification-center__title {
+    @apply text-sm font-semibold text-cumquat-text;
+  }
+  .cumquat-notification-center__actions {
+    @apply flex items-center gap-2;
+  }
+  .cumquat-notification-center__summary {
+    @apply text-xs text-cumquat-text-muted;
+  }
+  .cumquat-notification-center__read-all {
+    @apply cursor-pointer rounded px-1 text-xs text-cumquat-accent transition-colors;
+  }
+  .cumquat-notification-center__read-all:hover:not(:disabled) {
+    @apply text-cumquat-accent-hover;
+  }
+  .cumquat-notification-center__read-all:disabled {
+    @apply cursor-not-allowed text-cumquat-text-disabled;
+  }
+  .cumquat-notification-center__list {
+    @apply m-0 list-none overflow-y-auto p-0;
+  }
+  .cumquat-notification-center__item {
+    @apply relative flex items-start border-b border-cumquat-border;
+  }
+  .cumquat-notification-center__item:last-child {
+    @apply border-b-0;
+  }
+  .cumquat-notification-center__item-main {
+    @apply flex min-w-0 flex-1 cursor-pointer flex-col gap-1 py-3 pr-9 pl-4 text-left transition-colors hover:bg-cumquat-hover;
+  }
+  .cumquat-notification-center__item-title {
+    @apply flex items-center gap-2 text-sm text-cumquat-text;
+  }
+  .cumquat-notification-center__item--unread .cumquat-notification-center__item-title {
+    @apply font-medium;
+  }
+  .cumquat-notification-center__item-text {
+    @apply truncate;
+  }
+  .cumquat-notification-center__dot {
+    @apply size-1.5 shrink-0 rounded-full bg-cumquat-info;
+  }
+  .cumquat-notification-center__dot--success {
+    @apply bg-cumquat-success;
+  }
+  .cumquat-notification-center__dot--warning {
+    @apply bg-cumquat-warning;
+  }
+  .cumquat-notification-center__dot--danger {
+    @apply bg-cumquat-danger;
+  }
+  .cumquat-notification-center__item-description {
+    @apply line-clamp-2 text-xs text-cumquat-text-muted;
+  }
+  .cumquat-notification-center__item-time {
+    @apply text-xs text-cumquat-text-disabled;
+  }
+  .cumquat-notification-center__remove {
+    @apply absolute top-2 right-2 inline-flex size-6 cursor-pointer items-center justify-center rounded text-cumquat-text-disabled transition-colors;
+  }
+  .cumquat-notification-center__remove:hover {
+    @apply bg-cumquat-hover text-cumquat-text;
+  }
+  .cumquat-notification-center__remove svg {
+    @apply size-3;
+  }
+  .cumquat-notification-center__empty {
+    @apply px-4 py-10 text-center text-sm text-cumquat-text-muted;
   }
 
   /* ---------- Loading ---------- */
